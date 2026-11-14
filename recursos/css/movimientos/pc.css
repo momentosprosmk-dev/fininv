@@ -1,0 +1,11 @@
+@import url("./movil.css");
+
+.movimientos-toolbar {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search-box {
+  width: 18rem;
+}

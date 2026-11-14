@@ -1,0 +1,53 @@
+<header class="app-header">
+  <div class="header-inner">
+    <div class="brand-row">
+      <div class="brand-icon">
+        <i class="fa-solid fa-wallet"></i>
+      </div>
+      <div>
+        <h1 class="brand-title">Contabilidad aXe</h1>
+        <p class="brand-subtitle">Control financiero en COP</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div class="month-select-wrap">
+        <i class="fa-regular fa-calendar"></i>
+        <select id="month-selector" class="month-select" aria-label="Mes contable"></select>
+      </div>
+
+      <button type="button" id="btn-open-accounts" class="btn btn-secondary">
+        <i class="fa-solid fa-sliders"></i>
+        <span>Cuentas y Conceptos</span>
+      </button>
+
+      <button type="button" id="btn-open-google" class="btn btn-secondary">
+        <i class="fa-solid fa-table"></i>
+        <span id="google-btn-label">Conectar Gmail</span>
+      </button>
+
+      <button type="button" id="btn-new-movement" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i>
+        <span>Nuevo movimiento</span>
+      </button>
+    </div>
+  </div>
+
+  <nav class="header-tabs" aria-label="Secciones">
+    <button type="button" class="tab-btn active" data-tab="resumen" title="Resumen del Mes">
+      <i class="fa-solid fa-chart-pie"></i>
+      <span class="tab-label-pc">Resumen del Mes</span>
+    </button>
+
+    <button type="button" class="tab-btn" data-tab="movimientos" title="Movimientos">
+      <i class="fa-solid fa-list-ul"></i>
+      <span id="tab-mov-badge" class="tab-badge-mobile">0</span>
+      <span id="tab-mov-label-pc" class="tab-label-pc">Movimientos (0)</span>
+    </button>
+
+    <button type="button" class="tab-btn" data-tab="cierres" title="Cierre Contable">
+      <i class="fa-solid fa-clock-rotate-left"></i>
+      <span class="tab-label-pc">Cierre Contable</span>
+    </button>
+  </nav>
+</header>

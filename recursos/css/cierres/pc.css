@@ -1,0 +1,9 @@
+@import url("./movil.css");
+
+.cierre-summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.cierre-form-row {
+  flex-direction: row;
+}

@@ -1,0 +1,126 @@
+.movimientos-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.filter-pill {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.filter-pill.active {
+  background: var(--indigo);
+  border-color: var(--indigo);
+  color: #ffffff;
+}
+
+.search-box {
+  position: relative;
+  width: 100%;
+}
+
+.search-box i {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.search-box .input {
+  padding-left: 2.25rem;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 1rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+}
+
+.data-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.data-table th {
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(2, 6, 23, 0.7);
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.data-table td {
+  border-bottom: 1px solid rgba(30, 41, 59, 0.65);
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+}
+
+.data-table tr:hover td {
+  background: rgba(2, 6, 23, 0.45);
+}
+
+.text-right {
+  text-align: right;
+}
+
+.inline-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--rose-border);
+  background: var(--rose-bg);
+  padding: 0.2rem 0.4rem;
+  font-size: 0.7rem;
+}
+
+.inline-confirm-btn {
+  border: none;
+  border-radius: 0.35rem;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.inline-confirm-btn.no {
+  background: transparent;
+  color: #cbd5e1;
+}
+
+.inline-confirm-btn.yes {
+  background: #e11d48;
+  color: #ffffff;
+}
+
+.icon-delete-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  padding: 0.35rem;
+  border-radius: 0.5rem;
+}
+
+.icon-delete-btn:hover {
+  background: var(--rose-bg);
+  color: var(--rose);
+}

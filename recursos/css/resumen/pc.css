@@ -1,0 +1,34 @@
+@import url("./movil.css");
+
+.accounts-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.thermometer-card {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.thermometer-right {
+  flex-direction: row;
+  align-items: center;
+  text-align: right;
+}
+
+.kpi-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.resumen-panels {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.obligation-form {
+  flex-direction: row;
+}
+
+.obligation-form .input-amount {
+  width: 9rem;
+  flex-shrink: 0;
+}

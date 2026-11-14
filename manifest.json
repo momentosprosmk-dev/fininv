@@ -1,0 +1,10 @@
+{
+  "name": "Mi Contabilidad Personal (COP)",
+  "short_name": "Contabilidad COP",
+  "description": "Control financiero personal en pesos colombianos.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "lang": "es-CO"
+}

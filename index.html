@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contabilidad aXe COP</title>
+  <meta name="description" content="Control financiero personal en pesos colombianos (COP)." />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%234f46e5'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='sans-serif' font-size='32' font-weight='bold'%3E$%3C/text%3E%3C/svg%3E" />
+
+  <!-- Iconos Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <!-- CSS Global -->
+  <link rel="stylesheet" href="recursos/css/global/base.css" />
+  <link rel="stylesheet" href="recursos/css/global/header.css" />
+  <link rel="stylesheet" href="recursos/css/global/footer.css" />
+  <link rel="stylesheet" href="recursos/css/modales/modales.css" />
+
+  <!-- CSS por Módulo (Breakpoints sin colisión: <=1024px móvil, >=1025px PC) -->
+  <link rel="stylesheet" href="recursos/css/resumen/movil.css" media="(max-width: 1024px)" />
+  <link rel="stylesheet" href="recursos/css/resumen/pc.css" media="(min-width: 1025px)" />
+  <link rel="stylesheet" href="recursos/css/movimientos/movil.css" media="(max-width: 1024px)" />
+  <link rel="stylesheet" href="recursos/css/movimientos/pc.css" media="(min-width: 1025px)" />
+  <link rel="stylesheet" href="recursos/css/cierres/movil.css" media="(max-width: 1024px)" />
+  <link rel="stylesheet" href="recursos/css/cierres/pc.css" media="(min-width: 1025px)" />
+
+  <!-- Google Identity Services (opcional para modo OAuth) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <div id="header-root"></div>
+
+    <main id="main-root" class="main-container">
+      <section id="view-resumen" class="tab-view"></section>
+      <section id="view-movimientos" class="tab-view hidden"></section>
+      <section id="view-cierres" class="tab-view hidden"></section>
+    </main>
+
+    <div id="footer-root"></div>
+  </div>
+
+  <!-- Contenedor de Modales -->
+  <div id="modales-root"></div>
+
+  <!-- JS Global -->
+  <script src="recursos/js/global/gateway.js"></script>
+  <script src="recursos/js/global/format.js"></script>
+  <script src="recursos/js/global/storage.js"></script>
+  <script src="recursos/js/global/accounting.js"></script>
+  <script src="recursos/js/global/googleSheets.js"></script>
+  <script src="recursos/js/global/copyright.js"></script>
+
+  <!-- JS Vistas -->
+  <script src="recursos/js/resumen/resumenView.js"></script>
+  <script src="recursos/js/movimientos/movimientosView.js"></script>
+  <script src="recursos/js/cierres/cierresView.js"></script>
+
+  <!-- JS Modales -->
+  <script src="recursos/js/modales/datePicker.js"></script>
+  <script src="recursos/js/modales/movementModal.js"></script>
+  <script src="recursos/js/modales/accountsModal.js"></script>
+  <script src="recursos/js/modales/googleModal.js"></script>
+
+  <!-- Inicializador Principal -->
+  <script src="recursos/js/global/appState.js"></script>
+</body>
+</html>
