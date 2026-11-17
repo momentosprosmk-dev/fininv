@@ -3,14 +3,15 @@
 
   async function loadAppsScriptCode() {
     if (cachedScriptCode) return cachedScriptCode;
-    try {
-      var res = await fetch('../google-apps-script/Code.gs');
-      if (res.ok) {
-        cachedScriptCode = await res.text();
-        return cachedScriptCode;
-      }
-    } catch (e) {
-      // fallback if opened without parent folder
+    var paths = ['google-apps-script/Code.gs', '../google-apps-script/Code.gs'];
+    for (var i = 0; i < paths.length; i++) {
+      try {
+        var res = await fetch(paths[i]);
+        if (res.ok) {
+          cachedScriptCode = await res.text();
+          return cachedScriptCode;
+        }
+      } catch (e) { /* try next */ }
     }
     cachedScriptCode = '// Copia el archivo google-apps-script/Code.gs de tu proyecto en Extensiones > Apps Script';
     return cachedScriptCode;

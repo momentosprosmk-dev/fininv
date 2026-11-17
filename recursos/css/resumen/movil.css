@@ -32,18 +32,18 @@
 }
 
 .account-card.debt .account-top {
-  color: #fcd34d;
+  color: var(--amber);
 }
 
 .account-balance {
   margin: 0.5rem 0 0;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-strong);
 }
 
 .account-card.debt .account-balance {
-  color: #fde68a;
+  color: var(--amber);
 }
 
 .account-sub {
@@ -57,7 +57,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.7rem;
-  color: rgba(252, 211, 77, 0.85);
+  color: var(--amber);
 }
 
 .progress-track {
@@ -65,7 +65,7 @@
   height: 0.4rem;
   width: 100%;
   border-radius: 9999px;
-  background: rgba(69, 26, 3, 0.85);
+  background: var(--border-subtle);
   overflow: hidden;
 }
 
@@ -83,7 +83,7 @@
 .thermometer-card {
   border-radius: 1rem;
   border: 1px solid var(--emerald-border);
-  background: rgba(6, 78, 59, 0.22);
+  background: var(--thermometer-bg);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
@@ -92,7 +92,7 @@
 
 .thermometer-card.deficit {
   border-color: var(--rose-border);
-  background: rgba(136, 19, 55, 0.2);
+  background: var(--thermometer-deficit-bg);
 }
 
 .thermometer-title {
@@ -102,13 +102,13 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-strong);
 }
 
 .thermometer-desc {
   margin: 0.35rem 0 0;
   font-size: 0.875rem;
-  color: #cbd5e1;
+  color: var(--text-soft);
 }
 
 .thermometer-right {
@@ -139,7 +139,7 @@
 .kpi-card {
   border-radius: 1rem;
   border: 1px solid var(--border-subtle);
-  background: rgba(15, 23, 42, 0.55);
+  background: var(--bg-surface);
   padding: 1rem;
 }
 
@@ -155,7 +155,7 @@
   margin: 0.5rem 0 0;
   font-size: 1.25rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-strong);
 }
 
 /* Obligaciones y Conceptos */
@@ -179,7 +179,7 @@
   gap: 0.65rem;
   border-radius: 0.75rem;
   border: 1px solid var(--border-subtle);
-  background: rgba(2, 6, 23, 0.7);
+  background: var(--bg-subtle);
   padding: 0.65rem 0.85rem;
 }
 
@@ -205,7 +205,7 @@
   margin: 0;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--text-strong);
 }
 
 .obligation-sub {
@@ -243,7 +243,7 @@
 .cat-bar-track {
   height: 0.5rem;
   border-radius: 9999px;
-  background: #020617;
+  background: var(--bg-input);
   overflow: hidden;
 }
 

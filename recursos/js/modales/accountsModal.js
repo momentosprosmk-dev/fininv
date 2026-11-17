@@ -9,6 +9,7 @@
       draftCategories: (opts.categories || []).map(function (c) { return Object.assign({}, c); }),
       newAccName: '',
       newAccKind: 'liquidez',
+      newAccIcon: 'auto',
       newAccBalance: '',
       newAccLimit: '2400000',
       catFilter: 'Egreso',
@@ -23,9 +24,25 @@
       var bodyHtml = '';
 
       if (state.tab === 'cuentas') {
+        var iconOptions = [
+          { value: 'auto', label: 'Icono: Automático' },
+          { value: 'banco', label: 'Banco / Cuenta' },
+          { value: 'billetera', label: 'Billetera digital' },
+          { value: 'efectivo', label: 'Efectivo' },
+          { value: 'debito', label: 'Tarjeta de Débito' },
+          { value: 'credito', label: 'Tarjeta de Crédito' },
+        ];
+        var renderIconSelect = function (cls, attr, selectedVal) {
+          return '<select class="select ' + cls + '" ' + attr + ' style="padding:0.3rem 0.5rem;font-size:0.75rem">' +
+            iconOptions.map(function (op) {
+              return '<option value="' + op.value + '" ' + ((selectedVal || 'auto') === op.value ? 'selected' : '') + '>' + op.label + '</option>';
+            }).join('') +
+          '</select>';
+        };
+
         var accItems = state.draftAccounts.map(function (acc, idx) {
           var limitInput = acc.kind === 'deuda'
-            ? '<div style="margin-top:0.4rem;display:flex;align-items:center;gap:0.4rem"><span class="text-muted" style="font-size:0.72rem">Cupo TC:</span><input type="text" inputmode="numeric" class="input acc-limit-inp" data-acc-idx="' + idx + '" value="' + (acc.creditLimit != null ? acc.creditLimit : 2400000) + '" style="padding:0.3rem 0.5rem;font-size:0.75rem;width:8rem" /></div>'
+            ? '<div style="display:flex;align-items:center;gap:0.4rem"><span class="text-muted" style="font-size:0.72rem">Cupo TC:</span><input type="text" inputmode="numeric" class="input acc-limit-inp" data-acc-idx="' + idx + '" value="' + (acc.creditLimit != null ? acc.creditLimit : 2400000) + '" style="padding:0.3rem 0.5rem;font-size:0.75rem;width:7.5rem" /></div>'
             : '';
           var deleteBtn = state.draftAccounts.length > 1
             ? '<button type="button" class="icon-delete-btn ask-del-acc" data-acc-idx="' + idx + '" title="Eliminar cuenta"><i class="fa-regular fa-trash-can"></i></button>'
@@ -35,7 +52,7 @@
             '<div class="config-item" style="flex-direction:column;align-items:stretch">' +
               '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
                 '<div>' +
-                  '<strong style="font-size:0.85rem;color:#fff">' + esc(acc.name) + '</strong> ' +
+                  '<strong style="font-size:0.85rem;color:var(--text-strong)">' + esc(acc.name) + '</strong> ' +
                   '<span class="badge ' + (acc.kind === 'deuda' ? 'badge-rose' : 'badge-sky') + '">' + (acc.kind === 'deuda' ? 'Deuda / TC' : 'Liquidez') + '</span>' +
                 '</div>' +
                 '<div style="display:flex;align-items:center;gap:0.4rem">' +
@@ -44,7 +61,10 @@
                   deleteBtn +
                 '</div>' +
               '</div>' +
-              limitInput +
+              '<div style="margin-top:0.4rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0.5rem">' +
+                '<div style="width:10.5rem">' + renderIconSelect('acc-icon-sel', 'data-acc-idx="' + idx + '"', acc.icon || 'auto') + '</div>' +
+                limitInput +
+              '</div>' +
             '</div>'
           );
         }).join('');
@@ -72,6 +92,11 @@
               '</select>' +
             '</div>' +
             '<div style="display:flex;gap:0.5rem;flex-wrap:wrap">' +
+              '<select id="new-acc-icon" class="select" style="flex:1;min-width:9rem">' +
+                iconOptions.map(function (op) {
+                  return '<option value="' + op.value + '" ' + (state.newAccIcon === op.value ? 'selected' : '') + '>' + op.label + '</option>';
+                }).join('') +
+              '</select>' +
               '<input type="text" id="new-acc-bal" class="input" inputmode="decimal" placeholder="Saldo inicial COP" value="' + esc(state.newAccBalance) + '" style="flex:1;min-width:8rem" />' +
               (state.newAccKind === 'deuda'
                 ? '<input type="text" id="new-acc-limit" class="input" inputmode="numeric" placeholder="Cupo TC" value="' + esc(state.newAccLimit) + '" style="flex:1;min-width:8rem" />'
@@ -84,7 +109,7 @@
         var catItems = filteredCats.map(function (c) {
           return (
             '<div class="config-item">' +
-              '<div style="font-size:0.85rem;color:#fff">' + esc(c.name) + (c.isArq ? ' <span class="badge badge-violet">Inversión ARQ</span>' : '') + '</div>' +
+              '<div style="font-size:0.85rem;color:#fff">' + esc(c.name) + (c.isArq ? ' <span class="badge badge-violet">Inversión</span>' : '') + '</div>' +
               '<button type="button" class="icon-delete-btn ask-del-cat" data-cat-id="' + esc(c.id) + '" data-cat-name="' + esc(c.name) + '" title="Eliminar concepto"><i class="fa-regular fa-trash-can"></i></button>' +
             '</div>'
           );
@@ -115,7 +140,7 @@
               '<button type="button" id="btn-add-cat" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Agregar</button>' +
             '</div>' +
             (state.catFilter === 'Egreso'
-              ? '<label style="display:flex;align-items:center;gap:0.45rem;margin-top:0.5rem;font-size:0.75rem;color:#cbd5e1"><input type="checkbox" id="new-cat-arq" ' + (state.newCatIsArq ? 'checked' : '') + ' /> Contabilizar como inversión / aporte ARQ</label>'
+              ? '<label style="display:flex;align-items:center;gap:0.45rem;margin-top:0.5rem;font-size:0.75rem;color:#cbd5e1"><input type="checkbox" id="new-cat-arq" ' + (state.newCatIsArq ? 'checked' : '') + ' /> Contabilizar como Inversión</label>'
               : '') +
           '</div>';
       }
@@ -177,6 +202,12 @@
           state.draftAccounts[idx].creditLimit = Number(e.target.value.replace(/[^0-9]/g, '')) || 0;
         });
       });
+      root.querySelectorAll('.acc-icon-sel').forEach(function (sel) {
+        sel.addEventListener('change', function (e) {
+          var idx = Number(sel.getAttribute('data-acc-idx'));
+          state.draftAccounts[idx].icon = e.target.value;
+        });
+      });
       root.querySelectorAll('.ask-del-acc').forEach(function (btn) {
         btn.addEventListener('click', function () {
           var idx = Number(btn.getAttribute('data-acc-idx'));
@@ -189,6 +220,8 @@
       if (newAccName) newAccName.addEventListener('input', function (e) { state.newAccName = e.target.value; });
       var newAccKind = document.getElementById('new-acc-kind');
       if (newAccKind) newAccKind.addEventListener('change', function (e) { state.newAccKind = e.target.value; render(); });
+      var newAccIcon = document.getElementById('new-acc-icon');
+      if (newAccIcon) newAccIcon.addEventListener('change', function (e) { state.newAccIcon = e.target.value; });
       var newAccBal = document.getElementById('new-acc-bal');
       if (newAccBal) newAccBal.addEventListener('input', function (e) { state.newAccBalance = e.target.value; });
       var newAccLim = document.getElementById('new-acc-limit');
@@ -202,11 +235,13 @@
           var item = {
             name: trimmed,
             kind: state.newAccKind,
+            icon: state.newAccIcon || 'auto',
             initialBalance: Number(state.newAccBalance.replace(',', '.').replace(/[^0-9.-]/g, '')) || 0,
           };
           if (state.newAccKind === 'deuda') item.creditLimit = Number(state.newAccLimit.replace(/[^0-9]/g, '')) || 2400000;
           state.draftAccounts.push(item);
           state.newAccName = '';
+          state.newAccIcon = 'auto';
           state.newAccBalance = '';
           render();
         });

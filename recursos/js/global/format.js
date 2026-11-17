@@ -1,4 +1,41 @@
 (function () {
+  var CURRENCY_CATALOG = {
+    COP: { code: 'COP', label: 'Peso Colombiano (COP)', symbol: '$', locale: 'es-CO', decimals: 0 },
+    USD: { code: 'USD', label: 'Dólar EEUU (USD)', symbol: 'US$', locale: 'en-US', decimals: 2 },
+  };
+
+  var formattersCache = {};
+
+  function getCurrencyMeta(code) {
+    return CURRENCY_CATALOG[code] || CURRENCY_CATALOG.COP;
+  }
+
+  function getSupportedCurrencies() {
+    return Object.keys(CURRENCY_CATALOG).map(function (k) { return CURRENCY_CATALOG[k]; });
+  }
+
+  function formatCurrency(value, currencyCode) {
+    var meta = getCurrencyMeta(currencyCode || 'COP');
+    if (!formattersCache[meta.code]) {
+      formattersCache[meta.code] = new Intl.NumberFormat(meta.locale, {
+        style: 'currency',
+        currency: meta.code,
+        minimumFractionDigits: meta.decimals === 0 ? 0 : 2,
+        maximumFractionDigits: 2,
+      });
+    }
+    var formatted = formattersCache[meta.code].format(Number(value) || 0);
+    return meta.code === 'COP' ? formatted : meta.code + ' ' + formatted;
+  }
+
+  function maskCurrency(value, currencyCode, hideValues) {
+    if (hideValues) {
+      var meta = getCurrencyMeta(currencyCode || 'COP');
+      return meta.symbol + ' ••••••';
+    }
+    return formatCurrency(value, currencyCode);
+  }
+
   var copFormatter = new Intl.NumberFormat('es-CO', {
     style: 'currency',
     currency: 'COP',
@@ -8,6 +45,11 @@
 
   function formatCOP(value) {
     return copFormatter.format(Number(value) || 0);
+  }
+
+  function maskCOP(value, hideValues) {
+    if (hideValues) return '$ ••••••';
+    return formatCOP(value);
   }
 
   function formatMonthLabel(monthKey) {
@@ -45,7 +87,13 @@
   }
 
   window.AppFormat = {
+    CURRENCY_CATALOG: CURRENCY_CATALOG,
+    getCurrencyMeta: getCurrencyMeta,
+    getSupportedCurrencies: getSupportedCurrencies,
+    formatCurrency: formatCurrency,
+    maskCurrency: maskCurrency,
     formatCOP: formatCOP,
+    maskCOP: maskCOP,
     formatMonthLabel: formatMonthLabel,
     getCurrentMonthKey: getCurrentMonthKey,
     getTodayISO: getTodayISO,

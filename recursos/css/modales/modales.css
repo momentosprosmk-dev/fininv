@@ -17,9 +17,9 @@
   overflow-y: auto;
   border-radius: 1rem;
   border: 1px solid var(--border-subtle);
-  background: #0f172a;
+  background: var(--bg-card);
   padding: 1.25rem 1.5rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
 }
 
 .modal-header {
@@ -34,7 +34,7 @@
   margin: 0;
   font-size: 1.125rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-strong);
 }
 
 .modal-subtitle {
@@ -53,8 +53,8 @@
 }
 
 .modal-close:hover {
-  background: #1e293b;
-  color: #ffffff;
+  background: var(--border-subtle);
+  color: var(--text-strong);
 }
 
 .segmented-tabs {
@@ -62,7 +62,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.25rem;
   border-radius: 0.75rem;
-  background: #020617;
+  background: var(--bg-input);
   padding: 0.25rem;
   margin-bottom: 1rem;
 }
@@ -208,7 +208,7 @@
   background: var(--bg-input);
   padding: 0.55rem 0.75rem;
   font-size: 0.875rem;
-  color: #ffffff;
+  color: var(--text-strong);
 }
 
 .datepicker-popover {
@@ -220,9 +220,9 @@
   width: 18rem;
   border-radius: 1rem;
   border: 1px solid var(--border-input);
-  background: #0f172a;
+  background: var(--bg-card);
   padding: 0.85rem;
-  box-shadow: 0 20px 35px rgba(0, 0, 0, 0.65);
+  box-shadow: 0 20px 35px rgba(0, 0, 0, 0.35);
 }
 
 .dp-head {
@@ -260,7 +260,7 @@
 .dp-day {
   border: 1px solid transparent;
   background: transparent;
-  color: #e2e8f0;
+  color: var(--text-main);
   border-radius: 0.5rem;
   padding: 0.38rem 0;
   font-size: 0.75rem;
@@ -268,7 +268,7 @@
 }
 
 .dp-day:hover {
-  background: #1e293b;
+  background: var(--border-subtle);
 }
 
 .dp-day.today {
@@ -307,14 +307,14 @@
   gap: 0.5rem;
   border-radius: 0.75rem;
   border: 1px solid var(--border-subtle);
-  background: rgba(2, 6, 23, 0.7);
+  background: var(--bg-subtle);
   padding: 0.55rem 0.75rem;
 }
 
 .config-box {
   border-radius: 0.85rem;
   border: 1px solid var(--border-subtle);
-  background: rgba(2, 6, 23, 0.55);
+  background: var(--bg-hover);
   padding: 0.85rem;
   margin-bottom: 0.9rem;
 }
@@ -324,10 +324,10 @@
   overflow: auto;
   border-radius: 0.65rem;
   border: 1px solid var(--border-subtle);
-  background: #020617;
+  background: var(--bg-input);
   padding: 0.65rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.7rem;
-  color: #cbd5e1;
+  color: var(--text-soft);
   white-space: pre;
 }

@@ -6,6 +6,8 @@
     var accounts = opts.accounts || [];
     var accountBalances = opts.accountBalances || {};
     var categories = opts.categories || [];
+    var investmentAccounts = opts.investmentAccounts || [];
+    var exchangeRates = opts.exchangeRates || {};
     var preset = opts.preset || {};
     var currentCcDebt = opts.currentCcDebt || 0;
 
@@ -19,6 +21,8 @@
       fromAccount: preset.fromAccount || '',
       toAccount: preset.toAccount || '',
       category: preset.category || '',
+      invFund: '',
+      invRateStr: '',
       description: preset.description || '',
       amountStr: preset.amount ? String(preset.amount) : '',
       isCreatingCat: false,
@@ -43,15 +47,24 @@
       var isOutflow = state.type === 'Egreso' || state.type === 'Traspaso';
       var hasInsufficient = isOutflow && Boolean(state.fromAccount) && (availableFrom <= 0 || parsedAmount > availableFrom);
 
+      var catsForType = categories.filter(function (c) { return c.type === state.type; });
+      var selectedCatObj = categories.find(function (c) { return c.type === state.type && c.name === state.category; });
+      var isInvExpense = state.type === 'Egreso' && selectedCatObj && selectedCatObj.isArq && investmentAccounts.length > 0;
+      var lowerCat = String(state.category || '').toLowerCase();
+      var isInvIncome = state.type === 'Ingreso' && investmentAccounts.length > 0 && (lowerCat.indexOf('inversión') !== -1 || lowerCat.indexOf('inversion') !== -1 || lowerCat.indexOf('arq') !== -1);
+      var needsInvFund = isInvExpense || isInvIncome;
+      var selectedInvObj = needsInvFund ? investmentAccounts.find(function (ia) { return ia.name === state.invFund; }) : null;
+      var invCur = selectedInvObj ? (selectedInvObj.currency || 'COP') : 'COP';
+      var isForeignInv = invCur !== 'COP';
+      var activeInvRate = isForeignInv ? (fmt.parseDecimalInput(state.invRateStr) || window.AppInvestments.getEffectiveRate(invCur, exchangeRates)) : 1;
+
       var missingRequired =
         parsedAmount <= 0 ||
         !state.category ||
         (state.type === 'Egreso' && !state.fromAccount) ||
         (state.type === 'Ingreso' && !state.toAccount) ||
-        (state.type === 'Traspaso' && (!state.fromAccount || !state.toAccount || state.fromAccount === state.toAccount));
-
-      var catsForType = categories.filter(function (c) { return c.type === state.type; });
-      var selectedCatObj = categories.find(function (c) { return c.type === state.type && c.name === state.category; });
+        (state.type === 'Traspaso' && (!state.fromAccount || !state.toAccount || state.fromAccount === state.toAccount)) ||
+        (needsInvFund && !state.invFund);
 
       var accountSectionHtml = '';
       if (state.type === 'Egreso') {
@@ -108,8 +121,29 @@
           '</div>'
         : '';
 
+      var invFundHtml = '';
+      if (needsInvFund) {
+        var invOpts = '<option value="">Selecciona fondo de inversión...</option>' + investmentAccounts.map(function (ia) {
+          return '<option value="' + esc(ia.name) + '" ' + (state.invFund === ia.name ? 'selected' : '') + '>' + esc(ia.name) + ' (' + esc(ia.currency || 'COP') + ')</option>';
+        }).join('');
+        invFundHtml =
+          '<div class="config-box">' +
+            '<div class="field-group" style="margin-bottom:' + (isForeignInv ? '0.65rem' : '0') + '">' +
+              '<label class="field-label">' + (isInvExpense ? 'Fondo de Inversión destino' : 'Fondo de Inversión origen') + '</label>' +
+              '<select id="mm-inv-fund" class="select">' + invOpts + '</select>' +
+            '</div>' +
+            (isForeignInv
+              ? '<div class="field-group" style="margin-bottom:0">' +
+                  '<label class="field-label">Tasa de cambio (COP por 1 ' + esc(invCur) + ')</label>' +
+                  '<input type="text" inputmode="decimal" id="mm-inv-rate" class="input" value="' + esc(state.invRateStr || String(activeInvRate)) + '" />' +
+                  (parsedAmount > 0 ? '<p style="margin:0.25rem 0 0;font-size:0.75rem;color:#34d399">Equivalente: ' + esc(fmt.formatCurrency(parsedAmount / activeInvRate, invCur)) + '</p>' : '') +
+                '</div>'
+              : '') +
+          '</div>';
+      }
+
       var arqBanner = (state.type === 'Egreso' && selectedCatObj && selectedCatObj.isArq)
-        ? '<div class="alert-banner alert-indigo">Los aportes a <strong>' + esc(selectedCatObj.name) + '</strong> se separan de tu consumo mensual y se contabilizan como inversión.</div>'
+        ? '<div class="alert-banner alert-indigo">Los aportes a <strong>' + esc(selectedCatObj.name) + '</strong> se separan de tu consumo mensual y se contabilizan en el módulo de Inversiones.</div>'
         : '';
 
       root.innerHTML =
@@ -146,6 +180,7 @@
                 '</div>' +
                 catBlockHtml +
               '</div>' +
+              invFundHtml +
               '<div class="field-group">' +
                 '<label class="field-label">Descripción (opcional)</label>' +
                 '<input type="text" id="mm-desc" class="input" placeholder="Ej. Mercado D1, Uber, Pago arriendo..." value="' + esc(state.description) + '" />' +
@@ -213,7 +248,30 @@
       if (catSel) {
         catSel.addEventListener('change', function (e) {
           state.category = e.target.value;
+          state.invFund = '';
           render();
+        });
+      }
+
+      var invFundSel = document.getElementById('mm-inv-fund');
+      if (invFundSel) {
+        invFundSel.addEventListener('change', function (e) {
+          state.invFund = e.target.value;
+          var obj = investmentAccounts.find(function (ia) { return ia.name === state.invFund; });
+          state.invRateStr = obj && obj.currency && obj.currency !== 'COP'
+            ? String(window.AppInvestments.getEffectiveRate(obj.currency, exchangeRates))
+            : '1';
+          render();
+        });
+      }
+
+      var invRateInp = document.getElementById('mm-inv-rate');
+      if (invRateInp) {
+        invRateInp.addEventListener('input', function (e) {
+          state.invRateStr = e.target.value;
+          var p = invRateInp.parentElement.querySelector('p');
+          var r = fmt.parseDecimalInput(state.invRateStr);
+          if (p && r > 0) p.textContent = 'Equivalente: ' + fmt.formatCurrency(fmt.parseDecimalInput(state.amountStr) / r, invCur);
         });
       }
 
@@ -268,20 +326,37 @@
         if (out && (!state.fromAccount || avail <= 0 || amt > avail)) return;
         if (state.type === 'Ingreso' && !state.toAccount) return;
         if (state.type === 'Traspaso' && (!state.toAccount || state.fromAccount === state.toAccount)) return;
+        if (needsInvFund && !state.invFund) return;
 
         var month = state.date.slice(0, 7);
         var payload;
+        var invPayload = null;
         if (state.type === 'Ingreso') {
           payload = {
             date: state.date,
             month: month,
             type: 'Ingreso',
-            fromAccount: state.category.toLowerCase().indexOf('arq') !== -1 ? 'ARQ' : 'Externo',
+            fromAccount: isInvIncome ? state.invFund : (state.category.toLowerCase().indexOf('arq') !== -1 ? 'ARQ' : 'Externo'),
             toAccount: state.toAccount,
             category: state.category,
             description: state.description.trim() || state.category,
             amount: amt,
           };
+          if (isInvIncome) {
+            invPayload = {
+              date: state.date,
+              type: 'Retiro',
+              fundName: state.invFund,
+              subName: '',
+              normalAccount: state.toAccount,
+              description: payload.description,
+              amount: Math.round((amt / activeInvRate) * 100) / 100,
+              commission: 0,
+              commissionApply: 'moved',
+              exchangeRate: activeInvRate,
+              amountCOP: amt,
+            };
+          }
         } else if (state.type === 'Egreso') {
           var catObj = categories.find(function (c) { return c.type === 'Egreso' && c.name === state.category; });
           payload = {
@@ -289,11 +364,26 @@
             month: month,
             type: 'Egreso',
             fromAccount: state.fromAccount,
-            toAccount: catObj && catObj.isArq ? 'ARQ' : 'Externo',
+            toAccount: isInvExpense ? state.invFund : (catObj && catObj.isArq ? 'ARQ' : 'Externo'),
             category: state.category,
             description: state.description.trim() || state.category,
             amount: amt,
           };
+          if (isInvExpense) {
+            invPayload = {
+              date: state.date,
+              type: 'Aporte',
+              fundName: state.invFund,
+              subName: '',
+              normalAccount: state.fromAccount,
+              description: payload.description,
+              amount: Math.round((amt / activeInvRate) * 100) / 100,
+              commission: 0,
+              commissionApply: 'moved',
+              exchangeRate: activeInvRate,
+              amountCOP: amt,
+            };
+          }
         } else {
           payload = {
             date: state.date,
@@ -306,7 +396,7 @@
             amount: amt,
           };
         }
-        opts.onSave(payload);
+        opts.onSave(payload, invPayload);
         closeFn();
       });
 

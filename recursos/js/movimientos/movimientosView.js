@@ -11,6 +11,8 @@
 
     var esc = window.escapeHTML;
     var fmt = window.AppFormat;
+    var hide = Boolean(state.hideValues);
+    var mCOP = function (v) { return fmt.maskCOP(v, hide); };
     var filterTypes = ['Todos', 'Ingreso', 'Egreso', 'Traspaso'];
 
     var pillsHtml = filterTypes.map(function (t) {
@@ -37,10 +39,10 @@
             '<tr>' +
               '<td class="text-muted" style="white-space:nowrap">' + esc(m.date) + '</td>' +
               '<td><span class="badge ' + typeBadgeClass(m.type) + '">' + esc(m.type) + '</span></td>' +
-              '<td style="font-weight:500;color:#fff">' + esc(m.category) + '</td>' +
+              '<td style="font-weight:500;color:var(--text-strong)">' + esc(m.category) + '</td>' +
               '<td class="text-muted">' + esc(m.description) + '</td>' +
               '<td class="text-muted" style="font-size:0.75rem;white-space:nowrap">' + esc(m.fromAccount) + ' &rarr; ' + esc(m.toAccount) + '</td>' +
-              '<td class="text-right tabular ' + amountClass + '" style="font-weight:600;white-space:nowrap">' + prefix + esc(fmt.formatCOP(m.amount)) + '</td>' +
+              '<td class="text-right tabular ' + amountClass + '" style="font-weight:600;white-space:nowrap">' + (hide ? '' : prefix) + esc(mCOP(m.amount)) + '</td>' +
               '<td class="text-right">' + actionCell + '</td>' +
             '</tr>'
           );

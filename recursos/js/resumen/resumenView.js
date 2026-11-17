@@ -1,8 +1,34 @@
 (function () {
-  function getAccountIcon(name) {
-    if (name === 'Nequi') return { icon: 'fa-solid fa-mobile-screen-button', cls: 'text-fuchsia' };
-    if (name === 'Efectivo') return { icon: 'fa-solid fa-wallet', cls: 'text-emerald' };
-    return { icon: 'fa-solid fa-landmark', cls: 'text-sky' };
+  var ACCOUNT_ICONS = {
+    banco: { icon: 'fa-solid fa-landmark', cls: 'text-sky' },
+    billetera: { icon: 'fa-solid fa-mobile-screen-button', cls: 'text-fuchsia' },
+    efectivo: { icon: 'fa-solid fa-wallet', cls: 'text-emerald' },
+    debito: { icon: 'fa-regular fa-credit-card', cls: 'text-sky' },
+    credito: { icon: 'fa-regular fa-credit-card', cls: 'text-amber' },
+  };
+
+  function detectAccountIconKey(acc) {
+    if (acc && acc.icon && acc.icon !== 'auto' && ACCOUNT_ICONS[acc.icon]) {
+      return acc.icon;
+    }
+    var lower = String((acc && acc.name) || '').toLowerCase();
+    if ((acc && acc.kind === 'deuda') || lower.indexOf('crédito') !== -1 || lower.indexOf('credito') !== -1) {
+      return 'credito';
+    }
+    if (lower.indexOf('nequi') !== -1 || lower.indexOf('daviplata') !== -1 || lower.indexOf('dale') !== -1 || lower.indexOf('billetera') !== -1 || lower.indexOf('movii') !== -1) {
+      return 'billetera';
+    }
+    if (lower.indexOf('efectivo') !== -1 || lower.indexOf('caja') !== -1 || lower.indexOf('mano') !== -1) {
+      return 'efectivo';
+    }
+    if (lower.indexOf('débito') !== -1 || lower.indexOf('debito') !== -1 || lower.indexOf('tarjeta') !== -1) {
+      return 'debito';
+    }
+    return 'banco';
+  }
+
+  function getAccountIcon(acc) {
+    return ACCOUNT_ICONS[detectAccountIconKey(acc)] || ACCOUNT_ICONS.banco;
   }
 
   function renderResumenView(state) {
@@ -11,6 +37,8 @@
 
     var esc = window.escapeHTML;
     var fmt = window.AppFormat;
+    var hide = Boolean(state.hideValues);
+    var mCOP = function (v) { return fmt.maskCOP(v, hide); };
     var summary = state.summary;
     var data = state.data;
     var ccDebt = summary.totalDebt;
@@ -26,17 +54,17 @@
         return (
           '<div class="account-card debt">' +
             '<div class="account-top"><span>' + esc(acc.name) + ' (Deuda)</span><i class="fa-regular fa-credit-card text-amber"></i></div>' +
-            '<p class="account-balance tabular">' + esc(fmt.formatCOP(balance)) + '</p>' +
-            '<div class="credit-meta"><span>Cupo disp: ' + esc(fmt.formatCOP(available)) + '</span><span>' + usagePct + '% de ' + esc(fmt.formatCOP(limit)) + '</span></div>' +
+            '<p class="account-balance tabular">' + esc(mCOP(balance)) + '</p>' +
+            '<div class="credit-meta"><span>Cupo disp: ' + esc(mCOP(available)) + '</span><span>' + usagePct + '% de ' + esc(mCOP(limit)) + '</span></div>' +
             '<div class="progress-track"><div class="progress-fill ' + (usagePct >= 85 ? 'high' : '') + '" style="width:' + usagePct + '%"></div></div>' +
           '</div>'
         );
       }
-      var ic = getAccountIcon(acc.name);
+      var ic = getAccountIcon(acc);
       return (
         '<div class="account-card">' +
           '<div class="account-top"><span>' + esc(acc.name) + '</span><i class="' + ic.icon + ' ' + ic.cls + '"></i></div>' +
-          '<p class="account-balance tabular">' + esc(fmt.formatCOP(balance)) + '</p>' +
+          '<p class="account-balance tabular">' + esc(mCOP(balance)) + '</p>' +
           '<p class="account-sub">Liquidez disponible</p>' +
         '</div>'
       );
@@ -55,14 +83,14 @@
             '<span>Capacidad de Pago Total — Tarjeta de Crédito</span>' +
           '</h3>' +
           '<p class="thermometer-desc">' +
-            'Tienes <strong style="color:#fff">' + esc(fmt.formatCOP(summary.liquidityTotal)) + '</strong> en liquidez operativa ' +
-            'frente a <strong class="text-amber">' + esc(fmt.formatCOP(ccDebt)) + '</strong> de deuda en TC.' +
+            'Tienes <strong style="color:var(--text-strong)">' + esc(mCOP(summary.liquidityTotal)) + '</strong> en liquidez operativa ' +
+            'frente a <strong class="text-amber">' + esc(mCOP(ccDebt)) + '</strong> de deuda en TC.' +
           '</p>' +
         '</div>' +
         '<div class="thermometer-right">' +
           '<div>' +
             '<p class="obligation-sub">' + (isSurplus ? 'Te sobraría después del pago total' : 'Te falta para cubrir el total') + '</p>' +
-            '<p class="thermometer-amount tabular ' + (isSurplus ? 'text-emerald' : 'text-rose') + '">' + esc(fmt.formatCOP(Math.abs(summary.ccSurplusOrDeficit))) + '</p>' +
+            '<p class="thermometer-amount tabular ' + (isSurplus ? 'text-emerald' : 'text-rose') + '">' + esc(mCOP(Math.abs(summary.ccSurplusOrDeficit))) + '</p>' +
           '</div>' +
           payCcBtn +
         '</div>' +
@@ -71,18 +99,27 @@
     // 3. KPIs
     var kpisHtml =
       '<section class="kpi-grid">' +
-        '<div class="kpi-card"><div class="kpi-label text-emerald"><i class="fa-solid fa-arrow-trend-up"></i> Ingresos del mes</div><p class="kpi-value tabular">' + esc(fmt.formatCOP(summary.totalIncome)) + '</p></div>' +
-        '<div class="kpi-card"><div class="kpi-label text-rose"><i class="fa-solid fa-arrow-trend-down"></i> Egresos de consumo</div><p class="kpi-value tabular">' + esc(fmt.formatCOP(summary.totalConsumptionExpense)) + '</p></div>' +
-        '<div class="kpi-card"><div class="kpi-label text-violet"><i class="fa-solid fa-right-left"></i> Enviado a ARQ (Inversión)</div><p class="kpi-value tabular">' + esc(fmt.formatCOP(summary.totalArqInvestment)) + '</p></div>' +
-        '<div class="kpi-card"><div class="kpi-label text-muted">Flujo neto del mes</div><p class="kpi-value tabular ' + (summary.netFlow >= 0 ? 'text-emerald' : 'text-rose') + '">' + (summary.netFlow >= 0 ? '+' : '') + esc(fmt.formatCOP(summary.netFlow)) + '</p></div>' +
+        '<div class="kpi-card"><div class="kpi-label text-emerald"><i class="fa-solid fa-arrow-trend-up"></i> Ingresos del mes</div><p class="kpi-value tabular">' + esc(mCOP(summary.totalIncome)) + '</p></div>' +
+        '<div class="kpi-card"><div class="kpi-label text-rose"><i class="fa-solid fa-arrow-trend-down"></i> Egresos de consumo</div><p class="kpi-value tabular">' + esc(mCOP(summary.totalConsumptionExpense)) + '</p></div>' +
+        '<div class="kpi-card"><div class="kpi-label text-violet"><i class="fa-solid fa-right-left"></i> Enviado a Inversiones</div><p class="kpi-value tabular">' + esc(mCOP(summary.totalArqInvestment)) + '</p></div>' +
+        '<div class="kpi-card"><div class="kpi-label text-muted">Flujo neto del mes</div><p class="kpi-value tabular ' + (summary.netFlow >= 0 ? 'text-emerald' : 'text-rose') + '">' + (hide ? '' : (summary.netFlow >= 0 ? '+' : '')) + esc(mCOP(summary.netFlow)) + '</p></div>' +
       '</section>';
 
     // 4. Obligaciones
     var obListHtml = state.obligationStatuses.map(function (st, idx) {
       var ob = st.obligation;
       var subText = st.isPaid
-        ? 'Pagado: ' + fmt.formatCOP(st.paidAmount)
-        : (ob.estimatedAmount > 0 ? 'Estimado: ' + fmt.formatCOP(ob.estimatedAmount) : 'Pendiente este mes');
+        ? 'Pagado: ' + mCOP(st.paidAmount)
+        : (ob.estimatedAmount > 0 ? 'Estimado: ' + mCOP(ob.estimatedAmount) : 'Pendiente este mes');
+      var isConfirmingDel = state.pendingDeleteObligationId === ob.id;
+      var deleteCtrl = isConfirmingDel
+        ? '<div class="inline-confirm">' +
+            '<span class="text-rose" style="font-weight:500">¿Eliminar?</span>' +
+            '<button type="button" class="inline-confirm-btn no" data-cancel-del-ob="' + esc(ob.id) + '">No</button>' +
+            '<button type="button" class="inline-confirm-btn yes" data-confirm-del-ob="' + esc(ob.id) + '">Sí</button>' +
+          '</div>'
+        : '<button type="button" class="icon-delete-btn" data-ask-del-ob="' + esc(ob.id) + '" title="Eliminar obligación"><i class="fa-regular fa-trash-can"></i></button>';
+
       return (
         '<div class="obligation-item">' +
           '<div class="obligation-left">' +
@@ -95,6 +132,7 @@
           '<div class="obligation-actions">' +
             (st.isPaid ? '<span class="badge badge-emerald">Pagada</span>' : '') +
             '<button type="button" class="btn btn-secondary btn-ob-pay" data-ob-index="' + idx + '">' + (st.isPaid ? '+ Otro pago' : 'Registrar pago') + '</button>' +
+            deleteCtrl +
           '</div>' +
         '</div>'
       );
@@ -109,8 +147,8 @@
           return (
             '<div>' +
               '<div class="cat-bar-head">' +
-                '<span style="color:#e2e8f0">' + esc(item.category) + (item.isArq ? ' <span class="badge badge-violet">Inversión</span>' : '') + '</span>' +
-                '<span class="tabular" style="font-weight:600;color:#fff">' + esc(fmt.formatCOP(item.amount)) + '</span>' +
+                '<span style="color:var(--text-main)">' + esc(item.category) + (item.isArq ? ' <span class="badge badge-violet">Inversión</span>' : '') + '</span>' +
+                '<span class="tabular" style="font-weight:600;color:var(--text-strong)">' + esc(mCOP(item.amount)) + '</span>' +
               '</div>' +
               '<div class="cat-bar-track"><div class="cat-bar-fill ' + (item.isArq ? 'arq' : '') + '" style="width:' + pct + '%"></div></div>' +
             '</div>'
@@ -195,6 +233,24 @@
         window.AppActions.addObligation(nameEl.value, amtEl.value);
       });
     }
+
+    container.querySelectorAll('[data-ask-del-ob]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        window.AppActions.askDeleteObligation(btn.getAttribute('data-ask-del-ob'));
+      });
+    });
+
+    container.querySelectorAll('[data-cancel-del-ob]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        window.AppActions.askDeleteObligation(null);
+      });
+    });
+
+    container.querySelectorAll('[data-confirm-del-ob]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        window.AppActions.deleteObligation(btn.getAttribute('data-confirm-del-ob'));
+      });
+    });
   }
 
   window.renderResumenView = renderResumenView;

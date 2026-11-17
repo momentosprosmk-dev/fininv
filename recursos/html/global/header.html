@@ -1,12 +1,64 @@
 <header class="app-header">
   <div class="header-inner">
-    <div class="brand-row">
-      <div class="brand-icon">
-        <i class="fa-solid fa-wallet"></i>
+    <div class="brand-bar">
+      <div class="brand-row">
+        <div id="brand-icon-box" class="brand-icon">
+          <i id="brand-module-icon" class="fa-solid fa-wallet"></i>
+        </div>
+        <div>
+          <img src="recursos/media/global/fininv_logo.avif" alt="aXe" class="brand-logo-img" />
+          <p id="brand-subtitle" class="brand-subtitle">Control financiero</p>
+        </div>
       </div>
-      <div>
-        <h1 class="brand-title">Contabilidad aXe</h1>
-        <p class="brand-subtitle">Control financiero en COP</p>
+
+      <div class="top-utility-group">
+        <button type="button" id="btn-toggle-privacy" class="btn btn-secondary btn-icon-only" title="Ocultar valores" aria-label="Ocultar o mostrar valores">
+          <i id="privacy-icon" class="fa-regular fa-eye"></i>
+        </button>
+
+        <button type="button" id="btn-toggle-theme" class="theme-switch" role="switch" aria-checked="false" title="Cambiar a modo claro" aria-label="Cambiar tema claro u oscuro">
+          <span class="theme-switch-thumb">
+            <i id="theme-icon" class="fa-solid fa-moon"></i>
+          </span>
+        </button>
+
+        <div class="menu-dropdown-wrap">
+          <button type="button" id="btn-hamburger-menu" class="btn btn-secondary btn-icon-only" title="Menú" aria-label="Abrir menú de opciones" aria-expanded="false">
+            <i class="fa-solid fa-bars"></i>
+            <span id="menu-sheet-dot" class="menu-dot hidden" title="Sheet conectado"></span>
+          </button>
+
+          <div id="header-dropdown-menu" class="dropdown-menu hidden">
+            <div class="dropdown-items">
+              <div class="dropdown-section-label">Módulo activo</div>
+              <button type="button" id="btn-mod-finanzas" class="dropdown-item is-active" data-module-switch="finanzas">
+                <i class="fa-solid fa-wallet"></i>
+                <span>Control Financiero</span>
+              </button>
+              <button type="button" id="btn-mod-inversiones" class="dropdown-item" data-module-switch="inversiones">
+                <i class="fa-solid fa-arrow-trend-up"></i>
+                <span>Inversiones</span>
+              </button>
+
+              <div class="dropdown-divider"></div>
+
+              <button type="button" id="btn-open-accounts" class="dropdown-item">
+                <i class="fa-solid fa-sliders"></i>
+                <span>Cuentas y Conceptos</span>
+              </button>
+
+              <button type="button" id="btn-open-google" class="dropdown-item">
+                <i class="fa-solid fa-table"></i>
+                <span id="google-btn-label">Conectar Gmail</span>
+                <span id="google-status-pill" class="dropdown-status-pill hidden">Activo</span>
+              </button>
+            </div>
+
+            <div class="dropdown-footer">
+              <span class="js-texto-footer"></span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -15,16 +67,6 @@
         <i class="fa-regular fa-calendar"></i>
         <select id="month-selector" class="month-select" aria-label="Mes contable"></select>
       </div>
-
-      <button type="button" id="btn-open-accounts" class="btn btn-secondary">
-        <i class="fa-solid fa-sliders"></i>
-        <span>Cuentas y Conceptos</span>
-      </button>
-
-      <button type="button" id="btn-open-google" class="btn btn-secondary">
-        <i class="fa-solid fa-table"></i>
-        <span id="google-btn-label">Conectar Gmail</span>
-      </button>
 
       <button type="button" id="btn-new-movement" class="btn btn-primary">
         <i class="fa-solid fa-plus"></i>
@@ -48,6 +90,19 @@
     <button type="button" class="tab-btn" data-tab="cierres" title="Cierre Contable">
       <i class="fa-solid fa-clock-rotate-left"></i>
       <span class="tab-label-pc">Cierre Contable</span>
+    </button>
+  </nav>
+
+  <nav id="inv-tabs" class="header-tabs cols-2 hidden" aria-label="Secciones de Inversiones">
+    <button type="button" class="tab-btn active" data-inv-tab="resumen" title="Portafolio">
+      <i class="fa-solid fa-chart-pie"></i>
+      <span class="tab-label-pc">Portafolio</span>
+    </button>
+
+    <button type="button" class="tab-btn" data-inv-tab="movimientos" title="Movimientos de Inversión">
+      <i class="fa-solid fa-list-ul"></i>
+      <span id="inv-tab-mov-badge" class="tab-badge-mobile">0</span>
+      <span id="inv-tab-mov-label-pc" class="tab-label-pc">Movimientos (0)</span>
     </button>
   </nav>
 </header>

@@ -12,6 +12,9 @@
     Movimientos: ['ID', 'Fecha', 'Mes_Contable', 'Tipo', 'Cuenta_Origen', 'Cuenta_Destino', 'Categoria', 'Descripcion', 'Monto_COP', 'Creado_En'],
     Obligaciones_Fijas: ['ID', 'Nombre', 'Categoria', 'Monto_Estimado_COP', 'Tipo_Cruce'],
     Cierres_Mensuales: ['Mes', 'Fecha_Cierre', 'Total_Ingresos', 'Total_Egresos_Consumo', 'Total_Inversion_ARQ', 'Saldo_Debito', 'Saldo_Nequi', 'Saldo_Efectivo', 'Deuda_TC', 'Liquidez_Total', 'Sobrante_o_Faltante_TC', 'Notas'],
+    Cuentas_Inversion: ['ID', 'Nombre', 'Modo', 'Moneda', 'Saldo_Inicial', 'Meta', 'Notas'],
+    Subinversiones: ['ID', 'Cuenta_Inversion', 'Nombre', 'Saldo_Inicial', 'Notas'],
+    Movimientos_Inversion: ['ID', 'Fecha', 'Tipo', 'Cuenta_Inversion', 'Subinversion', 'Cuenta_Normal', 'Descripcion', 'Monto', 'Comision', 'Aplicacion_Comision', 'Tasa_Cambio', 'Monto_COP', 'Movimiento_Financiero_ID', 'Creado_En'],
   };
 
   async function apiFetch(url, token, options) {
@@ -56,7 +59,9 @@
     var cats = data.categories || window.AppStorage.DEFAULT_CATEGORIES;
     return {
       cuentas: (data.accounts || []).map(function (a, idx) {
-        return [a.id || 'cta-' + (idx + 1), a.name, a.kind, a.description || '', a.initialBalance, a.creditLimit != null ? a.creditLimit : ''];
+        var cleanDesc = String(a.description || '').replace(/\s*\[icon:[a-z]+\]/g, '').trim();
+        var descWithIcon = (a.icon && a.icon !== 'auto') ? (cleanDesc ? cleanDesc + ' [icon:' + a.icon + ']' : '[icon:' + a.icon + ']') : cleanDesc;
+        return [a.id || 'cta-' + (idx + 1), a.name, a.kind, descWithIcon, a.initialBalance, a.creditLimit != null ? a.creditLimit : ''];
       }),
       tiposEgresos: cats.filter(function (c) { return c.type === 'Egreso'; }).map(function (c) {
         return [c.id, c.name, c.description || '', c.isArq ? 'SI' : 'NO'];
@@ -76,6 +81,15 @@
       cierres: (data.monthlyCloses || []).map(function (c) {
         return [c.month, c.closedAt, c.totalIncome, c.totalConsumptionExpense, c.totalArqInvestment, c.debitBalance, c.nequiBalance, c.cashBalance, c.ccDebt, c.liquidityTotal, c.ccSurplusOrDeficit, c.notes];
       }),
+      cuentasInversion: (data.investmentAccounts || []).map(function (a, idx) {
+        return [a.id || 'inv-' + (idx + 1), a.name, a.mode || 'simple', a.currency || 'COP', a.initialBalance || 0, a.goal || 0, a.notes || ''];
+      }),
+      subinversiones: (data.subInvestments || []).map(function (s, idx) {
+        return [s.id || 'sub-' + (idx + 1), s.fundName, s.name, s.initialBalance || 0, s.notes || ''];
+      }),
+      movimientosInversion: (data.investmentMovements || []).map(function (m) {
+        return [m.id, m.date, m.type, m.fundName, m.subName || '', m.normalAccount || '', m.description || '', m.amount || 0, m.commission || 0, m.commissionApply || 'moved', m.exchangeRate || 1, m.amountCOP || 0, m.linkedMovementId || '', m.createdAt || ''];
+      }),
     };
   }
 
@@ -91,7 +105,7 @@
     });
   }
 
-  function parseRawTables(accRaw, egresosRaw, ingresosRaw, traspasosRaw, movRaw, obRaw, closeRaw) {
+  function parseRawTables(accRaw, egresosRaw, ingresosRaw, traspasosRaw, movRaw, obRaw, closeRaw, invAccRaw, subInvRaw, invMovRaw) {
     var movements = (movRaw || []).filter(function (r) { return r[0] && r[1]; }).map(function (r) {
       var dateStr = String(r[1]).slice(0, 10);
       var monthStr = r[2] ? String(r[2]).slice(0, 7) : dateStr.slice(0, 7);
@@ -114,11 +128,16 @@
       var rawKind = String(r[2] || '').toLowerCase();
       var kind = rawKind.indexOf('deuda') !== -1 || rawKind.indexOf('crédito') !== -1 || rawKind.indexOf('credito') !== -1 ? 'deuda' : 'liquidez';
       var parsedLimit = parseSheetNumber(r[5]);
+      var rawDesc = String(r[3] || '');
+      var iconMatch = rawDesc.match(/\[icon:([a-z]+)\]/);
+      var parsedIcon = iconMatch ? iconMatch[1] : 'auto';
+      var cleanDesc = rawDesc.replace(/\s*\[icon:[a-z]+\]/g, '').trim();
       var item = {
         id: String(r[0] || 'cta-' + (idx + 1)),
         name: name,
         kind: kind,
-        description: String(r[3] || ''),
+        icon: parsedIcon,
+        description: cleanDesc,
         initialBalance: parseSheetNumber(r[4]),
       };
       if (kind === 'deuda') item.creditLimit = parsedLimit > 0 ? parsedLimit : 2400000;
@@ -133,13 +152,16 @@
 
     var categories = parsedCategories.length > 0 ? parsedCategories : window.AppStorage.DEFAULT_CATEGORIES.slice();
 
-    var obligations = (obRaw || []).filter(function (r) { return r[0] && r[1]; }).map(function (r) {
+    var obligations = (obRaw || []).filter(function (r) { return r[1] || r[0]; }).map(function (r, idx) {
+      var name = String(r[1] || r[0]).trim();
+      var id = r[0] ? String(r[0]).trim() : 'ob-sheet-' + (idx + 1);
+      var rawMatch = String(r[4] || '').trim().toLowerCase();
       return {
-        id: String(r[0]),
-        name: String(r[1]),
-        category: String(r[2] || r[1]),
+        id: id,
+        name: name,
+        category: String(r[2] || name).trim(),
         estimatedAmount: parseSheetNumber(r[3]),
-        matchType: String(r[4]) === 'PagoTC' ? 'PagoTC' : 'Egreso',
+        matchType: rawMatch === 'pagotc' ? 'PagoTC' : 'Egreso',
       };
     });
 
@@ -160,7 +182,58 @@
       };
     });
 
-    return { accounts: accounts, categories: categories, movements: movements, obligations: obligations, monthlyCloses: monthlyCloses };
+    var investmentAccounts = (invAccRaw || []).filter(function (r) { return r[1] || r[0]; }).map(function (r, idx) {
+      var rawMode = String(r[2] || 'simple').toLowerCase();
+      return {
+        id: String(r[0] || 'inv-' + (idx + 1)),
+        name: String(r[1] || r[0]),
+        mode: rawMode === 'fragmentado' ? 'fragmentado' : 'simple',
+        currency: String(r[3] || 'COP').toUpperCase(),
+        initialBalance: parseSheetNumber(r[4]),
+        goal: parseSheetNumber(r[5]),
+        notes: String(r[6] || ''),
+      };
+    });
+
+    var subInvestments = (subInvRaw || []).filter(function (r) { return r[1] && r[2]; }).map(function (r, idx) {
+      return {
+        id: String(r[0] || 'sub-' + (idx + 1)),
+        fundName: String(r[1]),
+        name: String(r[2]),
+        initialBalance: parseSheetNumber(r[3]),
+        notes: String(r[4] || ''),
+      };
+    });
+
+    var investmentMovements = (invMovRaw || []).filter(function (r) { return r[0] && r[1]; }).map(function (r) {
+      return {
+        id: String(r[0]),
+        date: String(r[1]).slice(0, 10),
+        type: String(r[2] || 'Aporte'),
+        fundName: String(r[3] || ''),
+        subName: String(r[4] || ''),
+        normalAccount: String(r[5] || ''),
+        description: String(r[6] || ''),
+        amount: parseSheetNumber(r[7]),
+        commission: parseSheetNumber(r[8]),
+        commissionApply: String(r[9]) === 'fund' ? 'fund' : 'moved',
+        exchangeRate: parseSheetNumber(r[10]) || 1,
+        amountCOP: parseSheetNumber(r[11]),
+        linkedMovementId: String(r[12] || ''),
+        createdAt: String(r[13] || new Date().toISOString()),
+      };
+    });
+
+    return {
+      accounts: accounts,
+      categories: categories,
+      movements: movements,
+      obligations: obligations,
+      monthlyCloses: monthlyCloses,
+      investmentAccounts: investmentAccounts,
+      subInvestments: subInvestments,
+      investmentMovements: investmentMovements,
+    };
   }
 
   async function findOrCreateSpreadsheet(token, preferredId) {
@@ -206,6 +279,9 @@
           { range: 'Movimientos!A1', values: [SHEET_HEADERS.Movimientos].concat(serialized.movimientos) },
           { range: 'Obligaciones_Fijas!A1', values: [SHEET_HEADERS.Obligaciones_Fijas].concat(serialized.obligaciones) },
           { range: 'Cierres_Mensuales!A1', values: [SHEET_HEADERS.Cierres_Mensuales].concat(serialized.cierres) },
+          { range: 'Cuentas_Inversion!A1', values: [SHEET_HEADERS.Cuentas_Inversion].concat(serialized.cuentasInversion) },
+          { range: 'Subinversiones!A1', values: [SHEET_HEADERS.Subinversiones].concat(serialized.subinversiones) },
+          { range: 'Movimientos_Inversion!A1', values: [SHEET_HEADERS.Movimientos_Inversion].concat(serialized.movimientosInversion) },
         ],
       }),
     });
@@ -220,11 +296,14 @@
       'Movimientos!A2:J5000',
       'Obligaciones_Fijas!A2:E200',
       'Cierres_Mensuales!A2:L500',
+      'Cuentas_Inversion!A2:G200',
+      'Subinversiones!A2:E500',
+      'Movimientos_Inversion!A2:N5000',
     ].map(function (r) { return 'ranges=' + encodeURIComponent(r); }).join('&');
 
     var res = await apiFetch(SHEETS_API + '/' + spreadsheetId + '/values:batchGet?' + ranges, token);
     var vrs = res.valueRanges.map(function (vr) { return vr.values || []; });
-    return parseRawTables(vrs[0], vrs[1], vrs[2], vrs[3], vrs[4], vrs[5], vrs[6]);
+    return parseRawTables(vrs[0], vrs[1], vrs[2], vrs[3], vrs[4], vrs[5], vrs[6], vrs[7], vrs[8], vrs[9]);
   }
 
   async function readFromAppsScript(scriptUrl) {
@@ -240,7 +319,10 @@
         json.tiposTraspasos || [],
         json.movimientos || [],
         json.obligaciones || [],
-        json.cierres || []
+        json.cierres || [],
+        json.cuentasInversion || [],
+        json.subinversiones || [],
+        json.movimientosInversion || []
       ),
     };
   }

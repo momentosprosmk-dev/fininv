@@ -1,11 +1,18 @@
 :root {
   --bg-body: #020617;
+  --bg-header: rgba(2, 6, 23, 0.92);
   --bg-surface: rgba(15, 23, 42, 0.72);
   --bg-card: #0f172a;
   --bg-input: #020617;
+  --bg-subtle: rgba(2, 6, 23, 0.7);
+  --bg-hover: rgba(2, 6, 23, 0.45);
+  --bg-btn-sec: rgba(15, 23, 42, 0.8);
+  --bg-btn-sec-hover: #1e293b;
   --border-subtle: #1e293b;
   --border-input: #334155;
+  --text-strong: #ffffff;
   --text-main: #f1f5f9;
+  --text-soft: #cbd5e1;
   --text-muted: #94a3b8;
   --text-dim: #64748b;
   --indigo: #4f46e5;
@@ -23,6 +30,41 @@
   --sky: #38bdf8;
   --violet: #a78bfa;
   --fuchsia: #e879f9;
+  --thermometer-bg: rgba(6, 78, 59, 0.22);
+  --thermometer-deficit-bg: rgba(136, 19, 55, 0.2);
+}
+
+:root[data-theme="light"] {
+  --bg-body: #f1f5f9;
+  --bg-header: rgba(255, 255, 255, 0.94);
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-input: #f8fafc;
+  --bg-subtle: #f8fafc;
+  --bg-hover: #f1f5f9;
+  --bg-btn-sec: #ffffff;
+  --bg-btn-sec-hover: #f1f5f9;
+  --border-subtle: #e2e8f0;
+  --border-input: #cbd5e1;
+  --text-strong: #0f172a;
+  --text-main: #1e293b;
+  --text-soft: #334155;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+  --emerald: #059669;
+  --emerald-bg: rgba(16, 185, 129, 0.12);
+  --emerald-border: rgba(5, 150, 105, 0.35);
+  --rose: #e11d48;
+  --rose-bg: rgba(244, 63, 94, 0.1);
+  --rose-border: rgba(225, 29, 72, 0.32);
+  --amber: #d97706;
+  --amber-bg: rgba(254, 243, 199, 0.75);
+  --amber-border: rgba(217, 119, 6, 0.35);
+  --sky: #0284c7;
+  --violet: #7c3aed;
+  --fuchsia: #c026d3;
+  --thermometer-bg: rgba(209, 250, 229, 0.65);
+  --thermometer-deficit-bg: rgba(255, 228, 230, 0.75);
 }
 
 *,
@@ -39,7 +81,7 @@ body {
   color: var(--text-main);
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow-x: clip;
   font-size: 16px;
   line-height: 1.5;
 }
@@ -113,7 +155,7 @@ a {
 .section-title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-strong);
   margin: 0 0 1rem;
 }
 
@@ -148,12 +190,16 @@ a {
 
 .btn-secondary {
   border-color: var(--border-input);
-  background: rgba(15, 23, 42, 0.8);
-  color: #e2e8f0;
+  background: var(--bg-btn-sec);
+  color: var(--text-main);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #1e293b;
+  background: var(--bg-btn-sec-hover);
+}
+
+.btn-icon-only {
+  padding: 0.5rem 0.65rem;
 }
 
 .btn-sky {
@@ -195,7 +241,7 @@ a {
   background: var(--bg-input);
   padding: 0.55rem 0.75rem;
   font-size: 0.875rem;
-  color: #ffffff;
+  color: var(--text-strong);
   outline: none;
 }
 

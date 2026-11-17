@@ -1,0 +1,523 @@
+(function () {
+  function openInvestmentAccountModal(opts) {
+    var root = document.getElementById('modales-root');
+    if (!root) return;
+    var existing = opts.account || null;
+    var state = {
+      name: existing ? existing.name : '',
+      mode: existing ? existing.mode : 'simple',
+      currency: existing ? existing.currency : 'COP',
+      initialBalance: existing ? String(existing.initialBalance || 0) : '',
+      goal: existing && existing.goal ? String(existing.goal) : '',
+      notes: existing ? (existing.notes || '') : '',
+    };
+
+    function render(focusId, selStart, selEnd) {
+      var esc = window.escapeHTML;
+      var currencies = window.AppFormat.getSupportedCurrencies();
+      var curOpts = currencies.map(function (c) {
+        return '<option value="' + esc(c.code) + '" ' + (state.currency === c.code ? 'selected' : '') + '>' + esc(c.label) + '</option>';
+      }).join('');
+
+      root.innerHTML =
+        '<div class="modal-backdrop">' +
+          '<div class="modal-box">' +
+            '<div class="modal-header">' +
+              '<div><h2 class="modal-title">' + (existing ? 'Editar Cuenta de Inversión' : 'Nueva Cuenta de Inversión') + '</h2><p class="modal-subtitle">Configura un fondo simple (BBVA, CDT) o fragmentado (ARQ, acciones).</p></div>' +
+              '<button type="button" class="modal-close" id="ia-close"><i class="fa-solid fa-xmark"></i></button>' +
+            '</div>' +
+            '<form id="ia-form">' +
+              '<div class="field-group">' +
+                '<label class="field-label">Nombre del fondo / bróker</label>' +
+                '<input type="text" id="ia-name" class="input" placeholder="Ej. ARQ, Fondo BBVA, Cajita Nu" value="' + esc(state.name) + '" ' + (existing ? 'readonly' : '') + ' />' +
+              '</div>' +
+              '<div class="form-grid-2">' +
+                '<div class="field-group">' +
+                  '<label class="field-label">Tipo de fondo</label>' +
+                  '<select id="ia-mode" class="select">' +
+                    '<option value="simple" ' + (state.mode === 'simple' ? 'selected' : '') + '>Simple (todo en un solo fondo)</option>' +
+                    '<option value="fragmentado" ' + (state.mode === 'fragmentado' ? 'selected' : '') + '>Fragmentado (sub-inversiones / acciones)</option>' +
+                  '</select>' +
+                '</div>' +
+                '<div class="field-group">' +
+                  '<label class="field-label">Moneda del fondo</label>' +
+                  '<select id="ia-currency" class="select">' + curOpts + '</select>' +
+                '</div>' +
+              '</div>' +
+              '<div class="form-grid-2">' +
+                '<div class="field-group">' +
+                  '<label class="field-label">Saldo inicial disponible (' + esc(state.currency) + ')</label>' +
+                  '<input type="text" inputmode="decimal" id="ia-init" class="input" placeholder="0" value="' + esc(state.initialBalance) + '" />' +
+                '</div>' +
+                '<div class="field-group">' +
+                  '<label class="field-label">Meta opcional (' + esc(state.currency) + ')</label>' +
+                  '<input type="text" inputmode="decimal" id="ia-goal" class="input" placeholder="Ej. 10000000" value="' + esc(state.goal) + '" />' +
+                '</div>' +
+              '</div>' +
+              '<div class="field-group">' +
+                '<label class="field-label">Notas (opcional)</label>' +
+                '<input type="text" id="ia-notes" class="input" placeholder="Ej. Fondo balanceado global, acciones tech..." value="' + esc(state.notes) + '" />' +
+              '</div>' +
+              '<div class="modal-footer">' +
+                '<button type="button" class="btn btn-secondary" id="ia-cancel">Cancelar</button>' +
+                '<button type="submit" class="btn btn-primary">' + (existing ? 'Guardar cambios' : 'Crear cuenta') + '</button>' +
+              '</div>' +
+            '</form>' +
+          '</div>' +
+        '</div>';
+
+      var closeFn = function () { root.innerHTML = ''; };
+      document.getElementById('ia-close').addEventListener('click', closeFn);
+      document.getElementById('ia-cancel').addEventListener('click', closeFn);
+      document.getElementById('ia-name').addEventListener('input', function (e) { state.name = e.target.value; });
+      document.getElementById('ia-mode').addEventListener('change', function (e) { state.mode = e.target.value; });
+      document.getElementById('ia-currency').addEventListener('change', function (e) { state.currency = e.target.value; render(); });
+      document.getElementById('ia-init').addEventListener('input', function (e) { state.initialBalance = e.target.value; });
+      document.getElementById('ia-goal').addEventListener('input', function (e) { state.goal = e.target.value; });
+      document.getElementById('ia-notes').addEventListener('input', function (e) { state.notes = e.target.value; });
+
+      document.getElementById('ia-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var trimmed = state.name.trim();
+        if (!trimmed) return;
+        opts.onSave({
+          id: existing ? existing.id : 'inv-' + Date.now(),
+          name: trimmed,
+          mode: state.mode,
+          currency: state.currency,
+          initialBalance: window.AppFormat.parseDecimalInput(state.initialBalance),
+          goal: window.AppFormat.parseDecimalInput(state.goal),
+          notes: state.notes.trim(),
+        });
+        closeFn();
+      });
+    }
+
+    render();
+  }
+
+  function openSubInvestmentModal(opts) {
+    var root = document.getElementById('modales-root');
+    if (!root) return;
+    var esc = window.escapeHTML;
+
+    root.innerHTML =
+      '<div class="modal-backdrop">' +
+        '<div class="modal-box">' +
+          '<div class="modal-header">' +
+            '<div><h2 class="modal-title">Nueva Sub-inversión en ' + esc(opts.fundName) + '</h2><p class="modal-subtitle">Crea un activo o acción individual (ej. Microsoft, Apple, S&amp;P 500).</p></div>' +
+            '<button type="button" class="modal-close" id="sub-close"><i class="fa-solid fa-xmark"></i></button>' +
+          '</div>' +
+          '<form id="sub-form">' +
+            '<div class="field-group"><label class="field-label">Nombre del activo / acción</label><input type="text" id="sub-name" class="input" placeholder="Ej. Microsoft (MSFT)" required /></div>' +
+            '<div class="form-grid-2">' +
+              '<div class="field-group"><label class="field-label">Saldo inicial ya invertido (' + esc(opts.currency) + ')</label><input type="text" inputmode="decimal" id="sub-init" class="input" placeholder="0" /></div>' +
+              '<div class="field-group"><label class="field-label">Notas (opcional)</label><input type="text" id="sub-notes" class="input" placeholder="Ej. Largo plazo" /></div>' +
+            '</div>' +
+            '<div class="modal-footer">' +
+              '<button type="button" class="btn btn-secondary" id="sub-cancel">Cancelar</button>' +
+              '<button type="submit" class="btn btn-primary">Crear sub-inversión</button>' +
+            '</div>' +
+          '</form>' +
+        '</div>' +
+      '</div>';
+
+    var closeFn = function () { root.innerHTML = ''; };
+    document.getElementById('sub-close').addEventListener('click', closeFn);
+    document.getElementById('sub-cancel').addEventListener('click', closeFn);
+    document.getElementById('sub-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var name = document.getElementById('sub-name').value.trim();
+      if (!name) return;
+      opts.onSave({
+        id: 'sub-' + Date.now(),
+        fundName: opts.fundName,
+        name: name,
+        initialBalance: window.AppFormat.parseDecimalInput(document.getElementById('sub-init').value),
+        notes: document.getElementById('sub-notes').value.trim(),
+      });
+      closeFn();
+    });
+  }
+
+  function openUpdateValueModal(opts) {
+    var root = document.getElementById('modales-root');
+    if (!root) return;
+    var esc = window.escapeHTML;
+    var fmt = window.AppFormat;
+    var cur = opts.currency || 'COP';
+    var currentBookValue = Number(opts.currentBookValue) || 0;
+    var netContributed = Number(opts.netContributed) || 0;
+    var targetLabel = opts.subName ? (opts.fundName + ' — ' + opts.subName) : opts.fundName;
+    var valueStr = String(currentBookValue);
+
+    function render() {
+      var realVal = fmt.parseDecimalInput(valueStr);
+      var diff = Math.round((realVal - currentBookValue) * 100) / 100;
+      var totalGain = Math.round((realVal - netContributed) * 100) / 100;
+      var totalPct = netContributed > 0 ? ((totalGain / netContributed) * 100).toFixed(2) : '0.00';
+
+      root.innerHTML =
+        '<div class="modal-backdrop">' +
+          '<div class="modal-box">' +
+            '<div class="modal-header">' +
+              '<div><h2 class="modal-title">Actualizar Valor Actual</h2><p class="modal-subtitle">' + esc(targetLabel) + ' (' + esc(cur) + ')</p></div>' +
+              '<button type="button" class="modal-close" id="uv-close"><i class="fa-solid fa-xmark"></i></button>' +
+            '</div>' +
+            '<form id="uv-form">' +
+              '<div class="alert-banner alert-indigo">' +
+                'Capital neto aportado: <strong>' + esc(fmt.formatCurrency(netContributed, cur)) + '</strong> &middot; Saldo actual en sistema: <strong>' + esc(fmt.formatCurrency(currentBookValue, cur)) + '</strong>' +
+              '</div>' +
+              '<div class="field-group">' +
+                '<label class="field-label">¿Cuánto marca hoy tu fondo / banco? (' + esc(cur) + ')</label>' +
+                '<input type="text" inputmode="decimal" id="uv-amount" class="input" value="' + esc(valueStr) + '" />' +
+              '</div>' +
+              '<div id="uv-preview" class="alert-banner ' + (totalGain >= 0 ? 'alert-emerald' : 'alert-rose') + '">' +
+                'Ajuste por rendimiento: <strong>' + (diff >= 0 ? '+' : '') + esc(fmt.formatCurrency(diff, cur)) + '</strong><br/>' +
+                'Ganancia / Pérdida acumulada: <strong>' + (totalGain >= 0 ? '+' : '') + esc(fmt.formatCurrency(totalGain, cur)) + ' (' + totalPct + '%)</strong>' +
+              '</div>' +
+              '<div class="modal-footer">' +
+                '<button type="button" class="btn btn-secondary" id="uv-cancel">Cancelar</button>' +
+                '<button type="submit" class="btn btn-primary" id="uv-submit" ' + (diff === 0 ? 'disabled' : '') + '>Guardar actualización</button>' +
+              '</div>' +
+            '</form>' +
+          '</div>' +
+        '</div>';
+
+      var closeFn = function () { root.innerHTML = ''; };
+      document.getElementById('uv-close').addEventListener('click', closeFn);
+      document.getElementById('uv-cancel').addEventListener('click', closeFn);
+
+      var inp = document.getElementById('uv-amount');
+      inp.addEventListener('input', function (e) {
+        valueStr = e.target.value;
+        var v = fmt.parseDecimalInput(valueStr);
+        var d = Math.round((v - currentBookValue) * 100) / 100;
+        var g = Math.round((v - netContributed) * 100) / 100;
+        var p = netContributed > 0 ? ((g / netContributed) * 100).toFixed(2) : '0.00';
+        var prev = document.getElementById('uv-preview');
+        prev.className = 'alert-banner ' + (g >= 0 ? 'alert-emerald' : 'alert-rose');
+        prev.innerHTML =
+          'Ajuste por rendimiento: <strong>' + (d >= 0 ? '+' : '') + esc(fmt.formatCurrency(d, cur)) + '</strong><br/>' +
+          'Ganancia / Pérdida acumulada: <strong>' + (g >= 0 ? '+' : '') + esc(fmt.formatCurrency(g, cur)) + ' (' + p + '%)</strong>';
+        document.getElementById('uv-submit').disabled = (d === 0);
+      });
+
+      document.getElementById('uv-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var v = fmt.parseDecimalInput(valueStr);
+        var d = Math.round((v - currentBookValue) * 100) / 100;
+        if (d === 0) return;
+        opts.onSave(d);
+        closeFn();
+      });
+    }
+
+    render();
+  }
+
+  function openInvestmentOpModal(opts) {
+    var root = document.getElementById('modales-root');
+    if (!root) return;
+    var fmt = window.AppFormat;
+    var inv = window.AppInvestments;
+
+    var fundSummaries = opts.fundSummaries || [];
+    var liquidAccounts = opts.liquidAccounts || [];
+    var accountBalances = opts.accountBalances || {};
+    var exchangeRates = opts.exchangeRates || {};
+
+    var state = {
+      type: opts.initialType || 'Aporte', // Aporte | Retiro | AsignarSub | LiberarSub | TraspasoInv
+      date: fmt.getTodayISO(),
+      fundName: opts.initialFund || '',
+      subName: opts.initialSub || '',
+      normalAccount: '',
+      destFundName: '',
+      amountStr: '',
+      exchangeRateStr: '',
+      commType: 'none', // none | percent | fixed
+      commValueStr: '',
+      commApply: 'moved', // moved | fund
+      description: '',
+    };
+
+    function getSelectedFund() {
+      return fundSummaries.find(function (f) { return f.account.name === state.fundName; }) || null;
+    }
+
+    function syncDefaultRate() {
+      var f = getSelectedFund();
+      if (!f || f.currency === 'COP') {
+        state.exchangeRateStr = '1';
+      } else {
+        state.exchangeRateStr = String(inv.getEffectiveRate(f.currency, exchangeRates));
+      }
+    }
+    syncDefaultRate();
+
+    function render(focusId, selStart, selEnd) {
+      var esc = window.escapeHTML;
+      var f = getSelectedFund();
+      var cur = f ? f.currency : 'COP';
+      var isForeign = cur !== 'COP';
+      var rate = isForeign ? (fmt.parseDecimalInput(state.exchangeRateStr) || inv.getEffectiveRate(cur, exchangeRates)) : 1;
+
+      var amountVal = fmt.parseDecimalInput(state.amountStr);
+      var commVal = fmt.parseDecimalInput(state.commValueStr);
+
+      // En Aporte: el usuario puede ingresar en COP (si viene de su cuenta normal) y convertimos a moneda del fondo
+      var baseAmountInFundCur = (state.type === 'Aporte' && isForeign) ? (rate > 0 ? amountVal / rate : 0) : amountVal;
+      var commInFundCur = (state.type === 'Aporte' && isForeign && state.commType === 'fixed')
+        ? (rate > 0 ? commVal / rate : 0)
+        : commVal;
+
+      var split = inv.computeCommissionSplit(baseAmountInFundCur, state.commType, commInFundCur, state.commApply);
+      var copAmountForNormal = (state.type === 'Aporte')
+        ? amountVal
+        : (state.type === 'Retiro' ? Math.round(split.netToDest * rate) : 0);
+
+      // Validaciones de saldo
+      var insufficientMsg = '';
+      if (state.type === 'Aporte' && state.normalAccount) {
+        var bankBal = accountBalances[state.normalAccount] || 0;
+        if (bankBal <= 0 || amountVal > bankBal) {
+          insufficientMsg = 'Saldo insuficiente en ' + state.normalAccount + '. Disponible: ' + fmt.formatCOP(Math.max(0, bankBal));
+        } else if (split.fundExtraFee > 0 && f && split.fundExtraFee > f.availableCash) {
+          insufficientMsg = 'No hay saldo libre suficiente en ' + f.account.name + ' para cubrir la comisión (' + fmt.formatCurrency(split.fundExtraFee, cur) + ').';
+        }
+      } else if (state.type === 'Retiro' && f) {
+        var neededFromFund = split.applyTo === 'fund' ? (split.grossAmount + split.commission) : split.grossAmount;
+        if (f.availableCash <= 0 || neededFromFund > f.availableCash) {
+          insufficientMsg = 'Saldo disponible insuficiente en ' + f.account.name + '. Disponible: ' + fmt.formatCurrency(Math.max(0, f.availableCash), cur);
+        }
+      } else if (state.type === 'AsignarSub' && f) {
+        var neededAssign = split.applyTo === 'fund' ? (split.grossAmount + split.commission) : split.grossAmount;
+        if (f.availableCash <= 0 || neededAssign > f.availableCash) {
+          insufficientMsg = 'Disponible por invertir insuficiente en ' + f.account.name + '. Disponible: ' + fmt.formatCurrency(Math.max(0, f.availableCash), cur);
+        }
+      } else if (state.type === 'LiberarSub' && f && state.subName) {
+        var subObj = f.subSummaries.find(function (s) { return s.sub.name === state.subName; });
+        var subBal = subObj ? subObj.currentValue : 0;
+        if (subBal <= 0 || amountVal > subBal) {
+          insufficientMsg = 'Saldo insuficiente en ' + state.subName + '. Disponible: ' + fmt.formatCurrency(Math.max(0, subBal), cur);
+        }
+      } else if (state.type === 'TraspasoInv' && f) {
+        var neededTr = split.applyTo === 'fund' ? (split.grossAmount + split.commission) : split.grossAmount;
+        if (f.availableCash <= 0 || neededTr > f.availableCash) {
+          insufficientMsg = 'Saldo disponible insuficiente en ' + f.account.name + '.';
+        }
+      }
+
+      var fundListForType = (state.type === 'AsignarSub' || state.type === 'LiberarSub')
+        ? fundSummaries.filter(function (x) { return x.mode === 'fragmentado'; })
+        : fundSummaries;
+
+      var fundOpts = '<option value="">Selecciona fondo...</option>' + fundListForType.map(function (x) {
+        return '<option value="' + esc(x.account.name) + '" ' + (state.fundName === x.account.name ? 'selected' : '') + '>' + esc(x.account.name) + ' (' + esc(x.currency) + ')</option>';
+      }).join('');
+
+      var normalOpts = '<option value="">Selecciona cuenta...</option>' + liquidAccounts.map(function (a) {
+        return '<option value="' + esc(a.name) + '" ' + (state.normalAccount === a.name ? 'selected' : '') + '>' + esc(a.name) + '</option>';
+      }).join('');
+
+      var subOpts = f
+        ? '<option value="">Selecciona sub-inversión...</option>' + f.subSummaries.map(function (s) {
+            return '<option value="' + esc(s.sub.name) + '" ' + (state.subName === s.sub.name ? 'selected' : '') + '>' + esc(s.sub.name) + '</option>';
+          }).join('')
+        : '<option value="">Selecciona fondo primero...</option>';
+
+      var destFundOpts = '<option value="">Selecciona fondo destino...</option>' + fundSummaries.filter(function (x) { return x.account.name !== state.fundName; }).map(function (x) {
+        return '<option value="' + esc(x.account.name) + '" ' + (state.destFundName === x.account.name ? 'selected' : '') + '>' + esc(x.account.name) + ' (' + esc(x.currency) + ')</option>';
+      }).join('');
+
+      var accountFields = '';
+      if (state.type === 'Aporte') {
+        accountFields =
+          '<div class="form-grid-2">' +
+            '<div class="field-group"><label class="field-label">Sale de cuenta normal (COP)</label><select id="io-normal" class="select">' + normalOpts + '</select></div>' +
+            '<div class="field-group"><label class="field-label">Entra al fondo</label><select id="io-fund" class="select">' + fundOpts + '</select></div>' +
+          '</div>';
+      } else if (state.type === 'Retiro') {
+        accountFields =
+          '<div class="form-grid-2">' +
+            '<div class="field-group"><label class="field-label">Sale del fondo</label><select id="io-fund" class="select">' + fundOpts + '</select></div>' +
+            '<div class="field-group"><label class="field-label">Ingresa a cuenta normal (COP)</label><select id="io-normal" class="select">' + normalOpts + '</select></div>' +
+          '</div>';
+      } else if (state.type === 'AsignarSub' || state.type === 'LiberarSub') {
+        accountFields =
+          '<div class="form-grid-2">' +
+            '<div class="field-group"><label class="field-label">Fondo fragmentado</label><select id="io-fund" class="select">' + fundOpts + '</select></div>' +
+            '<div class="field-group"><label class="field-label">Sub-inversión</label><select id="io-sub" class="select">' + subOpts + '</select></div>' +
+          '</div>';
+      } else {
+        accountFields =
+          '<div class="form-grid-2">' +
+            '<div class="field-group"><label class="field-label">Fondo origen</label><select id="io-fund" class="select">' + fundOpts + '</select></div>' +
+            '<div class="field-group"><label class="field-label">Fondo destino</label><select id="io-dest-fund" class="select">' + destFundOpts + '</select></div>' +
+          '</div>';
+      }
+
+      var amountLabel = state.type === 'Aporte' ? 'Monto que envías (COP)' : ('Monto (' + cur + ')');
+      var previewHtml = '';
+      if (amountVal > 0 && f) {
+        if (state.type === 'Aporte') {
+          previewHtml =
+            '<div class="alert-banner alert-indigo">' +
+              'Salen <strong>' + esc(fmt.formatCOP(amountVal)) + '</strong> de tu cuenta normal &rarr; ' +
+              'Entran <strong>' + esc(fmt.formatCurrency(split.netToDest, cur)) + '</strong> al fondo' +
+              (split.commission > 0 ? ' (Comisión: <strong>' + esc(fmt.formatCurrency(split.commission, cur)) + '</strong> ' + (split.applyTo === 'fund' ? 'descontada de tu saldo previo en el fondo' : 'descontada del envío') + ')' : '') +
+            '</div>';
+        } else if (state.type === 'Retiro') {
+          previewHtml =
+            '<div class="alert-banner alert-indigo">' +
+              'Salen <strong>' + esc(fmt.formatCurrency(split.applyTo === 'fund' ? split.grossAmount + split.commission : split.grossAmount, cur)) + '</strong> del fondo &rarr; ' +
+              'Ingresan <strong>' + esc(fmt.formatCOP(copAmountForNormal)) + '</strong> a tu cuenta normal' +
+              (split.commission > 0 ? ' (Comisión: <strong>' + esc(fmt.formatCurrency(split.commission, cur)) + '</strong>)' : '') +
+            '</div>';
+        }
+      }
+
+      var missing =
+        amountVal <= 0 ||
+        !state.fundName ||
+        ((state.type === 'Aporte' || state.type === 'Retiro') && !state.normalAccount) ||
+        ((state.type === 'AsignarSub' || state.type === 'LiberarSub') && !state.subName) ||
+        (state.type === 'TraspasoInv' && !state.destFundName);
+
+      root.innerHTML =
+        '<div class="modal-backdrop">' +
+          '<div class="modal-box">' +
+            '<div class="modal-header">' +
+              '<h2 class="modal-title">Operación de Inversión</h2>' +
+              '<button type="button" class="modal-close" id="io-close"><i class="fa-solid fa-xmark"></i></button>' +
+            '</div>' +
+            '<div class="field-group">' +
+              '<label class="field-label">Tipo de operación</label>' +
+              '<select id="io-type" class="select">' +
+                '<option value="Aporte" ' + (state.type === 'Aporte' ? 'selected' : '') + '>Aportar (Cuenta normal &rarr; Fondo)</option>' +
+                '<option value="Retiro" ' + (state.type === 'Retiro' ? 'selected' : '') + '>Retirar (Fondo &rarr; Cuenta normal)</option>' +
+                '<option value="AsignarSub" ' + (state.type === 'AsignarSub' ? 'selected' : '') + '>Invertir en Sub-activo (Disponible &rarr; Acción)</option>' +
+                '<option value="LiberarSub" ' + (state.type === 'LiberarSub' ? 'selected' : '') + '>Vender / Liberar Sub-activo (Acción &rarr; Disponible)</option>' +
+                '<option value="TraspasoInv" ' + (state.type === 'TraspasoInv' ? 'selected' : '') + '>Traspaso entre fondos de inversión</option>' +
+              '</select>' +
+            '</div>' +
+            '<form id="io-form">' +
+              accountFields +
+              '<div class="form-grid-2">' +
+                '<div class="field-group"><label class="field-label">Fecha</label><div id="io-datepicker"></div></div>' +
+                '<div class="field-group"><label class="field-label">' + esc(amountLabel) + '</label><input type="text" inputmode="decimal" id="io-amount" class="input" placeholder="Ej. 100000" value="' + esc(state.amountStr) + '" /></div>' +
+              '</div>' +
+              (isForeign && (state.type === 'Aporte' || state.type === 'Retiro')
+                ? '<div class="field-group"><label class="field-label">Tasa de cambio usada (COP por 1 ' + esc(cur) + ')</label><input type="text" inputmode="decimal" id="io-rate" class="input" value="' + esc(state.exchangeRateStr) + '" /></div>'
+                : '') +
+              '<div class="config-box">' +
+                '<p class="field-label" style="margin-bottom:0.45rem">Comisión (opcional)</p>' +
+                '<div class="form-grid-2" style="margin-bottom:0.5rem">' +
+                  '<select id="io-comm-type" class="select">' +
+                    '<option value="none" ' + (state.commType === 'none' ? 'selected' : '') + '>Sin comisión</option>' +
+                    '<option value="percent" ' + (state.commType === 'percent' ? 'selected' : '') + '>Porcentaje (%)</option>' +
+                    '<option value="fixed" ' + (state.commType === 'fixed' ? 'selected' : '') + '>Valor fijo (' + (state.type === 'Aporte' ? 'COP' : esc(cur)) + ')</option>' +
+                  '</select>' +
+                  (state.commType !== 'none'
+                    ? '<input type="text" inputmode="decimal" id="io-comm-val" class="input" placeholder="' + (state.commType === 'percent' ? 'Ej. 4' : 'Ej. 4000') + '" value="' + esc(state.commValueStr) + '" />'
+                    : '') +
+                '</div>' +
+                (state.commType !== 'none'
+                  ? '<select id="io-comm-apply" class="select">' +
+                      '<option value="moved" ' + (state.commApply === 'moved' ? 'selected' : '') + '>Descontar de lo que se mueve (ej. 100 &rarr; 96 netos)</option>' +
+                      '<option value="fund" ' + (state.commApply === 'fund' ? 'selected' : '') + '>Descontar de lo que tengo en el fondo (100 exactos)</option>' +
+                    '</select>'
+                  : '') +
+              '</div>' +
+              '<div class="field-group"><label class="field-label">Descripción (opcional)</label><input type="text" id="io-desc" class="input" placeholder="Ej. Compra MSFT, retiro ganancias..." value="' + esc(state.description) + '" /></div>' +
+              previewHtml +
+              (insufficientMsg ? '<div class="alert-banner alert-rose">' + esc(insufficientMsg) + '</div>' : '') +
+              '<div class="modal-footer">' +
+                '<button type="button" class="btn btn-secondary" id="io-cancel">Cancelar</button>' +
+                '<button type="submit" class="btn btn-primary" ' + (missing || insufficientMsg ? 'disabled' : '') + '>Guardar operación</button>' +
+              '</div>' +
+            '</form>' +
+          '</div>' +
+        '</div>';
+
+      var dpEl = document.getElementById('io-datepicker');
+      if (dpEl) window.createDatePicker(dpEl, state.date, function (d) { state.date = d; });
+
+      var closeFn = function () { root.innerHTML = ''; };
+      document.getElementById('io-close').addEventListener('click', closeFn);
+      document.getElementById('io-cancel').addEventListener('click', closeFn);
+      document.getElementById('io-type').addEventListener('change', function (e) {
+        state.type = e.target.value;
+        state.subName = '';
+        render();
+      });
+
+      var fundSel = document.getElementById('io-fund');
+      if (fundSel) fundSel.addEventListener('change', function (e) { state.fundName = e.target.value; state.subName = ''; syncDefaultRate(); render(); });
+      var normSel = document.getElementById('io-normal');
+      if (normSel) normSel.addEventListener('change', function (e) { state.normalAccount = e.target.value; render(); });
+      var subSel = document.getElementById('io-sub');
+      if (subSel) subSel.addEventListener('change', function (e) { state.subName = e.target.value; render(); });
+      var destSel = document.getElementById('io-dest-fund');
+      if (destSel) destSel.addEventListener('change', function (e) { state.destFundName = e.target.value; render(); });
+
+      document.getElementById('io-amount').addEventListener('input', function (e) {
+        state.amountStr = e.target.value;
+        render('io-amount', e.target.selectionStart, e.target.selectionEnd);
+      });
+      var rateInp = document.getElementById('io-rate');
+      if (rateInp) rateInp.addEventListener('input', function (e) {
+        state.exchangeRateStr = e.target.value;
+        render('io-rate', e.target.selectionStart, e.target.selectionEnd);
+      });
+      document.getElementById('io-comm-type').addEventListener('change', function (e) { state.commType = e.target.value; render(); });
+      var commValInp = document.getElementById('io-comm-val');
+      if (commValInp) commValInp.addEventListener('input', function (e) {
+        state.commValueStr = e.target.value;
+        render('io-comm-val', e.target.selectionStart, e.target.selectionEnd);
+      });
+      var commAppSel = document.getElementById('io-comm-apply');
+      if (commAppSel) commAppSel.addEventListener('change', function (e) { state.commApply = e.target.value; render(); });
+      document.getElementById('io-desc').addEventListener('input', function (e) { state.description = e.target.value; });
+
+      document.getElementById('io-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (missing || insufficientMsg) return;
+        opts.onSave({
+          date: state.date,
+          type: state.type,
+          fundName: state.fundName,
+          subName: state.subName,
+          normalAccount: state.type === 'TraspasoInv' ? state.destFundName : state.normalAccount,
+          description: state.description.trim() || state.type,
+          amount: Math.round(baseAmountInFundCur * 100) / 100,
+          commission: split.commission,
+          commissionApply: split.applyTo,
+          exchangeRate: rate,
+          amountCOP: state.type === 'Aporte' ? amountVal : (state.type === 'Retiro' ? copAmountForNormal : Math.round(baseAmountInFundCur * rate)),
+        });
+        closeFn();
+      });
+
+      if (focusId) {
+        var el = document.getElementById(focusId);
+        if (el) {
+          el.focus();
+          if (typeof selStart === 'number' && el.setSelectionRange) {
+            try { el.setSelectionRange(selStart, selEnd); } catch (err) {}
+          }
+        }
+      }
+    }
+
+    render();
+  }
+
+  window.InvestmentModals = {
+    openAccountModal: openInvestmentAccountModal,
+    openSubModal: openSubInvestmentModal,
+    openUpdateValueModal: openUpdateValueModal,
+    openOpModal: openInvestmentOpModal,
+  };
+})();

@@ -9,12 +9,12 @@
     { id: 'cat-e4', name: 'Auxilio para mamá', type: 'Egreso' },
     { id: 'cat-e5', name: 'Corte de cabello', type: 'Egreso' },
     { id: 'cat-e6', name: 'Gustos y entretenimiento', type: 'Egreso' },
-    { id: 'cat-e7', name: ARQ_CATEGORY, type: 'Egreso', isArq: true },
+    { id: 'cat-e7', name: 'Aporte a Inversión', type: 'Egreso', isArq: true },
     { id: 'cat-e8', name: 'Servicios / Suscripciones', type: 'Egreso' },
     { id: 'cat-e9', name: 'Salud / Otros', type: 'Egreso' },
     { id: 'cat-i1', name: 'Salario / Nómina', type: 'Ingreso' },
     { id: 'cat-i2', name: 'Freelance / Ventas', type: 'Ingreso' },
-    { id: 'cat-i3', name: 'Retiro ARQ', type: 'Ingreso' },
+    { id: 'cat-i3', name: 'Retiro de Inversión', type: 'Ingreso' },
     { id: 'cat-i4', name: 'Reembolso / Otros', type: 'Ingreso' },
     { id: 'cat-t1', name: 'Pago TC', type: 'Traspaso' },
     { id: 'cat-t2', name: 'Recarga Billetera Digital', type: 'Traspaso' },
@@ -38,6 +38,10 @@
       ],
       movements: [],
       monthlyCloses: [],
+      investmentAccounts: [],
+      subInvestments: [],
+      investmentMovements: [],
+      exchangeRates: { USD: { live: 4300, custom: null, updatedAt: null } },
     };
   }
 
@@ -103,6 +107,10 @@
           parsed.categories && parsed.categories.length > 0
             ? parsed.categories
             : DEFAULT_CATEGORIES.map(function (c) { return Object.assign({}, c); }),
+        investmentAccounts: parsed.investmentAccounts || [],
+        subInvestments: parsed.subInvestments || [],
+        investmentMovements: parsed.investmentMovements || [],
+        exchangeRates: parsed.exchangeRates || { USD: { live: 4300, custom: null, updatedAt: null } },
       });
     } catch (e) {
       return getDefaultAppData();
