@@ -28,7 +28,7 @@
       '<div class="inv-top-bar">' +
         '<div>' +
           '<h2 class="section-title-upper" style="margin-bottom:0.2rem">Módulo de Inversiones</h2>' +
-          '<p class="text-muted" style="margin:0;font-size:0.78rem">Fondos simples (BBVA, CDT) y fragmentados (ARQ, acciones) con soporte multi-moneda.</p>' +
+          '<p class="text-muted" style="margin:0;font-size:0.9rem">Fondos simples (BBVA, CDT) y fragmentados (ARQ, acciones) con soporte multi-moneda.</p>' +
         '</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:0.5rem">' +
           '<button type="button" id="btn-inv-new-fund" class="btn btn-secondary"><i class="fa-solid fa-folder-plus"></i> Nueva Cuenta</button>' +
@@ -40,13 +40,13 @@
     var fxBarHtml =
       '<div class="inv-fx-bar">' +
         '<div>' +
-          '<span style="font-size:0.78rem;font-weight:600;color:var(--text-strong)"><i class="fa-solid fa-dollar-sign text-emerald"></i> Tasa USD / COP activa: ' + esc(fmt.formatCOP(activeUsdRate)) + '</span>' +
-          '<p class="text-muted" style="margin:0.15rem 0 0;font-size:0.7rem">En vivo: ' + esc(fmt.formatCOP(usdRate.live || 4300)) + (usdRate.custom ? ' &middot; Personalizada activa' : ' &middot; Usando tasa en vivo') + '</p>' +
+          '<span style="font-size:0.92rem;font-weight:600;color:var(--text-strong)"><i class="fa-solid fa-dollar-sign text-emerald"></i> Tasa USD / ' + esc(fmt.getBaseCurrency()) + ' activa: ' + esc(fmt.formatCOP(activeUsdRate)) + '</span>' +
+          '<p class="text-muted" style="margin:0.15rem 0 0;font-size:0.84rem">En vivo: ' + esc(fmt.formatCOP(usdRate.live || 4300)) + (usdRate.custom ? ' &middot; Personalizada activa' : ' &middot; Usando tasa en vivo') + '</p>' +
         '</div>' +
         '<div class="inv-fx-controls">' +
-          '<input type="text" inputmode="decimal" id="inv-custom-usd" class="input" style="width:9.5rem;padding:0.4rem 0.65rem;font-size:0.78rem" placeholder="Tasa manual (ARQ)" value="' + esc(usdRate.custom ? String(usdRate.custom) : '') + '" />' +
-          '<button type="button" id="btn-save-custom-usd" class="btn btn-secondary" style="padding:0.42rem 0.7rem;font-size:0.75rem">Aplicar</button>' +
-          '<button type="button" id="btn-fetch-fx" class="btn btn-secondary" style="padding:0.42rem 0.7rem;font-size:0.75rem"><i class="fa-solid fa-rotate"></i> TRM en vivo</button>' +
+          '<input type="text" inputmode="decimal" id="inv-custom-usd" class="input" style="width:10.5rem;padding:0.45rem 0.7rem;font-size:0.88rem" placeholder="Tasa manual (ARQ)" value="' + esc(usdRate.custom ? String(usdRate.custom) : '') + '" />' +
+          '<button type="button" id="btn-save-custom-usd" class="btn btn-secondary" style="padding:0.46rem 0.8rem;font-size:0.85rem">Aplicar</button>' +
+          '<button type="button" id="btn-fetch-fx" class="btn btn-secondary" style="padding:0.46rem 0.8rem;font-size:0.85rem"><i class="fa-solid fa-rotate"></i> TRM en vivo</button>' +
         '</div>' +
       '</div>';
 
@@ -86,7 +86,7 @@
           var subsHtml = '';
           if (isFrag) {
             var subRows = f.subSummaries.length === 0
-              ? '<p class="text-dim" style="margin:0;font-size:0.75rem">Sin sub-inversiones aún. Crea posiciones como Microsoft, Apple o ETFs.</p>'
+              ? '<p class="text-dim" style="margin:0;font-size:0.85rem">Sin sub-inversiones aún. Crea posiciones como Microsoft, Apple o ETFs.</p>'
               : f.subSummaries.map(function (s) {
                   var sPos = s.gainLoss >= 0;
                   var isDelSub = state.pendingDeleteSubId === s.sub.id;
@@ -97,7 +97,7 @@
                   return (
                     '<div class="inv-sub-item">' +
                       '<div>' +
-                        '<p class="obligation-name" style="font-size:0.82rem">' + esc(s.sub.name) + '</p>' +
+                        '<p class="obligation-name" style="font-size:0.92rem">' + esc(s.sub.name) + '</p>' +
                         '<p class="obligation-sub tabular">' +
                           'Actual: <strong style="color:var(--text-strong)">' + esc(mCur(s.currentValue, cur)) + '</strong>' +
                           ' &middot; Inv: ' + esc(mCur(s.netInvested, cur)) +
@@ -117,7 +117,7 @@
             subsHtml =
               '<div class="inv-subs-box">' +
                 '<div style="display:flex;align-items:center;justify-content:space-between">' +
-                  '<span style="font-size:0.75rem;font-weight:600;color:var(--text-soft)">Sub-inversiones (' + f.subSummaries.length + ')</span>' +
+                  '<span style="font-size:0.85rem;font-weight:600;color:var(--text-soft)">Sub-inversiones (' + f.subSummaries.length + ')</span>' +
                   '<button type="button" class="link-btn btn-add-sub" data-fund="' + esc(acc.name) + '" data-cur="' + esc(cur) + '">+ Nueva sub-inversión</button>' +
                 '</div>' +
                 subRows +

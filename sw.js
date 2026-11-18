@@ -1,4 +1,4 @@
-var CACHE_NAME = 'fininv-v1';
+var CACHE_NAME = 'fininv-v4';
 var CORE_ASSETS = [
   '/',
   '/index.html',

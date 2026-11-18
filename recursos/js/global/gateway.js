@@ -1,5 +1,9 @@
 // Utilidades globales (estilo gateway.js de MomentosPro)
 (function () {
+  window.tyc_fecha = "Martes 17 de Noviembre, 2026";
+  window.urlsmk = "https://www.momentospro.com/";
+  window.wasmk = "https://wa.me/573011529382?text=Hola.%20Uso%20FinInv%20y%20tengo%20dudas%20sobre%20los%20T%C3%A9rminos%20y%20Condiciones.%20%C2%BFMe%20pueden%20orientar%3F";
+
   window.cargarCSS = function (href, mediaQuery) {
     if (document.querySelector('link[href="' + href + '"]')) return;
     var link = document.createElement('link');

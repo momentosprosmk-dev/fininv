@@ -48,7 +48,7 @@
 
 .inv-fund-title {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: var(--text-strong);
 }
@@ -69,7 +69,7 @@
 
 .inv-fund-subval {
   margin: 0.15rem 0 0;
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   color: var(--text-muted);
 }
 
@@ -88,13 +88,13 @@
 
 .inv-mini-label {
   margin: 0;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
 .inv-mini-val {
   margin: 0.15rem 0 0;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-strong);
 }
@@ -127,6 +127,6 @@
 }
 
 .inv-actions-row .btn {
-  padding: 0.4rem 0.7rem;
-  font-size: 0.75rem;
+  padding: 0.48rem 0.8rem;
+  font-size: 0.85rem;
 }

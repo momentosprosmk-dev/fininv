@@ -259,8 +259,9 @@
     function render(focusId, selStart, selEnd) {
       var esc = window.escapeHTML;
       var f = getSelectedFund();
-      var cur = f ? f.currency : 'COP';
-      var isForeign = cur !== 'COP';
+      var baseCur = fmt.getBaseCurrency();
+      var cur = f ? f.currency : baseCur;
+      var isForeign = cur !== baseCur;
       var rate = isForeign ? (fmt.parseDecimalInput(state.exchangeRateStr) || inv.getEffectiveRate(cur, exchangeRates)) : 1;
 
       var amountVal = fmt.parseDecimalInput(state.amountStr);
@@ -335,14 +336,14 @@
       if (state.type === 'Aporte') {
         accountFields =
           '<div class="form-grid-2">' +
-            '<div class="field-group"><label class="field-label">Sale de cuenta normal (COP)</label><select id="io-normal" class="select">' + normalOpts + '</select></div>' +
+            '<div class="field-group"><label class="field-label">Sale de cuenta normal (' + esc(baseCur) + ')</label><select id="io-normal" class="select">' + normalOpts + '</select></div>' +
             '<div class="field-group"><label class="field-label">Entra al fondo</label><select id="io-fund" class="select">' + fundOpts + '</select></div>' +
           '</div>';
       } else if (state.type === 'Retiro') {
         accountFields =
           '<div class="form-grid-2">' +
             '<div class="field-group"><label class="field-label">Sale del fondo</label><select id="io-fund" class="select">' + fundOpts + '</select></div>' +
-            '<div class="field-group"><label class="field-label">Ingresa a cuenta normal (COP)</label><select id="io-normal" class="select">' + normalOpts + '</select></div>' +
+            '<div class="field-group"><label class="field-label">Ingresa a cuenta normal (' + esc(baseCur) + ')</label><select id="io-normal" class="select">' + normalOpts + '</select></div>' +
           '</div>';
       } else if (state.type === 'AsignarSub' || state.type === 'LiberarSub') {
         accountFields =
@@ -358,7 +359,7 @@
           '</div>';
       }
 
-      var amountLabel = state.type === 'Aporte' ? 'Monto que envías (COP)' : ('Monto (' + cur + ')');
+      var amountLabel = state.type === 'Aporte' ? ('Monto que envías (' + baseCur + ')') : ('Monto (' + cur + ')');
       var previewHtml = '';
       if (amountVal > 0 && f) {
         if (state.type === 'Aporte') {
@@ -409,7 +410,7 @@
                 '<div class="field-group"><label class="field-label">' + esc(amountLabel) + '</label><input type="text" inputmode="decimal" id="io-amount" class="input" placeholder="Ej. 100000" value="' + esc(state.amountStr) + '" /></div>' +
               '</div>' +
               (isForeign && (state.type === 'Aporte' || state.type === 'Retiro')
-                ? '<div class="field-group"><label class="field-label">Tasa de cambio usada (COP por 1 ' + esc(cur) + ')</label><input type="text" inputmode="decimal" id="io-rate" class="input" value="' + esc(state.exchangeRateStr) + '" /></div>'
+                ? '<div class="field-group"><label class="field-label">Tasa de cambio usada (' + esc(baseCur) + ' por 1 ' + esc(cur) + ')</label><input type="text" inputmode="decimal" id="io-rate" class="input" value="' + esc(state.exchangeRateStr) + '" /></div>'
                 : '') +
               '<div class="config-box">' +
                 '<p class="field-label" style="margin-bottom:0.45rem">Comisión (opcional)</p>' +
@@ -417,7 +418,7 @@
                   '<select id="io-comm-type" class="select">' +
                     '<option value="none" ' + (state.commType === 'none' ? 'selected' : '') + '>Sin comisión</option>' +
                     '<option value="percent" ' + (state.commType === 'percent' ? 'selected' : '') + '>Porcentaje (%)</option>' +
-                    '<option value="fixed" ' + (state.commType === 'fixed' ? 'selected' : '') + '>Valor fijo (' + (state.type === 'Aporte' ? 'COP' : esc(cur)) + ')</option>' +
+                    '<option value="fixed" ' + (state.commType === 'fixed' ? 'selected' : '') + '>Valor fijo (' + (state.type === 'Aporte' ? esc(baseCur) : esc(cur)) + ')</option>' +
                   '</select>' +
                   (state.commType !== 'none'
                     ? '<input type="text" inputmode="decimal" id="io-comm-val" class="input" placeholder="' + (state.commType === 'percent' ? 'Ej. 4' : 'Ej. 4000') + '" value="' + esc(state.commValueStr) + '" />'

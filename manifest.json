@@ -2,7 +2,7 @@
   "id": "/",
   "name": "FinInv",
   "short_name": "FinInv",
-  "description": "Control financiero personal en pesos colombianos (COP) y módulo de inversiones.",
+  "description": "Control financiero personal multi-divisa y módulo de inversiones.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -136,7 +136,7 @@
 
     var isInv = appState.activeModule === 'inversiones';
     var subEl = document.getElementById('brand-subtitle');
-    if (subEl) subEl.textContent = isInv ? 'Módulo de Inversiones' : 'Control financiero';
+    if (subEl) subEl.textContent = isInv ? 'Inversiones' : 'Finanzas';
     var brandIconEl = document.getElementById('brand-module-icon');
     if (brandIconEl) brandIconEl.className = isInv ? 'fa-solid fa-arrow-trend-up' : 'fa-solid fa-wallet';
     var brandIconBox = document.getElementById('brand-icon-box');
@@ -263,6 +263,11 @@
       scriptUrl: appState.scriptUrl,
       clientId: appState.clientId,
       connectionMode: getConnectionMode(),
+      baseCurrency: window.AppFormat.getBaseCurrency(),
+      onChangeCurrency: function (code) {
+        window.AppFormat.setBaseCurrency(code);
+        renderApp();
+      },
       sheetWebUrl: appState.sheetWebUrl || (appState.spreadsheetId ? 'https://docs.google.com/spreadsheets/d/' + appState.spreadsheetId + '/edit' : null),
       isSyncing: appState.isSyncing,
       syncError: appState.syncError,

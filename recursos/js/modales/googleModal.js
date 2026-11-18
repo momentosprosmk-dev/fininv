@@ -24,6 +24,12 @@
     var state = {
       methodTab: 'script',
       sheetMode: null,
+      baseCurrency: opts.baseCurrency || window.AppFormat.getBaseCurrency(),
+      showAddCurrency: false,
+      newCurCode: '',
+      newCurLabel: '',
+      newCurDecimals: '2',
+      newCurError: '',
       draftScriptUrl: opts.scriptUrl || '',
       draftClientId: opts.clientId || '',
       copied: false,
@@ -41,6 +47,33 @@
     function render() {
       var esc = window.escapeHTML;
       var isConnected = opts.connectionMode !== 'none';
+      var currencyOptionsHtml = window.AppFormat.getSupportedCurrencies().map(function (c) {
+        return '<option value="' + esc(c.code) + '" ' + (state.baseCurrency === c.code ? 'selected' : '') + '>' + esc(c.label) + '</option>';
+      }).join('');
+      var currencyBoxHtml =
+        '<div class="field-group" style="margin-bottom:0.9rem">' +
+          '<div class="field-label-row">' +
+            '<label class="field-label" for="gm-base-currency" style="margin:0">Moneda principal del Sheet y la App</label>' +
+            '<button type="button" id="gm-toggle-add-cur" class="link-btn">' + (state.showAddCurrency ? 'Cancelar' : '+ Otra moneda') + '</button>' +
+          '</div>' +
+          '<select id="gm-base-currency" class="select">' + currencyOptionsHtml + '</select>' +
+          (state.showAddCurrency
+            ? '<div class="config-box" style="margin-top:0.55rem">' +
+                '<div class="form-grid-2" style="margin-bottom:0.5rem">' +
+                  '<input type="text" id="gm-new-cur-code" class="input" maxlength="3" placeholder="Código ISO (ej. CAD, UYU)" value="' + esc(state.newCurCode) + '" style="text-transform:uppercase" />' +
+                  '<input type="text" id="gm-new-cur-label" class="input" placeholder="Nombre (opcional)" value="' + esc(state.newCurLabel) + '" />' +
+                '</div>' +
+                '<div style="display:flex;gap:0.5rem;align-items:center">' +
+                  '<select id="gm-new-cur-dec" class="select" style="flex:1">' +
+                    '<option value="2" ' + (state.newCurDecimals === '2' ? 'selected' : '') + '>2 decimales (ej. USD, EUR)</option>' +
+                    '<option value="0" ' + (state.newCurDecimals === '0' ? 'selected' : '') + '>Sin decimales (ej. COP, CLP, JPY)</option>' +
+                  '</select>' +
+                  '<button type="button" id="gm-save-new-cur" class="btn btn-primary">Agregar</button>' +
+                '</div>' +
+                (state.newCurError ? '<p class="text-rose" style="margin:0.4rem 0 0;font-size:0.75rem">' + esc(state.newCurError) + '</p>' : '') +
+              '</div>'
+            : '') +
+        '</div>';
       var bodyHtml = '';
 
       if (isConnected) {
@@ -49,6 +82,7 @@
             '<i class="fa-regular fa-circle-check" style="font-size:1.1rem"></i>' +
             '<span>Conectado vía <strong>' + (opts.connectionMode === 'script' ? 'Google Apps Script (sin Google Cloud)' : 'Google OAuth API') + '</strong>.</span>' +
           '</div>' +
+          currencyBoxHtml +
           (opts.sheetWebUrl
             ? '<a href="' + esc(opts.sheetWebUrl) + '" target="_blank" rel="noreferrer" class="config-item" style="margin-bottom:0.9rem;color:#e2e8f0;font-size:0.875rem"><span>Abrir mi Google Sheet en Drive</span><i class="fa-solid fa-arrow-up-right-from-square text-muted"></i></a>'
             : '') +
@@ -113,7 +147,7 @@
             methodContent;
         }
 
-        bodyHtml = step1Html + step2Html;
+        bodyHtml = currencyBoxHtml + step1Html + step2Html;
       }
 
       root.innerHTML =
@@ -132,6 +166,67 @@
 
       var closeFn = function () { root.innerHTML = ''; };
       document.getElementById('gm-close').addEventListener('click', closeFn);
+
+      var currencySel = document.getElementById('gm-base-currency');
+      if (currencySel) {
+        currencySel.addEventListener('change', function (e) {
+          state.baseCurrency = e.target.value;
+          if (typeof opts.onChangeCurrency === 'function') {
+            opts.onChangeCurrency(state.baseCurrency);
+          }
+        });
+      }
+
+      var toggleCurBtn = document.getElementById('gm-toggle-add-cur');
+      if (toggleCurBtn) {
+        toggleCurBtn.addEventListener('click', function () {
+          state.showAddCurrency = !state.showAddCurrency;
+          state.newCurError = '';
+          render();
+        });
+      }
+
+      var newCurCodeInp = document.getElementById('gm-new-cur-code');
+      if (newCurCodeInp) {
+        newCurCodeInp.addEventListener('input', function (e) {
+          state.newCurCode = e.target.value.toUpperCase();
+        });
+      }
+
+      var newCurLabelInp = document.getElementById('gm-new-cur-label');
+      if (newCurLabelInp) {
+        newCurLabelInp.addEventListener('input', function (e) {
+          state.newCurLabel = e.target.value;
+        });
+      }
+
+      var newCurDecSel = document.getElementById('gm-new-cur-dec');
+      if (newCurDecSel) {
+        newCurDecSel.addEventListener('change', function (e) {
+          state.newCurDecimals = e.target.value;
+        });
+      }
+
+      var saveCurBtn = document.getElementById('gm-save-new-cur');
+      if (saveCurBtn) {
+        saveCurBtn.addEventListener('click', function () {
+          try {
+            var created = window.AppFormat.addCustomCurrency(state.newCurCode, state.newCurLabel, state.newCurDecimals);
+            state.baseCurrency = created.code;
+            state.showAddCurrency = false;
+            state.newCurCode = '';
+            state.newCurLabel = '';
+            state.newCurError = '';
+            if (typeof opts.onChangeCurrency === 'function') {
+              opts.onChangeCurrency(created.code);
+            }
+            render();
+          } catch (err) {
+            state.newCurError = err.message || 'No se pudo agregar la moneda.';
+            render();
+          }
+        });
+      }
 
       if (isConnected) {
         document.getElementById('gm-disconnect').addEventListener('click', function () {

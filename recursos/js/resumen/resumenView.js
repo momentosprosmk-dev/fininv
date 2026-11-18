@@ -199,7 +199,7 @@
           '<div class="obligation-list">' + obListHtml + '</div>' +
           '<form id="form-new-obligation" class="obligation-form">' +
             '<input type="text" id="new-ob-name" class="input" placeholder="Nueva cuenta fija (ej. Internet)" />' +
-            '<input type="text" id="new-ob-amount" class="input input-amount" inputmode="numeric" placeholder="Estimado COP" />' +
+            '<input type="text" id="new-ob-amount" class="input input-amount" inputmode="numeric" placeholder="Estimado ' + esc(fmt.getBaseCurrency()) + '" />' +
             '<button type="submit" class="btn btn-primary">Agregar</button>' +
           '</form>' +
         '</div>' +

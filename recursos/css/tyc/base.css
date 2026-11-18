@@ -1,0 +1,49 @@
+/*=============== base.css | Variables globales y estilos principales de TyC ===============*/
+
+:root {
+  --color-fondo: #020617;
+  --color-texto: #e2e8f0;
+  --color-acento: #818cf8;
+  --color-acento-hover: #6366f1;
+
+  --color-borde: #1e293b;
+  --color-borde-claro: #334155;
+  --color-btn-fondo: #0f172a;
+  --color-btn-hover: #1e293b;
+
+  --fuente-base: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --tamano-texto: 1rem;
+  --tamano-titulo: 1.4rem;
+  --peso-negrita: 600;
+
+  --radio-borde: 8px;
+  --espaciado: 1rem;
+  --altura-footer: 60px;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: var(--fuente-base);
+  font-size: var(--tamano-texto);
+  line-height: 1.5;
+}
+
+button {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  font-family: var(--fuente-base);
+  font-weight: var(--peso-negrita);
+  border-radius: var(--radio-borde);
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+
+main.contenedor {
+  min-height: calc(100vh - var(--altura-footer));
+  background-color: rgba(15, 23, 42, 0.5);
+  display: flex;
+  flex-direction: column;
+}

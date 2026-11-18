@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- SEO básico -->
   <title>FinInv</title>
-  <meta name="description" content="FinInv: control financiero personal en pesos colombianos (COP) y gestión de inversiones en fondos simples y fragmentados, sincronizado con Google Sheets." />
-  <meta name="keywords" content="finanzas personales, finanzas COP, control de gastos, inversiones, fondos de inversión, Google Sheets, FinInv, Momentos Pro" />
+  <meta name="description" content="FinInv: plataforma privada de control financiero personal multi-divisa e inversiones en cualquier moneda (COP, USD, EUR y más). Organiza cuentas, deudas, obligaciones e inversiones con tus datos en tu propio Google Sheets." />
+  <meta name="keywords" content="FinInv, finanzas personales, multi-divisa, múltiples monedas, control de gastos, inversiones multi-moneda, COP, USD, EUR, fondos de inversión, soberanía de datos, Google Sheets, Momentos Pro" />
   <meta name="author" content="Momentos Pro" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#020617" />
@@ -23,7 +23,7 @@
 
   <!-- Open Graph (Facebook, WhatsApp) -->
   <meta property="og:title" content="FinInv — Control Financiero e Inversiones" />
-  <meta property="og:description" content="Organiza tus cuentas, gastos, obligaciones fijas e inversiones en COP y USD con sincronización directa en Google Sheets." />
+  <meta property="og:description" content="Organiza tus cuentas, gastos, obligaciones fijas e inversiones en múltiples divisas con sincronización directa en Google Sheets." />
   <meta property="og:image" content="https://www.fininv.momentospro.com/recursos/media/global/pwa_fininv_256x256.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="256" />
@@ -35,7 +35,7 @@
   <!-- Twitter Cards -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="FinInv — Control Financiero e Inversiones" />
-  <meta name="twitter:description" content="Control financiero personal en COP y portafolio de inversiones sincronizado con Google Sheets." />
+  <meta name="twitter:description" content="Control financiero personal multi-divisa y portafolio de inversiones sincronizado con Google Sheets." />
   <meta name="twitter:image" content="https://www.fininv.momentospro.com/recursos/media/global/pwa_fininv_256x256.png" />
   <meta name="twitter:url" content="https://www.fininv.momentospro.com/" />
 
@@ -46,10 +46,11 @@
     "@type": "WebApplication",
     "name": "FinInv",
     "url": "https://www.fininv.momentospro.com/",
+    "mainEntityOfPage": "https://www.fininv.momentospro.com/sobre/",
     "applicationCategory": "FinanceApplication",
     "operatingSystem": "Web",
     "inLanguage": "es-CO",
-    "description": "Plataforma web de control financiero personal en COP e inversiones en fondos simples y fragmentados.",
+    "description": "Plataforma web de control financiero personal multi-divisa e inversiones en fondos simples y fragmentados.",
     "image": "https://www.fininv.momentospro.com/recursos/media/global/pwa_fininv_256x256.png",
     "telephone": "+57-301-152-9382",
     "address": {
@@ -112,6 +113,9 @@
   <!-- Contenedor de Modales -->
   <div id="modales-root"></div>
 
+  <!-- Contenedor - Banner de Términos y Condiciones -->
+  <div id="tyc-container"></div>
+
   <!-- JS Global -->
   <script src="/recursos/js/global/gateway.js"></script>
   <script src="/recursos/js/global/format.js"></script>
@@ -137,5 +141,8 @@
 
   <!-- Inicializador Principal -->
   <script src="/recursos/js/global/appState.js"></script>
+
+  <!-- Validador de Términos y Condiciones -->
+  <script src="/recursos/js/tyc/validador.js"></script>
 </body>
 </html>

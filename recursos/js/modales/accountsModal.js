@@ -97,7 +97,7 @@
                   return '<option value="' + op.value + '" ' + (state.newAccIcon === op.value ? 'selected' : '') + '>' + op.label + '</option>';
                 }).join('') +
               '</select>' +
-              '<input type="text" id="new-acc-bal" class="input" inputmode="decimal" placeholder="Saldo inicial COP" value="' + esc(state.newAccBalance) + '" style="flex:1;min-width:8rem" />' +
+              '<input type="text" id="new-acc-bal" class="input" inputmode="decimal" placeholder="Saldo inicial ' + esc(window.AppFormat.getBaseCurrency()) + '" value="' + esc(state.newAccBalance) + '" style="flex:1;min-width:8rem" />' +
               (state.newAccKind === 'deuda'
                 ? '<input type="text" id="new-acc-limit" class="input" inputmode="numeric" placeholder="Cupo TC" value="' + esc(state.newAccLimit) + '" style="flex:1;min-width:8rem" />'
                 : '') +
@@ -159,7 +159,7 @@
         '<div class="modal-backdrop">' +
           '<div class="modal-box">' +
             '<div class="modal-header">' +
-              '<div><h2 class="modal-title">Cuentas y Conceptos (COP)</h2><p class="modal-subtitle">Administra tus cuentas, saldos iniciales y conceptos vinculados a Google Sheets.</p></div>' +
+              '<div><h2 class="modal-title">Cuentas y Conceptos (' + esc(window.AppFormat.getBaseCurrency()) + ')</h2><p class="modal-subtitle">Administra tus cuentas, saldos iniciales y conceptos vinculados a Google Sheets.</p></div>' +
               '<button type="button" class="modal-close" id="cfg-close"><i class="fa-solid fa-xmark"></i></button>' +
             '</div>' +
             '<div class="segmented-tabs cols-2">' +

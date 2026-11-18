@@ -54,8 +54,9 @@
       var isInvIncome = state.type === 'Ingreso' && investmentAccounts.length > 0 && (lowerCat.indexOf('inversión') !== -1 || lowerCat.indexOf('inversion') !== -1 || lowerCat.indexOf('arq') !== -1);
       var needsInvFund = isInvExpense || isInvIncome;
       var selectedInvObj = needsInvFund ? investmentAccounts.find(function (ia) { return ia.name === state.invFund; }) : null;
-      var invCur = selectedInvObj ? (selectedInvObj.currency || 'COP') : 'COP';
-      var isForeignInv = invCur !== 'COP';
+      var baseCur = fmt.getBaseCurrency();
+      var invCur = selectedInvObj ? (selectedInvObj.currency || baseCur) : baseCur;
+      var isForeignInv = invCur !== baseCur;
       var activeInvRate = isForeignInv ? (fmt.parseDecimalInput(state.invRateStr) || window.AppInvestments.getEffectiveRate(invCur, exchangeRates)) : 1;
 
       var missingRequired =
@@ -124,7 +125,7 @@
       var invFundHtml = '';
       if (needsInvFund) {
         var invOpts = '<option value="">Selecciona fondo de inversión...</option>' + investmentAccounts.map(function (ia) {
-          return '<option value="' + esc(ia.name) + '" ' + (state.invFund === ia.name ? 'selected' : '') + '>' + esc(ia.name) + ' (' + esc(ia.currency || 'COP') + ')</option>';
+          return '<option value="' + esc(ia.name) + '" ' + (state.invFund === ia.name ? 'selected' : '') + '>' + esc(ia.name) + ' (' + esc(ia.currency || baseCur) + ')</option>';
         }).join('');
         invFundHtml =
           '<div class="config-box">' +
@@ -134,7 +135,7 @@
             '</div>' +
             (isForeignInv
               ? '<div class="field-group" style="margin-bottom:0">' +
-                  '<label class="field-label">Tasa de cambio (COP por 1 ' + esc(invCur) + ')</label>' +
+                  '<label class="field-label">Tasa de cambio (' + esc(baseCur) + ' por 1 ' + esc(invCur) + ')</label>' +
                   '<input type="text" inputmode="decimal" id="mm-inv-rate" class="input" value="' + esc(state.invRateStr || String(activeInvRate)) + '" />' +
                   (parsedAmount > 0 ? '<p style="margin:0.25rem 0 0;font-size:0.75rem;color:#34d399">Equivalente: ' + esc(fmt.formatCurrency(parsedAmount / activeInvRate, invCur)) + '</p>' : '') +
                 '</div>'
@@ -162,7 +163,7 @@
               '<div class="form-grid-2">' +
                 '<div class="field-group"><label class="field-label">Fecha</label><div id="mm-datepicker"></div></div>' +
                 '<div class="field-group">' +
-                  '<label class="field-label">Monto (COP)</label>' +
+                  '<label class="field-label">Monto (' + esc(baseCur) + ')</label>' +
                   '<input type="text" inputmode="decimal" id="mm-amount" class="input" placeholder="Ej. 45000 o 45000.50" value="' + esc(state.amountStr) + '" />' +
                   (parsedAmount > 0 ? '<p style="margin:0.25rem 0 0;font-size:0.75rem;color:#a5b4fc">' + esc(fmt.formatCOP(parsedAmount)) + '</p>' : '') +
                 '</div>' +

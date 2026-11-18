@@ -1,0 +1,43 @@
+<!-- index.html | Visor de TyC de FinInv -->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinInv — Términos y Condiciones</title>
+  <link rel="icon" href="/recursos/media/global/favicon_fininv.ico" sizes="64x64" type="image/x-icon" />
+  <link rel="icon" href="/recursos/media/global/favicon_fininv.png" sizes="100x100" type="image/png" />
+  <link rel="stylesheet" href="/recursos/css/tyc/base.css" />
+  <link rel="stylesheet" href="/recursos/css/tyc/contenedor.css" />
+  <link rel="stylesheet" href="/recursos/css/tyc/footer.css" />
+</head>
+<body>
+  <!-- Contenedor principal con visor del documento TyC -->
+  <main class="contenedor">
+    <iframe
+      src="/recursos/html/tyc/tyc.html"
+      class="visor"
+      allowfullscreen
+      loading="lazy"
+      title="Términos y Condiciones de Uso de FinInv"
+    ></iframe>
+  </main>
+
+  <!-- Pie de página con botones de acción -->
+  <footer class="footer-fijo">
+    <div class="botones-horizontal">
+      <div class="btn-wrapper">
+        <button id="btn-aceptar" class="btn-confirmar">Aceptar</button>
+      </div>
+      <div class="btn-wrapper">
+        <button id="btn-rechazar" class="btn-confirmar">No acepto</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/recursos/js/global/gateway.js"></script>
+  <script src="/recursos/js/tyc/control.js"></script>
+</body>
+</html>

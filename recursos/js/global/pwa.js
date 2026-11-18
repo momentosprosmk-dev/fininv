@@ -88,7 +88,7 @@
     var shareUrl = 'https://www.fininv.momentospro.com/';
     var shareData = {
       title: 'FinInv — Control Financiero e Inversiones',
-      text: 'Organiza tus cuentas, gastos e inversiones en COP y USD con FinInv.',
+      text: 'Organiza tus cuentas, gastos e inversiones en múltiples divisas con FinInv.',
       url: shareUrl,
     };
 

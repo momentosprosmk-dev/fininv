@@ -1,8 +1,11 @@
 (function () {
-  var FX_API_URL = 'https://open.er-api.com/v6/latest/COP';
+  function getBaseCur() {
+    return window.AppFormat && window.AppFormat.getBaseCurrency ? window.AppFormat.getBaseCurrency() : 'COP';
+  }
 
   function getEffectiveRate(currencyCode, exchangeRates) {
-    if (!currencyCode || currencyCode === 'COP') return 1;
+    var baseCur = getBaseCur();
+    if (!currencyCode || currencyCode === baseCur) return 1;
     var entry = (exchangeRates && exchangeRates[currencyCode]) || {};
     if (Number(entry.custom) > 0) return Number(entry.custom);
     if (Number(entry.live) > 0) return Number(entry.live);
@@ -10,7 +13,8 @@
   }
 
   async function fetchLiveRates(currentRates) {
-    var res = await fetch(FX_API_URL);
+    var baseCur = getBaseCur();
+    var res = await fetch('https://open.er-api.com/v6/latest/' + encodeURIComponent(baseCur));
     if (!res.ok) throw new Error('No se pudo consultar la tasa de cambio (' + res.status + ')');
     var json = await res.json();
     if (!json || !json.rates) throw new Error('Respuesta de tasa inválida');
@@ -18,7 +22,7 @@
     var nextRates = Object.assign({}, currentRates || {});
     var nowIso = new Date().toISOString();
     window.AppFormat.getSupportedCurrencies().forEach(function (cur) {
-      if (cur.code === 'COP') return;
+      if (cur.code === baseCur) return;
       var copPerUnit = json.rates[cur.code] ? 1 / Number(json.rates[cur.code]) : null;
       if (copPerUnit && Number.isFinite(copPerUnit)) {
         var prev = nextRates[cur.code] || {};

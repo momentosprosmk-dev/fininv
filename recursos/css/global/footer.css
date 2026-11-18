@@ -1,8 +1,14 @@
 .app-footer {
   border-top: 1px solid var(--border-subtle);
   background: var(--bg-header);
-  padding: 1rem;
+  padding: 1.25rem 1rem;
   text-align: center;
-  font-size: 0.75rem;
-  color: var(--text-dim);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.app-footer a {
+  color: var(--text-main);
+  font-weight: 600;
 }

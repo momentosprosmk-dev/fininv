@@ -20,6 +20,38 @@
   background: var(--bg-card);
   padding: 1.25rem 1.5rem;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+.modal-box::-webkit-scrollbar,
+.config-list::-webkit-scrollbar,
+.code-preview::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.modal-box::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 0.85rem 0;
+}
+
+.config-list::-webkit-scrollbar-track,
+.code-preview::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-box::-webkit-scrollbar-thumb,
+.config-list::-webkit-scrollbar-thumb,
+.code-preview::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+}
+
+.modal-box::-webkit-scrollbar-thumb:hover,
+.config-list::-webkit-scrollbar-thumb:hover,
+.code-preview::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.55);
 }
 
 .modal-header {
@@ -32,14 +64,14 @@
 
 .modal-title {
   margin: 0;
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 600;
   color: var(--text-strong);
 }
 
 .modal-subtitle {
-  margin: 0.15rem 0 0;
-  font-size: 0.75rem;
+  margin: 0.2rem 0 0;
+  font-size: 0.88rem;
   color: var(--text-muted);
 }
 
@@ -79,8 +111,8 @@
   border: none;
   border-radius: 0.55rem;
   background: transparent;
-  padding: 0.5rem;
-  font-size: 0.75rem;
+  padding: 0.55rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -127,8 +159,8 @@
 
 .field-label {
   display: block;
-  margin-bottom: 0.3rem;
-  font-size: 0.75rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.88rem;
   font-weight: 500;
   color: var(--text-muted);
 }
@@ -137,14 +169,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.35rem;
 }
 
 .link-btn {
   border: none;
   background: transparent;
   color: #818cf8;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 500;
   padding: 0;
 }
@@ -155,8 +187,8 @@
 
 .alert-banner {
   border-radius: 0.75rem;
-  padding: 0.65rem 0.85rem;
-  font-size: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.86rem;
   margin-bottom: 0.9rem;
 }
 
@@ -297,7 +329,10 @@
   gap: 0.5rem;
   max-height: 15rem;
   overflow-y: auto;
+  padding-right: 0.35rem;
   margin-bottom: 0.85rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
 }
 
 .config-item {
