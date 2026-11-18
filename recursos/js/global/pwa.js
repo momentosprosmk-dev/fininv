@@ -47,7 +47,69 @@
     syncInstallButton();
   });
 
+  function copyShareLink(url) {
+    var label = document.getElementById('share-btn-label');
+    function showCopied() {
+      if (!label) return;
+      label.textContent = '¡Enlace copiado!';
+      window.setTimeout(function () {
+        var current = document.getElementById('share-btn-label');
+        if (current) current.textContent = 'Compartir Web';
+      }, 2000);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(showCopied).catch(function () {
+        fallbackCopy(url, showCopied);
+      });
+    } else {
+      fallbackCopy(url, showCopied);
+    }
+  }
+
+  function fallbackCopy(text, onDone) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      if (onDone) onDone();
+    } catch (err) {
+      // ignore
+    }
+    document.body.removeChild(ta);
+  }
+
+  function shareWeb() {
+    var shareUrl = 'https://www.fininv.momentospro.com/';
+    var shareData = {
+      title: 'FinInv — Control Financiero e Inversiones',
+      text: 'Organiza tus cuentas, gastos e inversiones en COP y USD con FinInv.',
+      url: shareUrl,
+    };
+
+    if (navigator.share) {
+      navigator.share(shareData).catch(function (err) {
+        if (err && err.name === 'AbortError') return;
+        copyShareLink(shareUrl);
+      });
+      return;
+    }
+
+    copyShareLink(shareUrl);
+  }
+
   document.addEventListener('click', function (e) {
+    var shareBtn = e.target && e.target.closest ? e.target.closest('#btn-share-web') : null;
+    if (shareBtn) {
+      shareWeb();
+      return;
+    }
+
     var btn = e.target && e.target.closest ? e.target.closest('#btn-install-pwa') : null;
     if (!btn) return;
 
