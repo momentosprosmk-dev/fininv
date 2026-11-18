@@ -14,13 +14,20 @@
 
   <!-- Manifest PWA & Favicon -->
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="recursos/media/global/fininv_favicon.ico" type="image/x-icon" />
-  <link rel="shortcut icon" href="recursos/media/global/fininv_favicon.ico" type="image/x-icon" />
+  <link rel="icon" href="/recursos/media/global/favicon_fininv.ico" sizes="64x64" type="image/x-icon" />
+  <link rel="icon" href="/recursos/media/global/favicon_fininv.png" sizes="100x100" type="image/png" />
+  <link rel="apple-touch-icon" href="/recursos/media/global/pwa_fininv_256x256.png" sizes="256x256" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="aXe COP" />
 
   <!-- Open Graph (Facebook, WhatsApp) -->
   <meta property="og:title" content="Contabilidad aXe — Control Financiero e Inversiones" />
   <meta property="og:description" content="Organiza tus cuentas, gastos, obligaciones fijas e inversiones en COP y USD con sincronización directa en Google Sheets." />
-  <meta property="og:image" content="https://fininv.momentospro.com/recursos/media/global/fininv_logo.avif" />
+  <meta property="og:image" content="https://fininv.momentospro.com/recursos/media/global/pwa_fininv_256x256.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="256" />
+  <meta property="og:image:height" content="256" />
   <meta property="og:url" content="https://fininv.momentospro.com/" />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="es_CO" />
@@ -29,7 +36,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Contabilidad aXe — Control Financiero e Inversiones" />
   <meta name="twitter:description" content="Control financiero personal en COP y portafolio de inversiones sincronizado con Google Sheets." />
-  <meta name="twitter:image" content="https://fininv.momentospro.com/recursos/media/global/fininv_logo.avif" />
+  <meta name="twitter:image" content="https://fininv.momentospro.com/recursos/media/global/pwa_fininv_256x256.png" />
   <meta name="twitter:url" content="https://fininv.momentospro.com/" />
 
   <!-- Schema.org: WebApplication + Contacto + Calificación 3 estrellas -->
@@ -42,8 +49,8 @@
     "applicationCategory": "FinanceApplication",
     "operatingSystem": "Web",
     "inLanguage": "es-CO",
-    "description": "Plataforma web de control financiero personal en COP e inversiones en fondos simples y fragmentados, sincronizada con Google Sheets.",
-    "image": "https://fininv.momentospro.com/recursos/media/global/fininv_logo.avif",
+    "description": "Plataforma web de control financiero personal en COP e inversiones en fondos simples y fragmentados.",
+    "image": "https://fininv.momentospro.com/recursos/media/global/pwa_fininv_256x256.png",
     "telephone": "+57-301-152-9382",
     "address": {
       "@type": "PostalAddress",
@@ -113,6 +120,7 @@
   <script src="recursos/js/global/investments.js"></script>
   <script src="recursos/js/global/googleSheets.js"></script>
   <script src="recursos/js/global/copyright.js"></script>
+  <script src="recursos/js/global/pwa.js"></script>
 
   <!-- JS Vistas -->
   <script src="recursos/js/resumen/resumenView.js"></script>

@@ -138,22 +138,46 @@
       );
     }).join('');
 
-    // 5. Egresos por concepto
-    var catMax = summary.expensesByCategory.length > 0 ? summary.expensesByCategory[0].amount : 1;
-    var catHtml = summary.expensesByCategory.length === 0
-      ? '<p class="text-dim" style="text-align:center;padding:2rem 0;font-size:0.875rem">Sin egresos registrados en este mes.</p>'
-      : '<div class="cat-bar-list">' + summary.expensesByCategory.map(function (item) {
-          var pct = Math.max(4, Math.round((item.amount / catMax) * 100));
-          return (
-            '<div>' +
-              '<div class="cat-bar-head">' +
-                '<span style="color:var(--text-main)">' + esc(item.category) + (item.isArq ? ' <span class="badge badge-violet">Inversión</span>' : '') + '</span>' +
-                '<span class="tabular" style="font-weight:600;color:var(--text-strong)">' + esc(mCOP(item.amount)) + '</span>' +
-              '</div>' +
-              '<div class="cat-bar-track"><div class="cat-bar-fill ' + (item.isArq ? 'arq' : '') + '" style="width:' + pct + '%"></div></div>' +
-            '</div>'
-          );
-        }).join('') + '</div>';
+    // 5. Egresos por concepto (consumo arriba + aportes a inversión por fondo abajo)
+    function renderConceptBarList(items, labelKey, fillClass) {
+      var maxAmt = items.length > 0 && items[0].amount > 0 ? items[0].amount : 1;
+      return '<div class="cat-bar-list">' + items.map(function (item) {
+        var pct = Math.max(4, Math.round((item.amount / maxAmt) * 100));
+        return (
+          '<div>' +
+            '<div class="cat-bar-head">' +
+              '<span style="color:var(--text-main)">' + esc(item[labelKey]) + '</span>' +
+              '<span class="tabular" style="font-weight:600;color:var(--text-strong)">' + esc(mCOP(item.amount)) + '</span>' +
+            '</div>' +
+            '<div class="cat-bar-track"><div class="cat-bar-fill ' + fillClass + '" style="width:' + pct + '%"></div></div>' +
+          '</div>'
+        );
+      }).join('') + '</div>';
+    }
+
+    var invFunds = summary.investmentsByFund || [];
+    var hasConsumption = summary.expensesByCategory.length > 0;
+    var hasInvestments = invFunds.length > 0;
+
+    var consumptionHtml = hasConsumption
+      ? renderConceptBarList(summary.expensesByCategory, 'category', '')
+      : (hasInvestments
+          ? '<p class="text-dim" style="padding:0.5rem 0;font-size:0.8125rem">Sin egresos de consumo en este mes.</p>'
+          : '<p class="text-dim" style="text-align:center;padding:2rem 0;font-size:0.875rem">Sin egresos registrados en este mes.</p>');
+
+    var investmentsHtml = hasInvestments
+      ? '<div style="margin-top:1.15rem;padding-top:1rem;border-top:1px solid var(--border)">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">' +
+            '<span style="font-size:0.8125rem;font-weight:600;color:var(--text-strong);display:flex;align-items:center;gap:0.45rem">' +
+              'Aportes a Inversión <span class="badge badge-violet">Inversión</span>' +
+            '</span>' +
+            '<span class="tabular text-violet" style="font-size:0.8125rem;font-weight:600">' + esc(mCOP(summary.totalArqInvestment)) + '</span>' +
+          '</div>' +
+          renderConceptBarList(invFunds, 'fund', 'arq') +
+        '</div>'
+      : '';
+
+    var catHtml = consumptionHtml + investmentsHtml;
 
     var closedBadge = state.existingClose
       ? '<span class="badge badge-emerald"><i class="fa-solid fa-lock"></i> Mes cerrado</span>'

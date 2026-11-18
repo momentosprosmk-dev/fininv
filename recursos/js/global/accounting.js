@@ -71,6 +71,7 @@
     var ccExpensesInMonth = 0;
     var ccPaymentsInMonth = 0;
     var categoryTotals = new Map();
+    var investmentFundTotals = new Map();
 
     relevantMovements.forEach(function (mov) {
       applyMovementToBalances(balances, data.accounts || [], mov);
@@ -83,13 +84,17 @@
         var isArq = arqCategoryNames.has(mov.category);
         if (isArq) {
           totalArqInvestment += amt;
+          var fundName = (mov.toAccount && mov.toAccount !== 'Externo')
+            ? mov.toAccount
+            : (mov.category === window.AppStorage.ARQ_CATEGORY ? 'ARQ' : mov.category);
+          investmentFundTotals.set(fundName, (investmentFundTotals.get(fundName) || 0) + amt);
         } else {
           totalConsumptionExpense += amt;
+          categoryTotals.set(mov.category, (categoryTotals.get(mov.category) || 0) + amt);
         }
         if (isDebtAccount(data.accounts || [], mov.fromAccount)) {
           ccExpensesInMonth += amt;
         }
-        categoryTotals.set(mov.category, (categoryTotals.get(mov.category) || 0) + amt);
       } else if (mov.type === 'Traspaso') {
         if (isDebtAccount(data.accounts || [], mov.toAccount)) {
           ccPaymentsInMonth += amt;
@@ -111,7 +116,16 @@
         return {
           category: entry[0],
           amount: entry[1],
-          isArq: arqCategoryNames.has(entry[0]),
+          isArq: false,
+        };
+      })
+      .sort(function (a, b) { return b.amount - a.amount; });
+
+    var investmentsByFund = Array.from(investmentFundTotals.entries())
+      .map(function (entry) {
+        return {
+          fund: entry[0],
+          amount: entry[1],
         };
       })
       .sort(function (a, b) { return b.amount - a.amount; });
@@ -130,6 +144,7 @@
       totalDebt: totalDebt,
       ccSurplusOrDeficit: liquidityTotal - totalDebt,
       expensesByCategory: expensesByCategory,
+      investmentsByFund: investmentsByFund,
     };
   }
 
