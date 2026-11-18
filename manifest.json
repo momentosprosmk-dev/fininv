@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Contabilidad aXe",
-  "short_name": "aXe COP",
+  "name": "FinInv",
+  "short_name": "FinInv",
   "description": "Control financiero personal en pesos colombianos (COP) y módulo de inversiones.",
   "start_url": "./",
   "scope": "./",
@@ -11,7 +11,7 @@
   "lang": "es-CO",
   "icons": [
     {
-      "src": "recursos/media/global/pwa_fininv_256x256.png",
+      "src": "/recursos/media/global/pwa_fininv_256x256.png",
       "sizes": "256x256",
       "type": "image/png",
       "purpose": "any maskable"
