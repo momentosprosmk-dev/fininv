@@ -647,8 +647,8 @@
 
   async function initApp() {
     document.documentElement.setAttribute('data-theme', appState.theme);
-    await window.loadHTMLFragment('recursos/html/global/header.html', 'header-root');
-    await window.loadHTMLFragment('recursos/html/global/footer.html', 'footer-root');
+    await window.loadHTMLFragment('/recursos/html/global/header.html', 'header-root');
+    await window.loadHTMLFragment('/recursos/html/global/footer.html', 'footer-root');
     window.initFooter();
 
     document.getElementById('btn-toggle-privacy').addEventListener('click', function () {

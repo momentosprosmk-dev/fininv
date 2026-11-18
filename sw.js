@@ -1,10 +1,10 @@
 var CACHE_NAME = 'fininv-v1';
 var CORE_ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  './recursos/media/global/pwa_fininv_256x256.png',
-  './recursos/media/global/favicon_fininv.png'
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/recursos/media/global/pwa_fininv_256x256.png',
+  '/recursos/media/global/favicon_fininv.png'
 ];
 
 self.addEventListener('install', function (event) {
@@ -48,7 +48,7 @@ self.addEventListener('fetch', function (event) {
       return res;
     }).catch(function () {
       return caches.match(req).then(function (cached) {
-        return cached || (req.mode === 'navigate' ? caches.match('./index.html') : undefined);
+        return cached || (req.mode === 'navigate' ? caches.match('/index.html') : undefined);
       });
     })
   );
