@@ -5,12 +5,18 @@
     });
   }
 
+  function isDebtLikeAccount(accounts, name) {
+    return accounts.some(function (a) {
+      return a.name === name && (a.kind === 'deuda' || a.kind === 'credito');
+    });
+  }
+
   function applyMovementToBalances(balances, accounts, mov) {
     var amount = Number(mov.amount) || 0;
 
     if (mov.type === 'Ingreso') {
       if (mov.toAccount in balances) {
-        if (isDebtAccount(accounts, mov.toAccount)) {
+        if (isDebtLikeAccount(accounts, mov.toAccount)) {
           balances[mov.toAccount] -= amount;
         } else {
           balances[mov.toAccount] += amount;
@@ -21,7 +27,7 @@
 
     if (mov.type === 'Egreso') {
       if (mov.fromAccount in balances) {
-        if (isDebtAccount(accounts, mov.fromAccount)) {
+        if (isDebtLikeAccount(accounts, mov.fromAccount)) {
           balances[mov.fromAccount] += amount;
         } else {
           balances[mov.fromAccount] -= amount;
@@ -32,14 +38,14 @@
 
     if (mov.type === 'Traspaso') {
       if (mov.fromAccount in balances) {
-        if (isDebtAccount(accounts, mov.fromAccount)) {
+        if (isDebtLikeAccount(accounts, mov.fromAccount)) {
           balances[mov.fromAccount] += amount;
         } else {
           balances[mov.fromAccount] -= amount;
         }
       }
       if (mov.toAccount in balances) {
-        if (isDebtAccount(accounts, mov.toAccount)) {
+        if (isDebtLikeAccount(accounts, mov.toAccount)) {
           balances[mov.toAccount] -= amount;
         } else {
           balances[mov.toAccount] += amount;
@@ -72,9 +78,16 @@
     var ccPaymentsInMonth = 0;
     var categoryTotals = new Map();
     var investmentFundTotals = new Map();
+    var creditPaidCounts = {};
+    (data.accounts || []).forEach(function (a) {
+      if (a.kind === 'credito') creditPaidCounts[a.name] = 0;
+    });
 
     relevantMovements.forEach(function (mov) {
       applyMovementToBalances(balances, data.accounts || [], mov);
+      if (mov.type === 'Traspaso' && (mov.toAccount in creditPaidCounts)) {
+        creditPaidCounts[mov.toAccount] += 1;
+      }
       if (mov.month !== targetMonth) return;
 
       var amt = Number(mov.amount) || 0;
@@ -111,6 +124,19 @@
       .filter(function (a) { return a.kind === 'deuda'; })
       .reduce(function (sum, a) { return sum + (balances[a.name] || 0); }, 0);
 
+    var totalCreditDebt = (data.accounts || [])
+      .filter(function (a) { return a.kind === 'credito'; })
+      .reduce(function (sum, a) { return sum + Math.max(0, balances[a.name] || 0); }, 0);
+
+    var totalMoraCredit = (data.accounts || [])
+      .filter(function (a) { return a.kind === 'credito' && a.inMora; })
+      .reduce(function (sum, a) {
+        var bal = Math.max(0, balances[a.name] || 0);
+        if (bal <= 0) return sum;
+        var cuota = Number(a.monthlyInstallment) || 0;
+        return sum + (cuota > 0 ? Math.min(bal, cuota) : bal);
+      }, 0);
+
     var expensesByCategory = Array.from(categoryTotals.entries())
       .map(function (entry) {
         return {
@@ -142,7 +168,10 @@
       endBalances: balances,
       liquidityTotal: liquidityTotal,
       totalDebt: totalDebt,
-      ccSurplusOrDeficit: liquidityTotal - totalDebt,
+      totalCreditDebt: totalCreditDebt,
+      totalMoraCredit: totalMoraCredit,
+      creditPaidCounts: creditPaidCounts,
+      ccSurplusOrDeficit: liquidityTotal - (totalDebt + totalMoraCredit),
       expensesByCategory: expensesByCategory,
       investmentsByFund: investmentsByFund,
     };

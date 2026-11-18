@@ -58,6 +58,7 @@
         { name: 'Nequi', kind: 'liquidez', initialBalance: 500000 },
         { name: 'Efectivo', kind: 'liquidez', initialBalance: 150000 },
         { name: 'Tarjeta de Crédito', kind: 'deuda', initialBalance: 0, creditLimit: 2400000 },
+        { name: 'Crédito Libre Inversión', kind: 'credito', initialBalance: 6000000, totalMonths: 24, monthlyInstallment: 300000, inMora: false },
       ],
       obligations: [
         { id: 'ob-1', name: 'Arriendo', category: 'Arriendo', estimatedAmount: 1350000, matchType: 'Egreso' },
@@ -77,6 +78,7 @@
         { id: 'demo-10', date: currentMonth + '-06', month: currentMonth, type: 'Egreso', fromAccount: 'Tarjeta de Crédito', toAccount: 'Externo', category: 'Alimentación', description: 'Supermercado + restaurantes', amount: 520000, createdAt: currentMonth + '-06T17:00:00Z' },
         { id: 'demo-11', date: currentMonth + '-08', month: currentMonth, type: 'Egreso', fromAccount: 'Tarjeta de Crédito', toAccount: 'Externo', category: 'Gustos y entretenimiento', description: 'Cine y salida fin de semana', amount: 190000, createdAt: currentMonth + '-08T21:00:00Z' },
         { id: 'demo-12', date: currentMonth + '-10', month: currentMonth, type: 'Egreso', fromAccount: 'Efectivo', toAccount: 'Externo', category: 'Corte de cabello', description: 'Barbería', amount: 35000, createdAt: currentMonth + '-10T15:00:00Z' },
+        { id: 'demo-13', date: currentMonth + '-12', month: currentMonth, type: 'Traspaso', fromAccount: 'Tarjeta de Débito', toAccount: 'Crédito Libre Inversión', category: 'Movimiento entre Cuentas', description: 'Cuota mensual crédito', amount: 300000, createdAt: currentMonth + '-12T10:00:00Z' },
       ],
       monthlyCloses: [
         {

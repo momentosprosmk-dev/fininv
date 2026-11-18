@@ -59,7 +59,7 @@
 }
 
 .brand-logo-img {
-  display: block;
+  display: none;
   height: 2rem;
   width: auto;
   max-width: 11rem;
@@ -68,7 +68,7 @@
   border: 1px solid var(--border-input);
   background: var(--bg-card);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
-  margin-bottom: 0.2rem;
+  margin-bottom: 0;
 }
 
 :root[data-theme="light"] .brand-logo-img {
@@ -85,7 +85,7 @@
 }
 
 .brand-subtitle {
-  margin: 0.15rem 0 0;
+  margin: 0;
   font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: 0.015em;
@@ -202,6 +202,21 @@
 
   .brand-bar {
     display: contents;
+  }
+
+  .brand-text-group {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
+  .brand-logo-img {
+    display: block;
+  }
+
+  .brand-subtitle {
+    padding-left: 0.7rem;
+    border-left: 1px solid var(--border-input);
   }
 
   .header-actions {

@@ -59,9 +59,17 @@
     var cats = data.categories || window.AppStorage.DEFAULT_CATEGORIES;
     return {
       cuentas: (data.accounts || []).map(function (a, idx) {
-        var cleanDesc = String(a.description || '').replace(/\s*\[icon:[a-z]+\]/g, '').trim();
-        var descWithIcon = (a.icon && a.icon !== 'auto') ? (cleanDesc ? cleanDesc + ' [icon:' + a.icon + ']' : '[icon:' + a.icon + ']') : cleanDesc;
-        return [a.id || 'cta-' + (idx + 1), a.name, a.kind, descWithIcon, a.initialBalance, a.creditLimit != null ? a.creditLimit : ''];
+        var cleanDesc = String(a.description || '')
+          .replace(/\s*\[icon:[a-z]+\]/g, '')
+          .replace(/\s*\[credito:[^\]]+\]/g, '')
+          .trim();
+        var parts = [];
+        if (cleanDesc) parts.push(cleanDesc);
+        if (a.icon && a.icon !== 'auto') parts.push('[icon:' + a.icon + ']');
+        if (a.kind === 'credito') {
+          parts.push('[credito:' + (Number(a.totalMonths) || 12) + ':' + (Number(a.monthlyInstallment) || 0) + ':' + (a.inMora ? 1 : 0) + ']');
+        }
+        return [a.id || 'cta-' + (idx + 1), a.name, a.kind, parts.join(' '), a.initialBalance, a.creditLimit != null ? a.creditLimit : ''];
       }),
       tiposEgresos: cats.filter(function (c) { return c.type === 'Egreso'; }).map(function (c) {
         return [c.id, c.name, c.description || '', c.isArq ? 'SI' : 'NO'];
@@ -125,13 +133,22 @@
 
     var accounts = (accRaw || []).filter(function (r) { return r[1] || r[0]; }).map(function (r, idx) {
       var name = String(r[1] || r[0]);
-      var rawKind = String(r[2] || '').toLowerCase();
-      var kind = rawKind.indexOf('deuda') !== -1 || rawKind.indexOf('crédito') !== -1 || rawKind.indexOf('credito') !== -1 ? 'deuda' : 'liquidez';
-      var parsedLimit = parseSheetNumber(r[5]);
+      var rawKind = String(r[2] || '').toLowerCase().trim();
       var rawDesc = String(r[3] || '');
+      var creditoMatch = rawDesc.match(/\[credito:(\d+):([\d.]+):([01])\]/);
+      var kind = 'liquidez';
+      if (rawKind === 'credito' || creditoMatch) {
+        kind = 'credito';
+      } else if (rawKind.indexOf('deuda') !== -1 || rawKind.indexOf('crédito') !== -1 || rawKind.indexOf('credito') !== -1) {
+        kind = 'deuda';
+      }
+      var parsedLimit = parseSheetNumber(r[5]);
       var iconMatch = rawDesc.match(/\[icon:([a-z]+)\]/);
       var parsedIcon = iconMatch ? iconMatch[1] : 'auto';
-      var cleanDesc = rawDesc.replace(/\s*\[icon:[a-z]+\]/g, '').trim();
+      var cleanDesc = rawDesc
+        .replace(/\s*\[icon:[a-z]+\]/g, '')
+        .replace(/\s*\[credito:[^\]]+\]/g, '')
+        .trim();
       var item = {
         id: String(r[0] || 'cta-' + (idx + 1)),
         name: name,
@@ -141,6 +158,11 @@
         initialBalance: parseSheetNumber(r[4]),
       };
       if (kind === 'deuda') item.creditLimit = parsedLimit > 0 ? parsedLimit : 2400000;
+      if (kind === 'credito') {
+        item.totalMonths = creditoMatch ? Number(creditoMatch[1]) || 12 : 12;
+        item.monthlyInstallment = creditoMatch ? Number(creditoMatch[2]) || 0 : 0;
+        item.inMora = creditoMatch ? creditoMatch[3] === '1' : false;
+      }
       return item;
     });
 
