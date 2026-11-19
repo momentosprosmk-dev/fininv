@@ -12,10 +12,6 @@
       </div>
 
       <div class="top-utility-group">
-        <button type="button" id="btn-sync-status" class="btn btn-secondary btn-icon-only" title="Estado de conexión con Google Sheet" aria-label="Estado de conexión con Google Sheet">
-          <i id="sync-status-icon" class="fa-solid fa-signal"></i>
-        </button>
-
         <button type="button" id="btn-toggle-privacy" class="btn btn-secondary btn-icon-only" title="Ocultar valores" aria-label="Ocultar o mostrar valores">
           <i id="privacy-icon" class="fa-regular fa-eye"></i>
         </button>
@@ -34,7 +30,12 @@
 
           <div id="header-dropdown-menu" class="dropdown-menu hidden">
             <div class="dropdown-items">
-              <div class="dropdown-section-label">Módulo activo</div>
+              <div class="dropdown-section-label" style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
+                <span>Módulo activo</span>
+                <button type="button" id="btn-sync-status" class="btn btn-secondary btn-icon-only" style="width:1.75rem;height:1.75rem;min-width:1.75rem;padding:0;font-size:0.78rem" title="Estado de conexión con Google Sheet" aria-label="Estado de conexión con Google Sheet">
+                  <i id="sync-status-icon" class="fa-solid fa-signal"></i>
+                </button>
+              </div>
               <button type="button" id="btn-mod-finanzas" class="dropdown-item is-active" data-module-switch="finanzas">
                 <i class="fa-solid fa-wallet"></i>
                 <span>Finanzas</span>
