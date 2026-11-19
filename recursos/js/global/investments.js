@@ -33,6 +33,25 @@
         };
       }
     });
+
+    // Si la moneda principal es COP, consultar TRM oficial (Superintendencia Financiera / Datos Abiertos)
+    if (baseCur === 'COP') {
+      try {
+        var trmRes = await fetch('https://www.datos.gov.co/resource/32sa-8pi3.json?$limit=1&$order=vigenciadesde%20DESC');
+        if (trmRes.ok) {
+          var trmRows = await trmRes.json();
+          var officialVal = trmRows && trmRows[0] ? Number(trmRows[0].valor) : 0;
+          if (officialVal > 0 && Number.isFinite(officialVal)) {
+            var prevUsd = nextRates.USD || {};
+            nextRates.USD = {
+              live: Math.round(officialVal * 100) / 100,
+              custom: prevUsd.custom || null,
+              updatedAt: nowIso,
+            };
+          }
+        }
+      } catch (e) { /* mantiene el valor de open.er-api si Datos Abiertos no responde */ }
+    }
     return nextRates;
   }
 

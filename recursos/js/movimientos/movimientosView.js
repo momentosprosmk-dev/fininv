@@ -59,7 +59,7 @@
       '<div class="table-wrap">' +
         '<table class="data-table">' +
           '<thead><tr>' +
-            '<th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Descripción</th><th>Flujo (Origen &rarr; Destino)</th><th class="text-right">Monto (COP)</th><th class="text-right">Acción</th>' +
+            '<th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Descripción</th><th>Flujo (Origen &rarr; Destino)</th><th class="text-right">Monto (' + esc(fmt.getBaseCurrency()) + ')</th><th class="text-right">Acción</th>' +
           '</tr></thead>' +
           '<tbody>' + rowsHtml + '</tbody>' +
         '</table>' +

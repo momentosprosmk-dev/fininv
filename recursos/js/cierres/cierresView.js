@@ -17,7 +17,7 @@
       : '<div class="table-wrap" style="border:none;background:transparent">' +
           '<table class="data-table" style="min-width:680px;font-size:0.78rem">' +
             '<thead><tr>' +
-              '<th>Mes</th><th class="text-right">Ingresos</th><th class="text-right">Consumo</th><th class="text-right">ARQ</th><th class="text-right">Liquidez</th><th class="text-right">Deuda TC</th><th class="text-right">Resultado TC</th><th>Notas</th>' +
+              '<th>Mes</th><th class="text-right">Ingresos</th><th class="text-right">Consumo</th><th class="text-right">Inversión</th><th class="text-right">Liquidez</th><th class="text-right">Deuda TC</th><th class="text-right">Resultado TC</th><th>Notas</th>' +
             '</tr></thead>' +
             '<tbody>' + closes.map(function (c) {
               var resPos = c.ccSurplusOrDeficit >= 0;
@@ -37,13 +37,18 @@
           '</table>' +
         '</div>';
 
+    var closeDay = fmt.getMonthCloseDay();
+    var periodRange = fmt.getAccountingPeriodRange(state.selectedMonth, closeDay);
+    var closeDayLabel = closeDay > 0 ? 'Día ' + closeDay + ' de cada mes' : 'Fin de mes (calendario)';
+
     container.innerHTML =
       '<section class="card">' +
         '<h2 class="section-title" style="font-size:1rem;margin-bottom:0.25rem">Cierre Contable de ' + esc(fmt.formatMonthLabel(state.selectedMonth)) + '</h2>' +
-        '<p class="text-muted" style="font-size:0.78rem;margin:0 0 1.25rem">Guarda una fotografía oficial del mes para tu historial y hoja Cierres_Mensuales.</p>' +
+        '<p class="text-muted" style="font-size:0.78rem;margin:0 0 0.75rem">Guarda una fotografía oficial del mes para tu historial y hoja Cierres_Mensuales.</p>' +
+        '<p style="font-size:0.8rem;color:var(--text-muted);margin:0 0 1rem"><i class="fa-regular fa-calendar-check" style="margin-right:0.35rem;color:#818cf8"></i>Corte configurado: <strong style="color:var(--text-strong)">' + esc(closeDayLabel) + '</strong> · Periodo: <strong style="color:var(--text-strong)">' + esc(periodRange.label) + '</strong></p>' +
         '<div class="cierre-summary-grid">' +
           '<div class="cierre-stat"><p class="cierre-stat-label">Ingresos</p><p class="cierre-stat-val text-emerald tabular">' + esc(mCOP(summary.totalIncome)) + '</p></div>' +
-          '<div class="cierre-stat"><p class="cierre-stat-label">Egresos (Consumo + ARQ)</p><p class="cierre-stat-val text-rose tabular">' + esc(mCOP(summary.totalExpense)) + '</p></div>' +
+          '<div class="cierre-stat"><p class="cierre-stat-label">Egresos (Consumo + Inversión)</p><p class="cierre-stat-val text-rose tabular">' + esc(mCOP(summary.totalExpense)) + '</p></div>' +
           '<div class="cierre-stat"><p class="cierre-stat-label">Liquidez Final</p><p class="cierre-stat-val tabular" style="color:var(--text-strong)">' + esc(mCOP(summary.liquidityTotal)) + '</p></div>' +
           '<div class="cierre-stat"><p class="cierre-stat-label">Deuda TC / Balance Pago</p><p class="cierre-stat-val tabular ' + (isSurplus ? 'text-emerald' : 'text-rose') + '">' + esc(mCOP(ccDebt)) + (hide ? '' : ' (' + (isSurplus ? 'Sobra ' : 'Falta ') + esc(mCOP(Math.abs(summary.ccSurplusOrDeficit))) + ')') + '</p></div>' +
         '</div>' +

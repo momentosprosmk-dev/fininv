@@ -51,11 +51,12 @@
         var limit = acc.creditLimit != null ? acc.creditLimit : 2400000;
         var available = limit - balance;
         var usagePct = limit > 0 ? Math.min(100, Math.max(0, Math.round((balance / limit) * 100))) : 0;
+        var isPaidFull = balance <= 0;
         return (
-          '<div class="account-card debt">' +
-            '<div class="account-top"><span>' + esc(acc.name) + ' (Deuda)</span><i class="fa-regular fa-credit-card text-amber"></i></div>' +
-            '<p class="account-balance tabular">' + esc(mCOP(balance)) + '</p>' +
-            '<div class="credit-meta"><span>Cupo disp: ' + esc(mCOP(available)) + '</span><span>' + usagePct + '% de ' + esc(mCOP(limit)) + '</span></div>' +
+          '<div class="account-card ' + (isPaidFull ? '' : 'debt') + '"' + (isPaidFull ? ' style="border-color:rgba(16,185,129,0.38);background:rgba(16,185,129,0.06)"' : '') + '>' +
+            '<div class="account-top"><span>' + esc(acc.name) + (isPaidFull ? ' (Al día)' : ' (Deuda)') + '</span><i class="fa-regular fa-credit-card ' + (isPaidFull ? 'text-emerald' : 'text-amber') + '"></i></div>' +
+            '<p class="account-balance tabular"' + (isPaidFull ? ' style="color:var(--emerald)"' : '') + '>' + esc(mCOP(Math.max(0, balance))) + '</p>' +
+            '<div class="credit-meta"' + (isPaidFull ? ' style="color:var(--text-muted)"' : '') + '><span>Cupo disp: ' + esc(mCOP(available)) + '</span><span>' + usagePct + '% de ' + esc(mCOP(limit)) + '</span></div>' +
             '<div class="progress-track"><div class="progress-fill ' + (usagePct >= 85 ? 'high' : '') + '" style="width:' + usagePct + '%"></div></div>' +
           '</div>'
         );
@@ -64,20 +65,28 @@
         var totalMonths = Number(acc.totalMonths) || 12;
         var paidCount = (summary.creditPaidCounts && summary.creditPaidCounts[acc.name]) || 0;
         var progressPct = totalMonths > 0 ? Math.min(100, Math.max(0, Math.round((paidCount / totalMonths) * 100))) : 0;
-        var cuota = Number(acc.monthlyInstallment) || 0;
-        var isMora = Boolean(acc.inMora) && balance > 0;
+        var st = (summary.creditStatusByAccount && summary.creditStatusByAccount[acc.name]) || {};
+        var cuota = st.cuota != null ? st.cuota : (Number(acc.monthlyInstallment) || 0);
+        var pendingMonth = st.pendingInstallment != null ? st.pendingInstallment : Math.min(Math.max(0, balance), cuota);
+        var isMora = Boolean(st.isOverdue);
+        var isPaidMonth = Boolean(st.isPaidThisMonth);
+        var dueDay = Number(acc.dueDay) || 0;
         var statusBadge = isMora
-          ? '<span class="badge badge-rose">En mora</span>'
-          : '<span class="badge badge-emerald">Al día</span>';
+          ? '<span class="badge badge-rose">Estás en mora</span>'
+          : (isPaidMonth
+              ? '<span class="badge badge-emerald">Cuota pagada</span>'
+              : '<span class="badge badge-violet">' + (dueDay > 0 ? 'Vence día ' + dueDay : 'Pendiente') + '</span>');
+        var pendingColor = pendingMonth > 0 ? (isMora ? 'var(--rose)' : 'var(--amber)') : 'var(--emerald)';
         return (
           '<div class="account-card ' + (isMora ? 'debt' : '') + '">' +
             '<div class="account-top"><span>' + esc(acc.name) + ' (Crédito)</span>' + statusBadge + '</div>' +
             '<p class="account-balance tabular">' + esc(mCOP(Math.max(0, balance))) + '</p>' +
             '<div class="credit-meta" style="color:' + (isMora ? 'var(--rose)' : 'var(--text-muted)') + '">' +
-              '<span>' + (cuota > 0 ? 'Cuota: ' + esc(mCOP(cuota)) : 'Sin cuota fija') + '</span>' +
+              '<span>' + (cuota > 0 ? 'Cuota: ' + esc(mCOP(cuota)) : 'Sin cuota fija') + (dueDay > 0 ? ' · Lím: día ' + dueDay : '') + '</span>' +
               '<span>' + paidCount + ' / ' + totalMonths + ' meses</span>' +
             '</div>' +
             '<div class="progress-track"><div class="progress-fill ' + (isMora ? 'high' : '') + '" style="width:' + progressPct + '%;' + (isMora ? '' : 'background:#6366f1;') + '"></div></div>' +
+            '<p class="account-sub" style="margin-top:0.35rem;color:' + pendingColor + '">Pendiente cuota: <strong class="tabular">' + esc(mCOP(pendingMonth)) + '</strong></p>' +
           '</div>'
         );
       }
@@ -106,7 +115,7 @@
           '<p class="thermometer-desc">' +
             'Tienes <strong style="color:var(--text-strong)">' + esc(mCOP(summary.liquidityTotal)) + '</strong> en liquidez operativa ' +
             'frente a <strong class="text-amber">' + esc(mCOP(ccDebt)) + '</strong> de deuda en TC' +
-            (summary.totalMoraCredit > 0 ? ' y <strong class="text-rose">' + esc(mCOP(summary.totalMoraCredit)) + '</strong> en créditos en mora' : '') +
+            (summary.totalPendingCreditInstallments > 0 ? ' y <strong class="text-rose">' + esc(mCOP(summary.totalPendingCreditInstallments)) + '</strong> en cuotas de crédito pendientes del mes' : '') +
             '.' +
           '</p>' +
         '</div>' +

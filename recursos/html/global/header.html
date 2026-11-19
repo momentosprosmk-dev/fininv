@@ -39,12 +39,27 @@
                 <i class="fa-solid fa-arrow-trend-up"></i>
                 <span>Inversiones</span>
               </button>
+              <button type="button" id="btn-mod-prestamos" class="dropdown-item" data-module-switch="prestamos">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+                <span>Préstamos</span>
+              </button>
 
               <div class="dropdown-divider"></div>
 
               <button type="button" id="btn-open-accounts" class="dropdown-item">
                 <i class="fa-solid fa-sliders"></i>
                 <span>Cuentas y Conceptos</span>
+              </button>
+
+              <button type="button" id="btn-open-close-day" class="dropdown-item">
+                <i class="fa-regular fa-calendar-check"></i>
+                <span>Cierres Mensuales</span>
+                <span id="close-day-pill" class="dropdown-status-pill hidden"></span>
+              </button>
+
+              <button type="button" id="btn-open-users" class="dropdown-item">
+                <i class="fa-solid fa-users-gear"></i>
+                <span>Gestión de Usuarios</span>
               </button>
 
               <button type="button" id="btn-open-google" class="dropdown-item">
@@ -63,6 +78,11 @@
                 <span id="share-btn-label">Compartir Web</span>
               </button>
 
+              <button type="button" id="btn-open-reset" class="dropdown-item">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>Restablecer</span>
+              </button>
+
               <a href="/sobre/" class="dropdown-item" style="text-decoration:none">
                 <i class="fa-solid fa-circle-info"></i>
                 <span>Sobre FinInv</span>
@@ -70,6 +90,7 @@
             </div>
 
             <div class="dropdown-footer">
+              <img src="/recursos/media/global/fininv_logo.avif" alt="FinInv" class="dropdown-footer-logo" />
               <span class="js-texto-footer"></span>
             </div>
           </div>
@@ -118,6 +139,25 @@
       <i class="fa-solid fa-list-ul"></i>
       <span id="inv-tab-mov-badge" class="tab-badge-mobile">0</span>
       <span id="inv-tab-mov-label-pc" class="tab-label-pc">Movimientos (0)</span>
+    </button>
+  </nav>
+
+  <nav id="prest-tabs" class="header-tabs hidden" aria-label="Secciones de Préstamos">
+    <button type="button" class="tab-btn active" data-prest-tab="lista" title="Préstamos">
+      <i class="fa-solid fa-hand-holding-dollar"></i>
+      <span id="prest-tab-count-badge" class="tab-badge-mobile">0</span>
+      <span id="prest-tab-count-label-pc" class="tab-label-pc">Préstamos (0)</span>
+    </button>
+
+    <button type="button" class="tab-btn" data-prest-tab="estado" title="Estado Financiero">
+      <i class="fa-solid fa-chart-pie"></i>
+      <span class="tab-label-pc">Estado Financiero</span>
+    </button>
+
+    <button type="button" class="tab-btn" data-prest-tab="movimientos" title="Movimientos">
+      <i class="fa-solid fa-list-ul"></i>
+      <span id="prest-tab-mov-badge" class="tab-badge-mobile">0</span>
+      <span id="prest-tab-mov-label-pc" class="tab-label-pc">Movimientos (0)</span>
     </button>
   </nav>
 </header>

@@ -1,4 +1,10 @@
 .movimientos-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  background: var(--bg-body);
+  padding: 0.65rem 0;
+  margin-top: -0.65rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -15,9 +21,9 @@
   border: 1px solid var(--border-subtle);
   background: var(--bg-card);
   color: var(--text-muted);
-  padding: 0.4rem 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 500;
+  padding: 0.5rem 0.95rem;
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
 .filter-pill.active {
@@ -60,13 +66,24 @@
   font-size: 0.875rem;
 }
 
+.data-table thead {
+  position: relative;
+  z-index: 6;
+  will-change: transform;
+}
+
 .data-table th {
   border-bottom: 1px solid var(--border-subtle);
-  background: var(--bg-subtle);
+  box-shadow: inset 0 -1px 0 var(--border-subtle);
+  background: var(--bg-card);
   padding: 0.75rem 1rem;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-muted);
+}
+
+.data-table thead.thead-stuck th {
+  box-shadow: 0 -12px 0 var(--bg-body), inset 0 -1px 0 var(--border-subtle);
 }
 
 .data-table td {
@@ -110,17 +127,4 @@
 .inline-confirm-btn.yes {
   background: #e11d48;
   color: #ffffff;
-}
-
-.icon-delete-btn {
-  border: none;
-  background: transparent;
-  color: var(--text-dim);
-  padding: 0.35rem;
-  border-radius: 0.5rem;
-}
-
-.icon-delete-btn:hover {
-  background: var(--rose-bg);
-  color: var(--rose);
 }

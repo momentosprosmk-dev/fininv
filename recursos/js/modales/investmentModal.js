@@ -6,7 +6,7 @@
     var state = {
       name: existing ? existing.name : '',
       mode: existing ? existing.mode : 'simple',
-      currency: existing ? existing.currency : 'COP',
+      currency: existing ? existing.currency : window.AppFormat.getBaseCurrency(),
       initialBalance: existing ? String(existing.initialBalance || 0) : '',
       goal: existing && existing.goal ? String(existing.goal) : '',
       notes: existing ? (existing.notes || '') : '',
@@ -41,7 +41,8 @@
                 '</div>' +
                 '<div class="field-group">' +
                   '<label class="field-label">Moneda del fondo</label>' +
-                  '<select id="ia-currency" class="select">' + curOpts + '</select>' +
+                  '<select id="ia-currency" class="select" ' + (existing ? 'disabled' : '') + '>' + curOpts + '</select>' +
+                  (existing ? '<span style="display:block;margin-top:0.25rem;font-size:0.75rem;color:var(--text-dim)">La moneda no se puede cambiar después de crear el fondo.</span>' : '') +
                 '</div>' +
               '</div>' +
               '<div class="form-grid-2">' +
@@ -236,6 +237,8 @@
       destFundName: '',
       amountStr: '',
       exchangeRateStr: '',
+      equivStr: '',
+      equivManual: false,
       commType: 'none', // none | percent | fixed
       commValueStr: '',
       commApply: 'moved', // moved | fund
@@ -248,7 +251,10 @@
 
     function syncDefaultRate() {
       var f = getSelectedFund();
-      if (!f || f.currency === 'COP') {
+      var baseCur = fmt.getBaseCurrency();
+      state.equivManual = false;
+      state.equivStr = '';
+      if (!f || f.currency === baseCur) {
         state.exchangeRateStr = '1';
       } else {
         state.exchangeRateStr = String(inv.getEffectiveRate(f.currency, exchangeRates));
@@ -262,21 +268,38 @@
       var baseCur = fmt.getBaseCurrency();
       var cur = f ? f.currency : baseCur;
       var isForeign = cur !== baseCur;
-      var rate = isForeign ? (fmt.parseDecimalInput(state.exchangeRateStr) || inv.getEffectiveRate(cur, exchangeRates)) : 1;
+      var refRate = isForeign ? (fmt.parseDecimalInput(state.exchangeRateStr) || inv.getEffectiveRate(cur, exchangeRates)) : 1;
 
       var amountVal = fmt.parseDecimalInput(state.amountStr);
       var commVal = fmt.parseDecimalInput(state.commValueStr);
 
-      // En Aporte: el usuario puede ingresar en COP (si viene de su cuenta normal) y convertimos a moneda del fondo
-      var baseAmountInFundCur = (state.type === 'Aporte' && isForeign) ? (rate > 0 ? amountVal / rate : 0) : amountVal;
-      var commInFundCur = (state.type === 'Aporte' && isForeign && state.commType === 'fixed')
-        ? (rate > 0 ? commVal / rate : 0)
-        : commVal;
+      var equivVal = 0;
+      var baseAmountInFundCur = amountVal;
+      var commInFundCur = commVal;
+      var split;
+      var copAmountForNormal = 0;
+      var rate = refRate;
 
-      var split = inv.computeCommissionSplit(baseAmountInFundCur, state.commType, commInFundCur, state.commApply);
-      var copAmountForNormal = (state.type === 'Aporte')
-        ? amountVal
-        : (state.type === 'Retiro' ? Math.round(split.netToDest * rate) : 0);
+      if (state.type === 'Aporte' && isForeign) {
+        equivVal = state.equivManual
+          ? fmt.parseDecimalInput(state.equivStr)
+          : (amountVal > 0 && refRate > 0 ? Math.round((amountVal / refRate) * 100) / 100 : 0);
+        baseAmountInFundCur = equivVal;
+        rate = (amountVal > 0 && equivVal > 0) ? Math.round((amountVal / equivVal) * 100) / 100 : refRate;
+        commInFundCur = state.commType === 'fixed' ? (rate > 0 ? commVal / rate : 0) : commVal;
+        split = inv.computeCommissionSplit(baseAmountInFundCur, state.commType, commInFundCur, state.commApply);
+        copAmountForNormal = amountVal;
+      } else if (state.type === 'Retiro' && isForeign) {
+        split = inv.computeCommissionSplit(baseAmountInFundCur, state.commType, commInFundCur, state.commApply);
+        equivVal = state.equivManual
+          ? fmt.parseDecimalInput(state.equivStr)
+          : (split.netToDest > 0 ? Math.round(split.netToDest * refRate) : 0);
+        copAmountForNormal = equivVal;
+        rate = (split.netToDest > 0 && equivVal > 0) ? Math.round((equivVal / split.netToDest) * 100) / 100 : refRate;
+      } else {
+        split = inv.computeCommissionSplit(baseAmountInFundCur, state.commType, commInFundCur, state.commApply);
+        copAmountForNormal = (state.type === 'Aporte') ? amountVal : (state.type === 'Retiro' ? split.netToDest : 0);
+      }
 
       // Validaciones de saldo
       var insufficientMsg = '';
@@ -383,6 +406,7 @@
         amountVal <= 0 ||
         !state.fundName ||
         ((state.type === 'Aporte' || state.type === 'Retiro') && !state.normalAccount) ||
+        (isForeign && (state.type === 'Aporte' || state.type === 'Retiro') && equivVal <= 0) ||
         ((state.type === 'AsignarSub' || state.type === 'LiberarSub') && !state.subName) ||
         (state.type === 'TraspasoInv' && !state.destFundName);
 
@@ -410,7 +434,19 @@
                 '<div class="field-group"><label class="field-label">' + esc(amountLabel) + '</label><input type="text" inputmode="decimal" id="io-amount" class="input" placeholder="Ej. 100000" value="' + esc(state.amountStr) + '" /></div>' +
               '</div>' +
               (isForeign && (state.type === 'Aporte' || state.type === 'Retiro')
-                ? '<div class="field-group"><label class="field-label">Tasa de cambio usada (' + esc(baseCur) + ' por 1 ' + esc(cur) + ')</label><input type="text" inputmode="decimal" id="io-rate" class="input" value="' + esc(state.exchangeRateStr) + '" /></div>'
+                ? '<div class="field-group">' +
+                    '<label class="field-label">' +
+                      (state.type === 'Aporte'
+                        ? '¿A cuánto equivale en ' + esc(cur) + ' (entra al fondo)?'
+                        : '¿A cuánto equivale en ' + esc(baseCur) + ' (ingresa a tu cuenta normal)?') +
+                    '</label>' +
+                    '<input type="text" inputmode="decimal" id="io-equiv" class="input" placeholder="Ej. ' + (state.type === 'Aporte' ? '25.50' : '100000') + '" value="' + esc(state.equivManual ? state.equivStr : (equivVal > 0 ? String(equivVal) : '')) + '" />' +
+                    '<p style="margin:0.3rem 0 0;font-size:0.78rem;color:#34d399">' +
+                      (amountVal > 0 && equivVal > 0
+                        ? 'Tasa implícita: 1 ' + esc(cur) + ' ≈ ' + esc(fmt.formatCOP(rate))
+                        : 'Tasa de referencia: 1 ' + esc(cur) + ' ≈ ' + esc(fmt.formatCOP(refRate))) +
+                    '</p>' +
+                  '</div>'
                 : '') +
               '<div class="config-box">' +
                 '<p class="field-label" style="margin-bottom:0.45rem">Comisión (opcional)</p>' +
@@ -451,6 +487,8 @@
       document.getElementById('io-type').addEventListener('change', function (e) {
         state.type = e.target.value;
         state.subName = '';
+        state.equivManual = false;
+        state.equivStr = '';
         render();
       });
 
@@ -467,10 +505,11 @@
         state.amountStr = e.target.value;
         render('io-amount', e.target.selectionStart, e.target.selectionEnd);
       });
-      var rateInp = document.getElementById('io-rate');
-      if (rateInp) rateInp.addEventListener('input', function (e) {
-        state.exchangeRateStr = e.target.value;
-        render('io-rate', e.target.selectionStart, e.target.selectionEnd);
+      var equivInp = document.getElementById('io-equiv');
+      if (equivInp) equivInp.addEventListener('input', function (e) {
+        state.equivManual = true;
+        state.equivStr = e.target.value;
+        render('io-equiv', e.target.selectionStart, e.target.selectionEnd);
       });
       document.getElementById('io-comm-type').addEventListener('change', function (e) { state.commType = e.target.value; render(); });
       var commValInp = document.getElementById('io-comm-val');

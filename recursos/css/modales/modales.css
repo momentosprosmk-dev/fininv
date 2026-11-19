@@ -7,31 +7,86 @@
   justify-content: center;
   background: rgba(2, 6, 23, 0.82);
   backdrop-filter: blur(4px);
-  padding: 0.75rem;
+  padding: 1.5rem 1rem;
+  overflow: hidden;
 }
 
 .modal-box {
   width: 100%;
-  max-width: 32rem;
-  max-height: 92vh;
+  max-width: 31rem;
+  max-height: min(74vh, 35rem);
   overflow-y: auto;
-  border-radius: 1rem;
+  overflow-x: hidden;
+  border-radius: 1.15rem;
   border: 1px solid var(--border-subtle);
   background: var(--bg-card);
-  padding: 1.25rem 1.5rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+  padding: 1.25rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.55);
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
 }
 
+.modal-box.modal-flex {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.modal-top-fixed {
+  flex-shrink: 0;
+  padding: 1.15rem 1.25rem 0.85rem;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+}
+
+.modal-top-fixed .modal-header {
+  position: static;
+  margin: 0 0 0.85rem;
+  padding: 0;
+  border-bottom: none;
+}
+
+.modal-top-fixed .segmented-tabs {
+  margin-bottom: 0;
+}
+
+.modal-body-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem 1.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+.modal-body-scroll .config-list {
+  max-height: none;
+  overflow-y: visible;
+  padding-right: 0;
+}
+
+.modal-bottom-fixed {
+  flex-shrink: 0;
+  padding: 0.85rem 1.25rem;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .modal-box::-webkit-scrollbar,
+.modal-body-scroll::-webkit-scrollbar,
 .config-list::-webkit-scrollbar,
 .code-preview::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
-.modal-box::-webkit-scrollbar-track {
+.modal-box::-webkit-scrollbar-track,
+.modal-body-scroll::-webkit-scrollbar-track {
   background: transparent;
   margin: 0.85rem 0;
 }
@@ -42,6 +97,7 @@
 }
 
 .modal-box::-webkit-scrollbar-thumb,
+.modal-body-scroll::-webkit-scrollbar-thumb,
 .config-list::-webkit-scrollbar-thumb,
 .code-preview::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.35);
@@ -49,17 +105,24 @@
 }
 
 .modal-box::-webkit-scrollbar-thumb:hover,
+.modal-body-scroll::-webkit-scrollbar-thumb:hover,
 .config-list::-webkit-scrollbar-thumb:hover,
 .code-preview::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.55);
 }
 
 .modal-header {
+  position: sticky;
+  top: -1.25rem;
+  z-index: 10;
+  background: var(--bg-card);
+  margin: -1.25rem -1.25rem 1rem;
+  padding: 1.15rem 1.25rem 0.85rem;
+  border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 1.15rem;
 }
 
 .modal-title {
@@ -143,7 +206,7 @@
 
 .form-grid-2 {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.75rem;
 }
 
@@ -155,6 +218,45 @@
 
 .field-group {
   margin-bottom: 0.9rem;
+  min-width: 0;
+}
+
+.pwd-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.pwd-input-wrap .input {
+  padding-right: 4.3rem;
+}
+
+.pwd-actions {
+  position: absolute;
+  right: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.pwd-action-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 0.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.pwd-action-btn:hover {
+  background: var(--border-subtle);
+  color: var(--text-strong);
 }
 
 .field-label {
@@ -327,7 +429,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-height: 15rem;
+  max-height: 12.5rem;
   overflow-y: auto;
   padding-right: 0.35rem;
   margin-bottom: 0.85rem;
@@ -337,13 +439,16 @@
 
 .config-item {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
   border-radius: 0.75rem;
   border: 1px solid var(--border-subtle);
   background: var(--bg-subtle);
-  padding: 0.55rem 0.75rem;
+  padding: 0.6rem 0.75rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .config-box {
@@ -352,6 +457,8 @@
   background: var(--bg-hover);
   padding: 0.85rem;
   margin-bottom: 0.9rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .code-preview {

@@ -14,6 +14,7 @@
       newAccLimit: '2400000',
       newAccMonths: '24',
       newAccInstallment: '',
+      newAccDueDay: '15',
       catFilter: 'Egreso',
       newCatName: '',
       newCatIsArq: false,
@@ -49,6 +50,7 @@
               ? '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem">' +
                   '<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.78rem;color:var(--text-muted)">Meses:<input type="text" inputmode="numeric" class="input acc-months-inp" data-acc-idx="' + idx + '" value="' + (acc.totalMonths || 12) + '" style="padding:0.3rem 0.45rem;font-size:0.8rem;width:3.8rem" /></label>' +
                   '<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.78rem;color:var(--text-muted)">Cuota:<input type="text" inputmode="decimal" class="input acc-inst-inp" data-acc-idx="' + idx + '" value="' + (acc.monthlyInstallment || 0) + '" style="padding:0.3rem 0.45rem;font-size:0.8rem;width:6.5rem" /></label>' +
+                  '<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.78rem;color:var(--text-muted)">Día límite:<input type="text" inputmode="numeric" class="input acc-due-inp" data-acc-idx="' + idx + '" value="' + (acc.dueDay || '') + '" placeholder="15" style="padding:0.3rem 0.45rem;font-size:0.8rem;width:3.5rem" /></label>' +
                   '<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.8rem;color:#fda4af;cursor:pointer"><input type="checkbox" class="acc-mora-chk" data-acc-idx="' + idx + '" ' + (acc.inMora ? 'checked' : '') + ' /> En mora</label>' +
                 '</div>'
               : '');
@@ -113,7 +115,8 @@
                 ? '<input type="text" id="new-acc-limit" class="input" inputmode="numeric" placeholder="Cupo TC" value="' + esc(state.newAccLimit) + '" style="flex:1;min-width:8rem" />'
                 : (state.newAccKind === 'credito'
                   ? '<input type="text" id="new-acc-months" class="input" inputmode="numeric" placeholder="Meses (ej. 24)" value="' + esc(state.newAccMonths) + '" style="flex:1;min-width:6.5rem" />' +
-                    '<input type="text" id="new-acc-installment" class="input" inputmode="decimal" placeholder="Cuota mensual" value="' + esc(state.newAccInstallment) + '" style="flex:1;min-width:8rem" />'
+                    '<input type="text" id="new-acc-installment" class="input" inputmode="decimal" placeholder="Cuota mensual" value="' + esc(state.newAccInstallment) + '" style="flex:1;min-width:7.5rem" />' +
+                    '<input type="text" id="new-acc-due-day" class="input" inputmode="numeric" placeholder="Día límite (1-31)" value="' + esc(state.newAccDueDay) + '" style="flex:1;min-width:7.5rem" />'
                   : '')) +
               '<button type="button" id="btn-add-acc" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Agregar</button>' +
             '</div>' +
@@ -140,11 +143,6 @@
           : '';
 
         bodyHtml =
-          '<div class="segmented-tabs" style="margin-bottom:0.75rem">' +
-            '<button type="button" class="seg-btn ' + (state.catFilter === 'Egreso' ? 'active-rose' : '') + '" data-cat-type="Egreso">Egresos</button>' +
-            '<button type="button" class="seg-btn ' + (state.catFilter === 'Ingreso' ? 'active-emerald' : '') + '" data-cat-type="Ingreso">Ingresos</button>' +
-            '<button type="button" class="seg-btn ' + (state.catFilter === 'Traspaso' ? 'active-sky' : '') + '" data-cat-type="Traspaso">Traspasos</button>' +
-          '</div>' +
           '<div class="config-list">' + (catItems || '<p class="text-dim" style="text-align:center;font-size:0.8rem">Sin conceptos en este tipo.</p>') + '</div>' +
           delCatBanner +
           '<div class="config-box">' +
@@ -159,31 +157,33 @@
           '</div>';
       }
 
-      var resetSection = state.confirmReset
-        ? '<div class="alert-banner alert-rose" style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-top:0.5rem">' +
-            '<span>¿Seguro que deseas borrar movimientos y empezar en $0?</span>' +
-            '<div style="display:flex;gap:0.4rem">' +
-              '<button type="button" class="btn btn-secondary" id="cfg-cancel-reset" style="padding:0.25rem 0.6rem;font-size:0.72rem">No</button>' +
-              '<button type="button" class="btn btn-primary" id="cfg-confirm-reset" style="background:#e11d48;padding:0.25rem 0.6rem;font-size:0.72rem">Sí, limpiar</button>' +
-            '</div>' +
+      var catSubTabsHtml = state.tab === 'conceptos'
+        ? '<div class="segmented-tabs" style="margin-top:0.6rem;margin-bottom:0">' +
+            '<button type="button" class="seg-btn ' + (state.catFilter === 'Egreso' ? 'active-rose' : '') + '" data-cat-type="Egreso">Egresos</button>' +
+            '<button type="button" class="seg-btn ' + (state.catFilter === 'Ingreso' ? 'active-emerald' : '') + '" data-cat-type="Ingreso">Ingresos</button>' +
+            '<button type="button" class="seg-btn ' + (state.catFilter === 'Traspaso' ? 'active-sky' : '') + '" data-cat-type="Traspaso">Traspasos</button>' +
           '</div>'
-        : '<button type="button" class="link-btn" style="color:#fb7185" id="cfg-ask-reset">Empezar en blanco (borrar datos demo)</button>';
+        : '';
 
       root.innerHTML =
         '<div class="modal-backdrop">' +
-          '<div class="modal-box">' +
-            '<div class="modal-header">' +
-              '<div><h2 class="modal-title">Cuentas y Conceptos (' + esc(window.AppFormat.getBaseCurrency()) + ')</h2><p class="modal-subtitle">Administra tus cuentas, saldos iniciales y conceptos vinculados a Google Sheets.</p></div>' +
-              '<button type="button" class="modal-close" id="cfg-close"><i class="fa-solid fa-xmark"></i></button>' +
+          '<div class="modal-box modal-flex">' +
+            '<div class="modal-top-fixed">' +
+              '<div class="modal-header">' +
+                '<div><h2 class="modal-title">Cuentas y Conceptos (' + esc(window.AppFormat.getBaseCurrency()) + ')</h2><p class="modal-subtitle">Administra tus cuentas, saldos iniciales y conceptos vinculados a Google Sheets.</p></div>' +
+                '<button type="button" class="modal-close" id="cfg-close"><i class="fa-solid fa-xmark"></i></button>' +
+              '</div>' +
+              '<div class="segmented-tabs cols-2">' +
+                '<button type="button" class="seg-btn ' + (state.tab === 'cuentas' ? 'active-indigo' : '') + '" data-cfg-tab="cuentas">Cuentas (' + state.draftAccounts.length + ')</button>' +
+                '<button type="button" class="seg-btn ' + (state.tab === 'conceptos' ? 'active-indigo' : '') + '" data-cfg-tab="conceptos">Conceptos (' + state.draftCategories.length + ')</button>' +
+              '</div>' +
+              catSubTabsHtml +
             '</div>' +
-            '<div class="segmented-tabs cols-2">' +
-              '<button type="button" class="seg-btn ' + (state.tab === 'cuentas' ? 'active-indigo' : '') + '" data-cfg-tab="cuentas">Cuentas (' + state.draftAccounts.length + ')</button>' +
-              '<button type="button" class="seg-btn ' + (state.tab === 'conceptos' ? 'active-indigo' : '') + '" data-cfg-tab="conceptos">Conceptos (' + state.draftCategories.length + ')</button>' +
-            '</div>' +
-            '<form id="cfg-form">' +
-              bodyHtml +
-              resetSection +
-              '<div class="modal-footer">' +
+            '<form id="cfg-form" style="display:flex;flex-direction:column;flex:1;min-height:0">' +
+              '<div class="modal-body-scroll">' +
+                bodyHtml +
+              '</div>' +
+              '<div class="modal-bottom-fixed">' +
                 '<button type="button" class="btn btn-secondary" id="cfg-cancel">Cancelar</button>' +
                 '<button type="submit" class="btn btn-primary">Guardar cambios</button>' +
               '</div>' +
@@ -228,6 +228,13 @@
           state.draftAccounts[idx].monthlyInstallment = Number(e.target.value.replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
         });
       });
+      root.querySelectorAll('.acc-due-inp').forEach(function (inp) {
+        inp.addEventListener('input', function (e) {
+          var idx = Number(inp.getAttribute('data-acc-idx'));
+          var day = Number(e.target.value.replace(/[^0-9]/g, '')) || 0;
+          state.draftAccounts[idx].dueDay = day > 31 ? 31 : day;
+        });
+      });
       root.querySelectorAll('.acc-mora-chk').forEach(function (chk) {
         chk.addEventListener('change', function (e) {
           var idx = Number(chk.getAttribute('data-acc-idx'));
@@ -262,6 +269,8 @@
       if (newAccMonths) newAccMonths.addEventListener('input', function (e) { state.newAccMonths = e.target.value; });
       var newAccInst = document.getElementById('new-acc-installment');
       if (newAccInst) newAccInst.addEventListener('input', function (e) { state.newAccInstallment = e.target.value; });
+      var newAccDue = document.getElementById('new-acc-due-day');
+      if (newAccDue) newAccDue.addEventListener('input', function (e) { state.newAccDueDay = e.target.value; });
       var addAccBtn = document.getElementById('btn-add-acc');
       if (addAccBtn) {
         addAccBtn.addEventListener('click', function () {
@@ -278,6 +287,9 @@
           if (state.newAccKind === 'credito') {
             item.totalMonths = Math.max(1, Number(state.newAccMonths.replace(/[^0-9]/g, '')) || 12);
             item.monthlyInstallment = Number(state.newAccInstallment.replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
+            var d = Number(state.newAccDueDay.replace(/[^0-9]/g, '')) || 0;
+            item.dueDay = d > 31 ? 31 : d;
+            item.startMonth = window.AppFormat.getCurrentMonthKey();
             item.inMora = false;
           }
           state.draftAccounts.push(item);
@@ -345,19 +357,6 @@
           }
           state.pendingDelete = null;
           render();
-        });
-      }
-
-      // Reset clean
-      var askReset = document.getElementById('cfg-ask-reset');
-      if (askReset) askReset.addEventListener('click', function () { state.confirmReset = true; render(); });
-      var cancelReset = document.getElementById('cfg-cancel-reset');
-      if (cancelReset) cancelReset.addEventListener('click', function () { state.confirmReset = false; render(); });
-      var confirmReset = document.getElementById('cfg-confirm-reset');
-      if (confirmReset) {
-        confirmReset.addEventListener('click', function () {
-          opts.onResetClean();
-          closeFn();
         });
       }
 

@@ -41,6 +41,8 @@
       investmentAccounts: [],
       subInvestments: [],
       investmentMovements: [],
+      loans: [],
+      loanPayments: [],
       exchangeRates: { USD: { live: 4300, custom: null, updatedAt: null } },
     };
   }
@@ -58,7 +60,7 @@
         { name: 'Nequi', kind: 'liquidez', initialBalance: 500000 },
         { name: 'Efectivo', kind: 'liquidez', initialBalance: 150000 },
         { name: 'Tarjeta de Crédito', kind: 'deuda', initialBalance: 0, creditLimit: 2400000 },
-        { name: 'Crédito Libre Inversión', kind: 'credito', initialBalance: 6000000, totalMonths: 24, monthlyInstallment: 300000, inMora: false },
+        { name: 'Crédito Libre Inversión', kind: 'credito', initialBalance: 6000000, totalMonths: 24, monthlyInstallment: 300000, dueDay: 15, startMonth: currentMonth, inMora: false },
       ],
       obligations: [
         { id: 'ob-1', name: 'Arriendo', category: 'Arriendo', estimatedAmount: 1350000, matchType: 'Egreso' },
@@ -112,6 +114,8 @@
         investmentAccounts: parsed.investmentAccounts || [],
         subInvestments: parsed.subInvestments || [],
         investmentMovements: parsed.investmentMovements || [],
+        loans: parsed.loans || [],
+        loanPayments: parsed.loanPayments || [],
         exchangeRates: parsed.exchangeRates || { USD: { live: 4300, custom: null, updatedAt: null } },
       });
     } catch (e) {

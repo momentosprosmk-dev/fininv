@@ -1,8 +1,10 @@
 (function () {
-  var CLIENT_ID_STORAGE = 'contabilidad_google_client_id';
-  var SPREADSHEET_ID_STORAGE = 'contabilidad_spreadsheet_id';
   var APPS_SCRIPT_URL_STORAGE = 'contabilidad_apps_script_url';
   var SHEET_WEB_URL_STORAGE = 'contabilidad_sheet_web_url';
+  var AUTH_MODE_STORAGE = 'fininv_auth_mode';
+  var AUTH_EMAIL_STORAGE = 'fininv_auth_email';
+  var AUTH_USER_STORAGE = 'fininv_auth_user';
+  var AUTH_PASS_HASH_STORAGE = 'fininv_auth_pass_hash';
   var THEME_STORAGE = 'contabilidad_theme';
   var HIDE_VALUES_STORAGE = 'contabilidad_hide_values';
 
@@ -12,6 +14,7 @@
     activeModule: 'finanzas', // finanzas | inversiones
     activeTab: 'resumen',
     invActiveTab: 'resumen', // resumen | movimientos
+    prestActiveTab: 'lista', // lista | estado | movimientos
     invFilterFund: 'Todas',
     invFilterType: 'Todos',
     invSearchTerm: '',
@@ -22,22 +25,41 @@
     pendingDeleteFundId: null,
     pendingDeleteSubId: null,
     pendingDeleteInvMovId: null,
+    pendingDeleteLoanId: null,
+    pendingDeleteLoanPayId: null,
+    loanFilter: 'Todos',
     theme: localStorage.getItem(THEME_STORAGE) || 'dark',
     hideValues: localStorage.getItem(HIDE_VALUES_STORAGE) === 'true',
     closeNotes: '',
     scriptUrl: localStorage.getItem(APPS_SCRIPT_URL_STORAGE) || '',
     sheetWebUrl: localStorage.getItem(SHEET_WEB_URL_STORAGE) || null,
-    clientId: localStorage.getItem(CLIENT_ID_STORAGE) || '',
-    accessToken: null,
-    spreadsheetId: localStorage.getItem(SPREADSHEET_ID_STORAGE) || null,
+    authMode: localStorage.getItem(AUTH_MODE_STORAGE) || 'email',
+    authEmail: localStorage.getItem(AUTH_EMAIL_STORAGE) || '',
+    authUser: localStorage.getItem(AUTH_USER_STORAGE) || '',
+    authPassHash: localStorage.getItem(AUTH_PASS_HASH_STORAGE) || '',
     isSyncing: false,
     syncError: null,
   };
 
   function getConnectionMode() {
     if (appState.scriptUrl) return 'script';
-    if (appState.accessToken) return 'oauth';
     return 'none';
+  }
+
+  function getActiveAuth() {
+    if (appState.authMode === 'credentials' && appState.authUser && appState.authPassHash) {
+      return {
+        username: appState.authUser,
+        passwordHash: appState.authPassHash,
+        email: appState.authEmail || '',
+      };
+    }
+    if (appState.authMode === 'email' && appState.authEmail) {
+      return {
+        email: appState.authEmail,
+      };
+    }
+    return null;
   }
 
   function computeDerived() {
@@ -50,7 +72,10 @@
       appState.data.accounts
     );
     var monthMovements = (appState.data.movements || [])
-      .filter(function (m) { return m.month === appState.selectedMonth; })
+      .filter(function (m) {
+        var mm = m.date ? window.AppFormat.getAccountingMonthForDate(m.date) : m.month;
+        return mm === appState.selectedMonth;
+      })
       .filter(function (m) { return appState.filterType === 'Todos' ? true : m.type === appState.filterType; })
       .filter(function (m) {
         if (!appState.searchTerm.trim()) return true;
@@ -88,7 +113,10 @@
       }).join('');
     }
 
-    var movCount = (appState.data.movements || []).filter(function (m) { return m.month === appState.selectedMonth; }).length;
+    var movCount = (appState.data.movements || []).filter(function (m) {
+      var mm = m.date ? window.AppFormat.getAccountingMonthForDate(m.date) : m.month;
+      return mm === appState.selectedMonth;
+    }).length;
     var badge = document.getElementById('tab-mov-badge');
     if (badge) badge.textContent = String(movCount);
     var labelPc = document.getElementById('tab-mov-label-pc');
@@ -117,6 +145,17 @@
       }
     }
 
+    var closeDayPill = document.getElementById('close-day-pill');
+    if (closeDayPill) {
+      var curCloseDay = window.AppFormat.getMonthCloseDay();
+      if (curCloseDay > 0) {
+        closeDayPill.textContent = 'Día ' + curCloseDay;
+        closeDayPill.classList.remove('hidden');
+      } else {
+        closeDayPill.classList.add('hidden');
+      }
+    }
+
     var privIcon = document.getElementById('privacy-icon');
     var privBtn = document.getElementById('btn-toggle-privacy');
     if (privIcon && privBtn) {
@@ -135,16 +174,33 @@
     }
 
     var isInv = appState.activeModule === 'inversiones';
+    var isPrest = appState.activeModule === 'prestamos';
+    var isFin = appState.activeModule === 'finanzas';
     var subEl = document.getElementById('brand-subtitle');
-    if (subEl) subEl.textContent = isInv ? 'Inversiones' : 'Finanzas';
+    if (subEl) subEl.textContent = isInv ? 'Inversiones' : (isPrest ? 'Préstamos' : 'Finanzas');
     var brandIconEl = document.getElementById('brand-module-icon');
-    if (brandIconEl) brandIconEl.className = isInv ? 'fa-solid fa-arrow-trend-up' : 'fa-solid fa-wallet';
+    if (brandIconEl) brandIconEl.className = isInv ? 'fa-solid fa-arrow-trend-up' : (isPrest ? 'fa-solid fa-hand-holding-dollar' : 'fa-solid fa-wallet');
     var brandIconBox = document.getElementById('brand-icon-box');
-    if (brandIconBox) brandIconBox.classList.toggle('is-inv', isInv);
-    var tabsEl = document.querySelector('.header-tabs:not(#inv-tabs)');
-    if (tabsEl) tabsEl.classList.toggle('hidden', isInv);
+    if (brandIconBox) brandIconBox.classList.toggle('is-inv', isInv || isPrest);
+    var tabsEl = document.querySelector('.header-tabs:not(#inv-tabs):not(#prest-tabs)');
+    if (tabsEl) tabsEl.classList.toggle('hidden', !isFin);
     var invTabsEl = document.getElementById('inv-tabs');
     if (invTabsEl) invTabsEl.classList.toggle('hidden', !isInv);
+    var prestTabsEl = document.getElementById('prest-tabs');
+    if (prestTabsEl) prestTabsEl.classList.toggle('hidden', !isPrest);
+    var prestCount = (appState.data.loans || []).length;
+    var prestBadge = document.getElementById('prest-tab-count-badge');
+    if (prestBadge) prestBadge.textContent = String(prestCount);
+    var prestLabelPc = document.getElementById('prest-tab-count-label-pc');
+    if (prestLabelPc) prestLabelPc.textContent = 'Préstamos (' + prestCount + ')';
+    var prestMovCount = prestCount + (appState.data.loanPayments || []).length;
+    var prestMovBadge = document.getElementById('prest-tab-mov-badge');
+    if (prestMovBadge) prestMovBadge.textContent = String(prestMovCount);
+    var prestMovLabelPc = document.getElementById('prest-tab-mov-label-pc');
+    if (prestMovLabelPc) prestMovLabelPc.textContent = 'Movimientos (' + prestMovCount + ')';
+    document.querySelectorAll('[data-prest-tab]').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-prest-tab') === appState.prestActiveTab);
+    });
     var invMovCount = (appState.data.investmentMovements || []).length;
     var invBadge = document.getElementById('inv-tab-mov-badge');
     if (invBadge) invBadge.textContent = String(invMovCount);
@@ -154,7 +210,7 @@
       btn.classList.toggle('active', btn.getAttribute('data-inv-tab') === appState.invActiveTab);
     });
     var actionsEl = document.querySelector('.header-actions');
-    if (actionsEl) actionsEl.classList.toggle('hidden', isInv);
+    if (actionsEl) actionsEl.classList.toggle('hidden', !isFin);
     document.querySelectorAll('[data-module-switch]').forEach(function (btn) {
       btn.classList.toggle('is-active', btn.getAttribute('data-module-switch') === appState.activeModule);
     });
@@ -168,16 +224,22 @@
     var viewMov = document.getElementById('view-movimientos');
     var viewCie = document.getElementById('view-cierres');
     var viewInv = document.getElementById('view-inversiones');
+    var viewPrest = document.getElementById('view-prestamos');
 
     var isFin = appState.activeModule === 'finanzas';
+    var isInv = appState.activeModule === 'inversiones';
+    var isPrest = appState.activeModule === 'prestamos';
     viewRes.classList.toggle('hidden', !isFin || appState.activeTab !== 'resumen');
     viewMov.classList.toggle('hidden', !isFin || appState.activeTab !== 'movimientos');
     viewCie.classList.toggle('hidden', !isFin || appState.activeTab !== 'cierres');
-    if (viewInv) viewInv.classList.toggle('hidden', isFin);
+    if (viewInv) viewInv.classList.toggle('hidden', !isInv);
+    if (viewPrest) viewPrest.classList.toggle('hidden', !isPrest);
 
     var viewState = Object.assign({}, appState, derived);
-    if (!isFin) {
+    if (isInv) {
       window.renderInversionesView(viewState);
+    } else if (isPrest) {
+      window.renderPrestamosView(viewState);
     } else if (appState.activeTab === 'resumen') {
       window.renderResumenView(viewState);
     } else if (appState.activeTab === 'movimientos') {
@@ -185,65 +247,85 @@
     } else if (appState.activeTab === 'cierres') {
       window.renderCierresView(viewState);
     }
+    syncStickyTableHeaders();
+  }
+
+  function syncStickyTableHeaders() {
+    var scrollBody = document.querySelector('.app-scroll-body');
+    if (!scrollBody) return;
+    var scrollTop = scrollBody.getBoundingClientRect().top;
+    document.querySelectorAll('.tab-view:not(.hidden) .table-wrap').forEach(function (wrap) {
+      var thead = wrap.querySelector('thead');
+      if (!thead) return;
+      var view = wrap.closest('.tab-view');
+      var toolbar = view ? view.querySelector('.movimientos-toolbar') : null;
+      var stickyBottom = (toolbar ? toolbar.getBoundingClientRect().bottom : scrollTop) - 2;
+      var wrapRect = wrap.getBoundingClientRect();
+      var theadH = thead.offsetHeight || 40;
+      if (wrapRect.top < stickyBottom && wrapRect.bottom > stickyBottom + theadH) {
+        var offset = Math.round(Math.max(0, Math.min(wrapRect.bottom - stickyBottom - theadH, stickyBottom - wrapRect.top)));
+        thead.style.position = 'relative';
+        thead.style.zIndex = '6';
+        thead.style.transform = 'translate3d(0,' + offset + 'px,0)';
+        thead.classList.toggle('thead-stuck', offset > 0);
+      } else {
+        thead.style.transform = '';
+        thead.classList.remove('thead-stuck');
+      }
+    });
   }
 
   async function syncDataToCloud(nextData) {
-    if (appState.scriptUrl) {
-      appState.isSyncing = true;
-      appState.syncError = null;
-      renderHeader(computeDerived());
-      try {
-        var res = await window.GoogleSheetsService.writeToAppsScript(appState.scriptUrl, nextData);
-        if (res.spreadsheetUrl) {
-          appState.sheetWebUrl = res.spreadsheetUrl;
-          localStorage.setItem(SHEET_WEB_URL_STORAGE, res.spreadsheetUrl);
-        }
-      } catch (err) {
-        appState.syncError = err && err.message ? err.message : 'Error al sincronizar con Apps Script';
-      } finally {
-        appState.isSyncing = false;
-        renderHeader(computeDerived());
-      }
-      return;
-    }
-
-    if (!appState.accessToken || !appState.spreadsheetId) return;
+    if (!appState.scriptUrl) return;
     appState.isSyncing = true;
     appState.syncError = null;
     renderHeader(computeDerived());
     try {
-      await window.GoogleSheetsService.writeAllToSpreadsheet(appState.accessToken, appState.spreadsheetId, nextData);
+      var res = await window.GoogleSheetsService.writeToAppsScript(appState.scriptUrl, nextData, getActiveAuth());
+      if (res.spreadsheetUrl) {
+        appState.sheetWebUrl = res.spreadsheetUrl;
+        localStorage.setItem(SHEET_WEB_URL_STORAGE, res.spreadsheetUrl);
+      }
     } catch (err) {
-      appState.syncError = err && err.message ? err.message : 'Error al sincronizar con Google Sheets';
+      appState.syncError = err && err.message ? err.message : 'Error al sincronizar con Apps Script';
     } finally {
       appState.isSyncing = false;
       renderHeader(computeDerived());
     }
   }
 
-  async function pullFromAppsScript(url, initializeIfEmpty) {
+  async function pullFromAppsScript(url, initializeIfEmpty, customAuth) {
     appState.isSyncing = true;
     appState.syncError = null;
     renderHeader(computeDerived());
+    var authToUse = customAuth !== undefined ? customAuth : getActiveAuth();
     try {
-      var remote = await window.GoogleSheetsService.readFromAppsScript(url);
-      if (remote.spreadsheetUrl) {
-        appState.sheetWebUrl = remote.spreadsheetUrl;
-        localStorage.setItem(SHEET_WEB_URL_STORAGE, remote.spreadsheetUrl);
-      }
       if (initializeIfEmpty) {
         var clean = window.AppStorage.getCleanAppData();
         appState.data = clean;
         window.AppStorage.saveLocalData(clean);
-        await window.GoogleSheetsService.writeToAppsScript(url, clean);
+        var writeRes = authToUse
+          ? await window.GoogleSheetsService.registerAppsScriptUser(url, authToUse, clean)
+          : await window.GoogleSheetsService.writeToAppsScript(url, clean, null);
+        if (writeRes && writeRes.spreadsheetUrl) {
+          appState.sheetWebUrl = writeRes.spreadsheetUrl;
+          localStorage.setItem(SHEET_WEB_URL_STORAGE, writeRes.spreadsheetUrl);
+        }
       } else {
+        var remote = authToUse
+          ? await window.GoogleSheetsService.loginAppsScriptUser(url, authToUse)
+          : await window.GoogleSheetsService.readFromAppsScript(url, null);
+        if (remote.spreadsheetUrl) {
+          appState.sheetWebUrl = remote.spreadsheetUrl;
+          localStorage.setItem(SHEET_WEB_URL_STORAGE, remote.spreadsheetUrl);
+        }
         appState.data = remote.data;
         window.AppStorage.saveLocalData(remote.data);
       }
       renderApp();
       return true;
     } catch (err) {
-      appState.syncError = err && err.message ? err.message : 'No se pudo conectar. Verifica la URL /exec.';
+      appState.syncError = err && err.message ? err.message : 'No se pudo conectar. Verifica tus credenciales y la URL /exec.';
       return false;
     } finally {
       appState.isSyncing = false;
@@ -261,87 +343,93 @@
   function openGoogleConnect() {
     window.openGoogleModal({
       scriptUrl: appState.scriptUrl,
-      clientId: appState.clientId,
+      authMode: appState.authMode,
+      authEmail: appState.authEmail,
+      authUser: appState.authUser,
+      authPassHash: appState.authPassHash,
       connectionMode: getConnectionMode(),
       baseCurrency: window.AppFormat.getBaseCurrency(),
       onChangeCurrency: function (code) {
         window.AppFormat.setBaseCurrency(code);
         renderApp();
+        window.AppActions.refreshLiveFx();
       },
-      sheetWebUrl: appState.sheetWebUrl || (appState.spreadsheetId ? 'https://docs.google.com/spreadsheets/d/' + appState.spreadsheetId + '/edit' : null),
+      sheetWebUrl: appState.sheetWebUrl,
       isSyncing: appState.isSyncing,
       syncError: appState.syncError,
-      onConnectScript: async function (url, sheetMode) {
-        var ok = await pullFromAppsScript(url, sheetMode === 'new');
+      onConnectScript: async function (params) {
+        var url = params.url;
+        var isNew = params.sheetMode === 'new';
+        var mode = params.authMode || 'email';
+        var pwdHash = mode === 'credentials' ? window.GoogleSheetsService.hashPassword(params.password) : '';
+        var authPayload = mode === 'credentials'
+          ? { username: params.username, passwordHash: pwdHash, rawPassword: params.password, email: params.email || '' }
+          : (params.email ? { email: params.email } : null);
+
+        var ok = await pullFromAppsScript(url, isNew, authPayload);
         if (ok) {
           appState.scriptUrl = url;
+          appState.authMode = mode;
+          appState.authEmail = params.email || '';
+          appState.authUser = mode === 'credentials' ? params.username : '';
+          appState.authPassHash = mode === 'credentials' ? pwdHash : '';
           localStorage.setItem(APPS_SCRIPT_URL_STORAGE, url);
-        }
-        openGoogleConnect();
-      },
-      onSaveClientId: function (id) {
-        appState.clientId = id;
-        localStorage.setItem(CLIENT_ID_STORAGE, id);
-      },
-      onConnectOAuth: function (sheetMode) {
-        if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-          appState.syncError = 'El script de Google aún está cargando. Intenta en unos segundos.';
+          localStorage.setItem(AUTH_MODE_STORAGE, appState.authMode);
+          localStorage.setItem(AUTH_EMAIL_STORAGE, appState.authEmail);
+          localStorage.setItem(AUTH_USER_STORAGE, appState.authUser);
+          localStorage.setItem(AUTH_PASS_HASH_STORAGE, appState.authPassHash);
           openGoogleConnect();
-          return;
+          return { ok: true };
         }
-        var tokenClient = window.google.accounts.oauth2.initTokenClient({
-          client_id: appState.clientId.trim(),
-          scope: window.GoogleSheetsService.GOOGLE_SCOPES,
-          callback: async function (resp) {
-            if (resp.error || !resp.access_token) {
-              appState.syncError = resp.error || 'No se pudo obtener autorización de Google.';
-              openGoogleConnect();
-              return;
-            }
-            appState.accessToken = resp.access_token;
-            appState.isSyncing = true;
-            openGoogleConnect();
-            try {
-              var res = await window.GoogleSheetsService.findOrCreateSpreadsheet(resp.access_token, appState.spreadsheetId || undefined);
-              appState.spreadsheetId = res.spreadsheetId;
-              localStorage.setItem(SPREADSHEET_ID_STORAGE, res.spreadsheetId);
-              if (sheetMode === 'new' || res.isNew) {
-                var clean = window.AppStorage.getCleanAppData();
-                appState.data = clean;
-                window.AppStorage.saveLocalData(clean);
-                await window.GoogleSheetsService.writeAllToSpreadsheet(resp.access_token, res.spreadsheetId, clean);
-              } else {
-                var remoteData = await window.GoogleSheetsService.readAllFromSpreadsheet(resp.access_token, res.spreadsheetId);
-                appState.data = remoteData;
-                window.AppStorage.saveLocalData(remoteData);
-              }
-              renderApp();
-            } catch (err) {
-              appState.syncError = err && err.message ? err.message : 'Error conectando con Google Sheets';
-            } finally {
-              appState.isSyncing = false;
-              openGoogleConnect();
-            }
-          },
-        });
-        tokenClient.requestAccessToken({ prompt: 'consent' });
+        return { ok: false, error: appState.syncError || 'No se pudo conectar con Google Sheets.' };
+      },
+      onSetupCredentials: async function (username, password) {
+        if (!appState.scriptUrl) return { ok: false, error: 'No hay URL configurada.' };
+        var pwdHash = window.GoogleSheetsService.hashPassword(password);
+        var authPayload = { username: username, passwordHash: pwdHash, email: appState.authEmail || '' };
+        appState.isSyncing = true;
+        appState.syncError = null;
+        try {
+          await window.GoogleSheetsService.registerAppsScriptUser(appState.scriptUrl, authPayload, appState.data);
+          appState.authMode = 'credentials';
+          appState.authUser = username;
+          appState.authPassHash = pwdHash;
+          localStorage.setItem(AUTH_MODE_STORAGE, 'credentials');
+          localStorage.setItem(AUTH_USER_STORAGE, username);
+          localStorage.setItem(AUTH_PASS_HASH_STORAGE, pwdHash);
+          openGoogleConnect();
+          return { ok: true };
+        } catch (err) {
+          appState.syncError = err && err.message ? err.message : 'No se pudo registrar la contraseña. Asegúrate de haber actualizado Code.gs en tu Sheet.';
+          return { ok: false, error: appState.syncError };
+        } finally {
+          appState.isSyncing = false;
+          renderHeader(computeDerived());
+        }
       },
       onDisconnect: function () {
-        appState.accessToken = null;
         appState.scriptUrl = '';
         appState.sheetWebUrl = null;
+        appState.authMode = 'email';
+        appState.authEmail = '';
+        appState.authUser = '';
+        appState.authPassHash = '';
         localStorage.removeItem(APPS_SCRIPT_URL_STORAGE);
         localStorage.removeItem(SHEET_WEB_URL_STORAGE);
+        localStorage.removeItem(AUTH_MODE_STORAGE);
+        localStorage.removeItem(AUTH_EMAIL_STORAGE);
+        localStorage.removeItem(AUTH_USER_STORAGE);
+        localStorage.removeItem(AUTH_PASS_HASH_STORAGE);
         appState.syncError = null;
         renderHeader(computeDerived());
       },
       onForceSync: async function () {
         await syncDataToCloud(appState.data);
-        openGoogleConnect();
+        return { ok: !appState.syncError, error: appState.syncError };
       },
       onPullFromSheet: async function () {
-        await pullFromAppsScript(appState.scriptUrl, false);
-        openGoogleConnect();
+        var ok = await pullFromAppsScript(appState.scriptUrl, false);
+        return { ok: ok, error: appState.syncError };
       },
     });
   }
@@ -352,6 +440,7 @@
       window.openMovementModal({
         accounts: appState.data.accounts,
         accountBalances: derived.summary.endBalances,
+        movements: appState.data.movements || [],
         categories: appState.data.categories,
         investmentAccounts: appState.data.investmentAccounts || [],
         exchangeRates: appState.data.exchangeRates || {},
@@ -367,11 +456,13 @@
           return newCat;
         },
         onSave: function (mov, invPayload) {
+          var effMonth = mov.date ? window.AppFormat.getAccountingMonthForDate(mov.date) : mov.month;
           var newMov = Object.assign({}, mov, {
             id: 'mov-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+            month: effMonth,
             createdAt: new Date().toISOString(),
           });
-          appState.selectedMonth = mov.month;
+          appState.selectedMonth = effMonth;
           updateData(function (prev) {
             var nextInvMovs = (prev.investmentMovements || []).slice();
             if (invPayload) {
@@ -431,9 +522,20 @@
     deleteMovement: function (id) {
       appState.pendingDeleteMovementId = null;
       updateData(function (prev) {
+        var delLoan = (prev.loans || []).find(function (l) { return l.linkedMovementId === id; });
+        var extraPayMovIds = new Set();
+        if (delLoan) {
+          (prev.loanPayments || []).forEach(function (p) {
+            if (p.loanId === delLoan.id && p.linkedMovementId) extraPayMovIds.add(p.linkedMovementId);
+          });
+        }
         return Object.assign({}, prev, {
-          movements: prev.movements.filter(function (m) { return m.id !== id; }),
+          movements: prev.movements.filter(function (m) { return m.id !== id && !extraPayMovIds.has(m.id); }),
           investmentMovements: (prev.investmentMovements || []).filter(function (im) { return im.linkedMovementId !== id; }),
+          loans: delLoan ? (prev.loans || []).filter(function (l) { return l.id !== delLoan.id; }) : (prev.loans || []),
+          loanPayments: (prev.loanPayments || []).filter(function (p) {
+            return p.linkedMovementId !== id && (!delLoan || p.loanId !== delLoan.id);
+          }),
         });
       });
     },
@@ -522,7 +624,7 @@
             linkedMov = {
               id: 'mov-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
               date: op.date,
-              month: op.date.slice(0, 7),
+              month: window.AppFormat.getAccountingMonthForDate(op.date),
               type: 'Egreso',
               fromAccount: op.normalAccount,
               toAccount: op.fundName,
@@ -535,7 +637,7 @@
             linkedMov = {
               id: 'mov-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
               date: op.date,
-              month: op.date.slice(0, 7),
+              month: window.AppFormat.getAccountingMonthForDate(op.date),
               type: 'Ingreso',
               fromAccount: op.fundName,
               toAccount: op.normalAccount,
@@ -648,12 +750,130 @@
       appState.activeTab = 'resumen';
       renderApp();
     },
+    setMonthCloseDay: function (day) {
+      window.AppFormat.setMonthCloseDay(day);
+      appState.selectedMonth = window.AppFormat.getCurrentMonthKey();
+      updateData(function (prev) { return Object.assign({}, prev); });
+    },
+    setLoanFilter: function (f) {
+      appState.loanFilter = f;
+      renderApp();
+    },
+    openNewLoan: function () {
+      var derived = computeDerived();
+      var liquidAccounts = (appState.data.accounts || []).filter(function (a) { return a.kind === 'liquidez'; }).map(function (a) { return a.name; });
+      window.openLoanModal({
+        liquidAccounts: liquidAccounts,
+        accountBalances: derived.summary.endBalances,
+        onSave: function (loanInput) {
+          var nowIso = new Date().toISOString();
+          var loanId = 'loan-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+          var movId = 'mov-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+          var linkedMov = {
+            id: movId,
+            date: loanInput.startDate,
+            month: window.AppFormat.getAccountingMonthForDate(loanInput.startDate),
+            type: 'Egreso',
+            fromAccount: loanInput.fromAccount,
+            toAccount: 'Externo',
+            category: 'Préstamo otorgado',
+            description: 'Préstamo a ' + loanInput.borrower + (loanInput.notes ? ' - ' + loanInput.notes : ''),
+            amount: loanInput.principal,
+            createdAt: nowIso,
+          };
+          var newLoan = Object.assign({}, loanInput, {
+            id: loanId,
+            linkedMovementId: movId,
+            createdAt: nowIso,
+          });
+          updateData(function (prev) {
+            return Object.assign({}, prev, {
+              movements: (prev.movements || []).concat([linkedMov]),
+              loans: (prev.loans || []).concat([newLoan]),
+            });
+          });
+        },
+      });
+    },
+    openNewLoanPayment: function (loanStat) {
+      var liquidAccounts = (appState.data.accounts || []).filter(function (a) { return a.kind === 'liquidez'; }).map(function (a) { return a.name; });
+      window.openLoanPaymentModal({
+        loan: loanStat.loan,
+        remainingTotal: loanStat.remainingTotal,
+        suggestedAmount: loanStat.remainingInCurrentQuota,
+        liquidAccounts: liquidAccounts,
+        onSave: function (payInput) {
+          var nowIso = new Date().toISOString();
+          var payId = 'lp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+          var movId = 'mov-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+          var linkedMov = {
+            id: movId,
+            date: payInput.date,
+            month: window.AppFormat.getAccountingMonthForDate(payInput.date),
+            type: 'Ingreso',
+            fromAccount: 'Externo',
+            toAccount: payInput.toAccount,
+            category: 'Cobro de préstamo',
+            description: 'Cobro préstamo ' + loanStat.loan.borrower + (payInput.notes ? ' - ' + payInput.notes : ''),
+            amount: payInput.amount,
+            createdAt: nowIso,
+          };
+          var newPay = Object.assign({}, payInput, {
+            id: payId,
+            linkedMovementId: movId,
+            createdAt: nowIso,
+          });
+          updateData(function (prev) {
+            return Object.assign({}, prev, {
+              movements: (prev.movements || []).concat([linkedMov]),
+              loanPayments: (prev.loanPayments || []).concat([newPay]),
+            });
+          });
+        },
+      });
+    },
+    askDeleteLoan: function (id) {
+      appState.pendingDeleteLoanId = id;
+      renderApp();
+    },
+    deleteLoan: function (id) {
+      appState.pendingDeleteLoanId = null;
+      updateData(function (prev) {
+        var target = (prev.loans || []).find(function (l) { return l.id === id; });
+        var payMovIds = new Set(
+          (prev.loanPayments || []).filter(function (p) { return p.loanId === id && p.linkedMovementId; }).map(function (p) { return p.linkedMovementId; })
+        );
+        if (target && target.linkedMovementId) payMovIds.add(target.linkedMovementId);
+        return Object.assign({}, prev, {
+          loans: (prev.loans || []).filter(function (l) { return l.id !== id; }),
+          loanPayments: (prev.loanPayments || []).filter(function (p) { return p.loanId !== id; }),
+          movements: (prev.movements || []).filter(function (m) { return !payMovIds.has(m.id); }),
+        });
+      });
+    },
+    askDeleteLoanPayment: function (payId) {
+      appState.pendingDeleteLoanPayId = payId;
+      renderApp();
+    },
+    deleteLoanPayment: function (payId) {
+      appState.pendingDeleteLoanPayId = null;
+      updateData(function (prev) {
+        var target = (prev.loanPayments || []).find(function (p) { return p.id === payId; });
+        var linkedId = target ? target.linkedMovementId : '';
+        return Object.assign({}, prev, {
+          loanPayments: (prev.loanPayments || []).filter(function (p) { return p.id !== payId; }),
+          movements: linkedId ? (prev.movements || []).filter(function (m) { return m.id !== linkedId; }) : prev.movements,
+        });
+      });
+    },
   };
 
   async function initApp() {
     document.documentElement.setAttribute('data-theme', appState.theme);
     await window.loadHTMLFragment('/recursos/html/global/header.html', 'header-root');
-    await window.loadHTMLFragment('/recursos/html/global/footer.html', 'footer-root');
+    if (document.getElementById('footer-root')) {
+      await window.loadHTMLFragment('/recursos/html/global/footer.html', 'footer-root');
+    }
     window.initFooter();
 
     document.getElementById('btn-toggle-privacy').addEventListener('click', function () {
@@ -713,11 +933,19 @@
       });
     });
 
+    document.querySelectorAll('[data-prest-tab]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        appState.prestActiveTab = btn.getAttribute('data-prest-tab');
+        renderApp();
+      });
+    });
+
     document.querySelectorAll('[data-module-switch]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         appState.activeModule = btn.getAttribute('data-module-switch');
         appState.activeTab = 'resumen';
         appState.invActiveTab = 'resumen';
+        appState.prestActiveTab = 'lista';
         closeDropdown();
         renderApp();
       });
@@ -740,12 +968,233 @@
       });
     });
 
+    document.getElementById('btn-open-close-day').addEventListener('click', function () {
+      closeDropdown();
+      var root = document.getElementById('modales-root');
+      if (!root) return;
+      var fmt = window.AppFormat;
+      var esc = window.escapeHTML;
+      var currentDay = fmt.getMonthCloseDay();
+      var dayOpts = '<option value="0"' + (currentDay === 0 ? ' selected' : '') + '>Fin de mes (calendario)</option>';
+      for (var d = 2; d <= 28; d++) {
+        dayOpts += '<option value="' + d + '"' + (currentDay === d ? ' selected' : '') + '>Día ' + d + ' de cada mes</option>';
+      }
+      var previewMonth = fmt.getAccountingMonthForDate(fmt.getTodayISO(), currentDay);
+      var previewRange = fmt.getAccountingPeriodRange(previewMonth, currentDay);
+
+      root.innerHTML =
+        '<div class="modal-backdrop" id="cdm-backdrop">' +
+          '<div class="modal-box" style="max-width:440px">' +
+            '<div class="modal-header">' +
+              '<h2 class="modal-title"><i class="fa-regular fa-calendar-check" style="margin-right:0.45rem;color:#818cf8"></i>Cierres Mensuales</h2>' +
+              '<button type="button" class="modal-close" id="cdm-close"><i class="fa-solid fa-xmark"></i></button>' +
+            '</div>' +
+            '<div class="field-group">' +
+              '<label class="field-label" for="cdm-day-select">Día de cierre mensual</label>' +
+              '<select id="cdm-day-select" class="select">' + dayOpts + '</select>' +
+              '<p class="text-muted" style="font-size:0.78rem;margin:0.45rem 0 0">Al llegar este día comienza automáticamente el siguiente mes contable, renovando tus pagos pendientes de tarjetas y créditos.</p>' +
+            '</div>' +
+            '<div class="config-box" style="margin-bottom:1rem">' +
+              '<p style="margin:0;font-size:0.8rem;color:var(--text-muted)">Mes activo hoy: <strong id="cdm-preview-month" style="color:var(--text-strong)">' + esc(fmt.formatMonthLabel(previewMonth)) + '</strong></p>' +
+              '<p style="margin:0.25rem 0 0;font-size:0.8rem;color:var(--text-muted)">Periodo: <strong id="cdm-preview-range" style="color:#818cf8">' + esc(previewRange.label) + '</strong></p>' +
+            '</div>' +
+            '<div class="modal-footer">' +
+              '<button type="button" class="btn btn-secondary" id="cdm-cancel">Cancelar</button>' +
+              '<button type="button" class="btn btn-primary" id="cdm-save">Guardar</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+
+      var closeModal = function () { root.innerHTML = ''; };
+      document.getElementById('cdm-close').addEventListener('click', closeModal);
+      document.getElementById('cdm-cancel').addEventListener('click', closeModal);
+      document.getElementById('cdm-day-select').addEventListener('change', function (e) {
+        var val = Number(e.target.value);
+        var pm = fmt.getAccountingMonthForDate(fmt.getTodayISO(), val);
+        var pr = fmt.getAccountingPeriodRange(pm, val);
+        document.getElementById('cdm-preview-month').textContent = fmt.formatMonthLabel(pm);
+        document.getElementById('cdm-preview-range').textContent = pr.label;
+      });
+      document.getElementById('cdm-save').addEventListener('click', function () {
+        var val = Number(document.getElementById('cdm-day-select').value);
+        closeModal();
+        window.AppActions.setMonthCloseDay(val);
+      });
+    });
+
+    var usersBtn = document.getElementById('btn-open-users');
+    if (usersBtn) {
+      usersBtn.addEventListener('click', function () {
+        closeDropdown();
+        window.openUsersModal({
+          isConnected: getConnectionMode() !== 'none',
+          currentUsername: appState.authUser || '',
+          currentEmail: appState.authEmail || '',
+          onListUsers: async function () {
+            try {
+              var res = await window.GoogleSheetsService.manageAppsScriptUsers(appState.scriptUrl, 'users_list', getActiveAuth());
+              return { ok: true, users: res.users || [] };
+            } catch (err) {
+              return { ok: false, error: err && err.message ? err.message : 'No se pudieron cargar los usuarios.' };
+            }
+          },
+          onAddUser: async function (u) {
+            try {
+              var pwdHash = window.GoogleSheetsService.hashPassword(u.password);
+              var res = await window.GoogleSheetsService.manageAppsScriptUsers(
+                appState.scriptUrl,
+                'users_add',
+                getActiveAuth(),
+                { newUser: { username: u.username, email: u.email, passwordHash: pwdHash } }
+              );
+              return { ok: true, users: res.users || [] };
+            } catch (err) {
+              return { ok: false, error: err && err.message ? err.message : 'No se pudo agregar el usuario.' };
+            }
+          },
+          onUpdateUser: async function (u) {
+            try {
+              var pwdHash = u.password ? window.GoogleSheetsService.hashPassword(u.password) : '';
+              var res = await window.GoogleSheetsService.manageAppsScriptUsers(
+                appState.scriptUrl,
+                'users_update',
+                getActiveAuth(),
+                {
+                  rowIndex: u.rowIndex,
+                  newUser: { username: u.username, email: u.email, passwordHash: pwdHash },
+                }
+              );
+              if (appState.authUser && u.oldUsername && appState.authUser.toLowerCase() === u.oldUsername.toLowerCase()) {
+                appState.authUser = u.username;
+                appState.authEmail = u.email;
+                localStorage.setItem(AUTH_USER_STORAGE, u.username);
+                localStorage.setItem(AUTH_EMAIL_STORAGE, u.email);
+                if (pwdHash) {
+                  appState.authPassHash = pwdHash;
+                  localStorage.setItem(AUTH_PASS_HASH_STORAGE, pwdHash);
+                }
+                renderHeader(computeDerived());
+              }
+              return { ok: true, users: res.users || [] };
+            } catch (err) {
+              return { ok: false, error: err && err.message ? err.message : 'No se pudo actualizar el usuario.' };
+            }
+          },
+          onDeleteUser: async function (rowIndex) {
+            try {
+              var res = await window.GoogleSheetsService.manageAppsScriptUsers(
+                appState.scriptUrl,
+                'users_delete',
+                getActiveAuth(),
+                { rowIndex: rowIndex }
+              );
+              return { ok: true, users: res.users || [] };
+            } catch (err) {
+              return { ok: false, error: err && err.message ? err.message : 'No se pudo eliminar el usuario.' };
+            }
+          },
+        });
+      });
+    }
+
     document.getElementById('btn-open-google').addEventListener('click', function () {
       closeDropdown();
       openGoogleConnect();
     });
 
+    var resetBtn = document.getElementById('btn-open-reset');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        closeDropdown();
+        window.openResetModal({
+          currentUser: appState.authUser || '',
+          onResetSelected: function (keys) {
+            var clean = window.AppStorage.getCleanAppData();
+            if (keys.indexOf('default_all') !== -1) {
+              appState.selectedMonth = window.AppFormat.getCurrentMonthKey();
+              updateData(function () { return clean; });
+              return;
+            }
+            updateData(function (prev) {
+              var next = Object.assign({}, prev);
+              if (keys.indexOf('cuentas') !== -1) next.accounts = clean.accounts;
+              if (keys.indexOf('conceptos') !== -1) next.categories = clean.categories;
+              if (keys.indexOf('egresos') !== -1) {
+                next.movements = (next.movements || []).filter(function (m) { return m.type !== 'Egreso'; });
+                next.investmentMovements = (next.investmentMovements || []).filter(function (im) { return im.type !== 'Aporte'; });
+                next.loans = [];
+                next.loanPayments = [];
+              }
+              if (keys.indexOf('ingresos') !== -1) {
+                next.movements = (next.movements || []).filter(function (m) { return m.type !== 'Ingreso'; });
+                next.investmentMovements = (next.investmentMovements || []).filter(function (im) { return im.type !== 'Retiro'; });
+                next.loanPayments = [];
+              }
+              if (keys.indexOf('traspasos') !== -1) {
+                next.movements = (next.movements || []).filter(function (m) { return m.type !== 'Traspaso'; });
+              }
+              if (keys.indexOf('cuentas_inversion') !== -1) {
+                next.investmentAccounts = [];
+                next.subInvestments = [];
+              }
+              if (keys.indexOf('movimientos_inversion') !== -1) {
+                next.investmentMovements = [];
+              }
+              if (keys.indexOf('prestamos') !== -1) {
+                var loanMovIds = new Set();
+                (next.loans || []).forEach(function (l) { if (l.linkedMovementId) loanMovIds.add(l.linkedMovementId); });
+                (next.loanPayments || []).forEach(function (p) { if (p.linkedMovementId) loanMovIds.add(p.linkedMovementId); });
+                next.loans = [];
+                next.loanPayments = [];
+                next.movements = (next.movements || []).filter(function (m) { return !loanMovIds.has(m.id); });
+              }
+              return next;
+            });
+          },
+          onUpdateCredentials: async function (newUsername, newPassword) {
+            var nextUser = newUsername || appState.authUser || '';
+            var nextHash = newPassword ? window.GoogleSheetsService.hashPassword(newPassword) : (appState.authPassHash || '');
+            if (appState.scriptUrl) {
+              try {
+                await window.GoogleSheetsService.updateAppsScriptUser(
+                  appState.scriptUrl,
+                  getActiveAuth(),
+                  { username: nextUser, passwordHash: nextHash, email: appState.authEmail || '' }
+                );
+              } catch (err) {
+                return { ok: false, error: err && err.message ? err.message : 'No se pudo actualizar en el Sheet.' };
+              }
+            }
+            if (nextUser) {
+              appState.authUser = nextUser;
+              localStorage.setItem(AUTH_USER_STORAGE, nextUser);
+            }
+            if (nextHash) {
+              appState.authPassHash = nextHash;
+              appState.authMode = 'credentials';
+              localStorage.setItem(AUTH_PASS_HASH_STORAGE, nextHash);
+              localStorage.setItem(AUTH_MODE_STORAGE, 'credentials');
+            }
+            return { ok: true };
+          },
+        });
+      });
+    }
+
     renderApp();
+
+    var scrollBodyEl = document.querySelector('.app-scroll-body');
+    if (scrollBodyEl) {
+      scrollBodyEl.addEventListener('scroll', syncStickyTableHeaders, { passive: true });
+    }
+    window.addEventListener('resize', syncStickyTableHeaders, { passive: true });
+
+    // Actualizar TRM oficial automáticamente al iniciar si no hay tasa reciente (< 1 hora)
+    var usdRateInfo = (appState.data.exchangeRates && appState.data.exchangeRates.USD) || null;
+    var rateAgeMs = usdRateInfo && usdRateInfo.updatedAt ? (Date.now() - new Date(usdRateInfo.updatedAt).getTime()) : Infinity;
+    if (!Number.isFinite(rateAgeMs) || rateAgeMs > 3600000) {
+      window.AppActions.refreshLiveFx();
+    }
 
     if (appState.scriptUrl) {
       pullFromAppsScript(appState.scriptUrl, false);

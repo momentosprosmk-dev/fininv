@@ -92,22 +92,20 @@
   <link rel="stylesheet" href="/recursos/css/cierres/pc.css" media="(min-width: 1025px)" />
   <link rel="stylesheet" href="/recursos/css/inversiones/movil.css" media="(max-width: 1024px)" />
   <link rel="stylesheet" href="/recursos/css/inversiones/pc.css" media="(min-width: 1025px)" />
-
-  <!-- Google Identity Services (opcional para modo OAuth) -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <div class="app-shell">
     <div id="header-root"></div>
 
-    <main id="main-root" class="main-container">
-      <section id="view-resumen" class="tab-view"></section>
-      <section id="view-movimientos" class="tab-view hidden"></section>
-      <section id="view-cierres" class="tab-view hidden"></section>
-      <section id="view-inversiones" class="tab-view hidden"></section>
-    </main>
-
-    <div id="footer-root"></div>
+    <div class="app-scroll-body">
+      <main id="main-root" class="main-container">
+        <section id="view-resumen" class="tab-view"></section>
+        <section id="view-movimientos" class="tab-view hidden"></section>
+        <section id="view-cierres" class="tab-view hidden"></section>
+        <section id="view-inversiones" class="tab-view hidden"></section>
+        <section id="view-prestamos" class="tab-view hidden"></section>
+      </main>
+    </div>
   </div>
 
   <!-- Contenedor de Modales -->
@@ -131,13 +129,17 @@
   <script src="/recursos/js/movimientos/movimientosView.js"></script>
   <script src="/recursos/js/cierres/cierresView.js"></script>
   <script src="/recursos/js/inversiones/inversionesView.js"></script>
+  <script src="/recursos/js/prestamos/prestamosView.js"></script>
 
   <!-- JS Modales -->
   <script src="/recursos/js/modales/datePicker.js"></script>
   <script src="/recursos/js/modales/movementModal.js"></script>
   <script src="/recursos/js/modales/accountsModal.js"></script>
   <script src="/recursos/js/modales/googleModal.js"></script>
+  <script src="/recursos/js/modales/usersModal.js"></script>
   <script src="/recursos/js/modales/investmentModal.js"></script>
+  <script src="/recursos/js/modales/loanModal.js"></script>
+  <script src="/recursos/js/modales/resetModal.js"></script>
 
   <!-- Inicializador Principal -->
   <script src="/recursos/js/global/appState.js"></script>

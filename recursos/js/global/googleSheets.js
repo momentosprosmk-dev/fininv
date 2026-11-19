@@ -1,34 +1,62 @@
 (function () {
-  var SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets';
-  var DRIVE_API = 'https://www.googleapis.com/drive/v3/files';
-  var SPREADSHEET_TITLE = 'Contabilidad Personal - COP';
-  var GOOGLE_SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
-
-  var SHEET_HEADERS = {
-    Cuentas: ['ID', 'Nombre', 'Tipo', 'Descripcion', 'Saldo_Inicial_COP', 'Cupo_COP'],
-    Tipos_Egresos: ['ID', 'Nombre', 'Descripcion', 'Es_Inversion_ARQ'],
-    Tipos_Ingresos: ['ID', 'Nombre', 'Descripcion'],
-    Tipos_Traspasos: ['ID', 'Nombre', 'Descripcion'],
-    Movimientos: ['ID', 'Fecha', 'Mes_Contable', 'Tipo', 'Cuenta_Origen', 'Cuenta_Destino', 'Categoria', 'Descripcion', 'Monto_COP', 'Creado_En'],
-    Obligaciones_Fijas: ['ID', 'Nombre', 'Categoria', 'Monto_Estimado_COP', 'Tipo_Cruce'],
-    Cierres_Mensuales: ['Mes', 'Fecha_Cierre', 'Total_Ingresos', 'Total_Egresos_Consumo', 'Total_Inversion_ARQ', 'Saldo_Debito', 'Saldo_Nequi', 'Saldo_Efectivo', 'Deuda_TC', 'Liquidez_Total', 'Sobrante_o_Faltante_TC', 'Notas'],
-    Cuentas_Inversion: ['ID', 'Nombre', 'Modo', 'Moneda', 'Saldo_Inicial', 'Meta', 'Notas'],
-    Subinversiones: ['ID', 'Cuenta_Inversion', 'Nombre', 'Saldo_Inicial', 'Notas'],
-    Movimientos_Inversion: ['ID', 'Fecha', 'Tipo', 'Cuenta_Inversion', 'Subinversion', 'Cuenta_Normal', 'Descripcion', 'Monto', 'Comision', 'Aplicacion_Comision', 'Tasa_Cambio', 'Monto_COP', 'Movimiento_Financiero_ID', 'Creado_En'],
-  };
-
-  async function apiFetch(url, token, options) {
-    var opts = options || {};
-    var headers = Object.assign(
-      { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-      opts.headers || {}
-    );
-    var res = await fetch(url, Object.assign({}, opts, { headers: headers }));
-    if (!res.ok) {
-      var text = await res.text();
-      throw new Error('Google API error (' + res.status + '): ' + text);
+  function sha256Hex(ascii) {
+    function rightRotate(value, amount) {
+      return (value >>> amount) | (value << (32 - amount));
     }
-    return res.json();
+    var mathPow = Math.pow;
+    var maxWord = mathPow(2, 32);
+    var lengthProperty = 'length';
+    var i, j;
+    var result = '';
+    var words = [];
+    var asciiBitLength = ascii[lengthProperty] * 8;
+    var hash = (sha256Hex.h = sha256Hex.h || []);
+    var k = (sha256Hex.k = sha256Hex.k || []);
+    var primeCounter = k[lengthProperty];
+    var isComposite = {};
+    for (var candidate = 2; primeCounter < 64; candidate++) {
+      if (!isComposite[candidate]) {
+        for (i = 0; i < 313; i += candidate) isComposite[i] = candidate;
+        hash[primeCounter] = (mathPow(candidate, 0.5) * maxWord) | 0;
+        k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;
+      }
+    }
+    ascii += '\x80';
+    while ((ascii[lengthProperty] % 64) - 56) ascii += '\x00';
+    for (i = 0; i < ascii[lengthProperty]; i++) {
+      j = ascii.charCodeAt(i);
+      if (j >> 8) return '';
+      words[i >> 2] |= j << (((3 - i) % 4) * 8);
+    }
+    words[words[lengthProperty]] = (asciiBitLength / maxWord) | 0;
+    words[words[lengthProperty]] = asciiBitLength;
+    for (j = 0; j < words[lengthProperty];) {
+      var w = words.slice(j, (j += 16));
+      var oldHash = hash;
+      hash = hash.slice(0, 8);
+      for (i = 0; i < 64; i++) {
+        var w15 = w[i - 15], w2 = w[i - 2];
+        var a = hash[0], e = hash[4];
+        var temp1 = hash[7] + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) + ((e & hash[5]) ^ (~e & hash[6])) + k[i] +
+          (w[i] = i < 16 ? w[i] : (w[i - 16] + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) + w[i - 7] + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))) | 0);
+        var temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+        hash = [(temp1 + temp2) | 0].concat(hash);
+        hash[4] = (hash[4] + temp1) | 0;
+      }
+      for (i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
+    }
+    for (i = 0; i < 8; i++) {
+      for (j = 3; j + 1; j--) {
+        var b = (hash[i] >> (j * 8)) & 255;
+        result += (b < 16 ? 0 : '') + b.toString(16);
+      }
+    }
+    return result;
+  }
+
+  function hashPassword(pwd) {
+    var utf8 = unescape(encodeURIComponent(String(pwd || '')));
+    return sha256Hex(utf8);
   }
 
   function parseSheetNumber(cell) {
@@ -62,12 +90,17 @@
         var cleanDesc = String(a.description || '')
           .replace(/\s*\[icon:[a-z]+\]/g, '')
           .replace(/\s*\[credito:[^\]]+\]/g, '')
+          .replace(/\s*\[corte:\d+\]/g, '')
           .trim();
         var parts = [];
         if (cleanDesc) parts.push(cleanDesc);
         if (a.icon && a.icon !== 'auto') parts.push('[icon:' + a.icon + ']');
         if (a.kind === 'credito') {
-          parts.push('[credito:' + (Number(a.totalMonths) || 12) + ':' + (Number(a.monthlyInstallment) || 0) + ':' + (a.inMora ? 1 : 0) + ']');
+          parts.push('[credito:' + (Number(a.totalMonths) || 12) + ':' + (Number(a.monthlyInstallment) || 0) + ':' + (a.inMora ? 1 : 0) + ':' + (Number(a.dueDay) || 0) + ':' + (a.startMonth || '') + ']');
+        }
+        if (idx === 0 && window.AppFormat && window.AppFormat.getMonthCloseDay) {
+          var closeDay = window.AppFormat.getMonthCloseDay();
+          if (closeDay > 0) parts.push('[corte:' + closeDay + ']');
         }
         return [a.id || 'cta-' + (idx + 1), a.name, a.kind, parts.join(' '), a.initialBalance, a.creditLimit != null ? a.creditLimit : ''];
       }),
@@ -81,7 +114,11 @@
         return [c.id, c.name, c.description || ''];
       }),
       movimientos: (data.movements || []).map(function (m) {
-        return [m.id, m.date, m.month, m.type, m.fromAccount, m.toAccount, m.category, m.description, m.amount, m.createdAt];
+        var desc = String(m.description || '').replace(/\s*\[cuotaReq:[^\]]+\]/g, '').trim();
+        if (Number(m.creditRequiredAmount) > 0) {
+          desc = (desc ? desc + ' ' : '') + '[cuotaReq:' + Number(m.creditRequiredAmount) + ']';
+        }
+        return [m.id, m.date, m.month, m.type, m.fromAccount, m.toAccount, m.category, desc, m.amount, m.createdAt];
       }),
       obligaciones: (data.obligations || []).map(function (o) {
         return [o.id, o.name, o.category, o.estimatedAmount, o.matchType];
@@ -98,6 +135,12 @@
       movimientosInversion: (data.investmentMovements || []).map(function (m) {
         return [m.id, m.date, m.type, m.fundName, m.subName || '', m.normalAccount || '', m.description || '', m.amount || 0, m.commission || 0, m.commissionApply || 'moved', m.exchangeRate || 1, m.amountCOP || 0, m.linkedMovementId || '', m.createdAt || ''];
       }),
+      prestamos: (data.loans || []).map(function (l) {
+        return [l.id, l.borrower || '', l.fromAccount || '', l.principal || 0, l.interestRate || 0, l.interestMode || 'none', l.totalDue || 0, l.installments || 1, l.frequency || 'mensual', l.startDate || '', l.notes || '', l.linkedMovementId || '', l.createdAt || ''];
+      }),
+      pagosPrestamos: (data.loanPayments || []).map(function (p) {
+        return [p.id, p.loanId || '', p.date || '', p.toAccount || '', p.amount || 0, p.notes || '', p.linkedMovementId || '', p.createdAt || ''];
+      }),
     };
   }
 
@@ -113,11 +156,14 @@
     });
   }
 
-  function parseRawTables(accRaw, egresosRaw, ingresosRaw, traspasosRaw, movRaw, obRaw, closeRaw, invAccRaw, subInvRaw, invMovRaw) {
+  function parseRawTables(accRaw, egresosRaw, ingresosRaw, traspasosRaw, movRaw, obRaw, closeRaw, invAccRaw, subInvRaw, invMovRaw, loansRaw, loanPayRaw) {
     var movements = (movRaw || []).filter(function (r) { return r[0] && r[1]; }).map(function (r) {
       var dateStr = String(r[1]).slice(0, 10);
       var monthStr = r[2] ? String(r[2]).slice(0, 7) : dateStr.slice(0, 7);
-      return {
+      var rawMovDesc = String(r[7] || '');
+      var cuotaReqMatch = rawMovDesc.match(/\[cuotaReq:([\d.]+)\]/);
+      var cleanMovDesc = rawMovDesc.replace(/\s*\[cuotaReq:[^\]]+\]/g, '').trim();
+      var movItem = {
         id: String(r[0]),
         date: dateStr,
         month: monthStr,
@@ -125,17 +171,19 @@
         fromAccount: String(r[4]) || 'Tarjeta de Débito',
         toAccount: String(r[5]) || 'Externo',
         category: String(r[6] || 'Otros'),
-        description: String(r[7] || ''),
+        description: cleanMovDesc,
         amount: parseSheetNumber(r[8]),
         createdAt: String(r[9] || new Date().toISOString()),
       };
+      if (cuotaReqMatch) movItem.creditRequiredAmount = Number(cuotaReqMatch[1]) || 0;
+      return movItem;
     });
 
     var accounts = (accRaw || []).filter(function (r) { return r[1] || r[0]; }).map(function (r, idx) {
       var name = String(r[1] || r[0]);
       var rawKind = String(r[2] || '').toLowerCase().trim();
       var rawDesc = String(r[3] || '');
-      var creditoMatch = rawDesc.match(/\[credito:(\d+):([\d.]+):([01])\]/);
+      var creditoMatch = rawDesc.match(/\[credito:(\d+):([\d.]+):([01])(?::(\d+))?(?::(\d{4}-\d{2})?)?\]/);
       var kind = 'liquidez';
       if (rawKind === 'credito' || creditoMatch) {
         kind = 'credito';
@@ -145,9 +193,14 @@
       var parsedLimit = parseSheetNumber(r[5]);
       var iconMatch = rawDesc.match(/\[icon:([a-z]+)\]/);
       var parsedIcon = iconMatch ? iconMatch[1] : 'auto';
+      var corteMatch = rawDesc.match(/\[corte:(\d+)\]/);
+      if (corteMatch && window.AppFormat && window.AppFormat.setMonthCloseDay) {
+        window.AppFormat.setMonthCloseDay(Number(corteMatch[1]));
+      }
       var cleanDesc = rawDesc
         .replace(/\s*\[icon:[a-z]+\]/g, '')
         .replace(/\s*\[credito:[^\]]+\]/g, '')
+        .replace(/\s*\[corte:\d+\]/g, '')
         .trim();
       var item = {
         id: String(r[0] || 'cta-' + (idx + 1)),
@@ -162,6 +215,8 @@
         item.totalMonths = creditoMatch ? Number(creditoMatch[1]) || 12 : 12;
         item.monthlyInstallment = creditoMatch ? Number(creditoMatch[2]) || 0 : 0;
         item.inMora = creditoMatch ? creditoMatch[3] === '1' : false;
+        item.dueDay = creditoMatch && creditoMatch[4] ? Number(creditoMatch[4]) || 0 : 0;
+        if (creditoMatch && creditoMatch[5]) item.startMonth = creditoMatch[5];
       }
       return item;
     });
@@ -246,6 +301,37 @@
       };
     });
 
+    var loans = (loansRaw || []).filter(function (r) { return r[0] && r[1]; }).map(function (r) {
+      return {
+        id: String(r[0]),
+        borrower: String(r[1] || ''),
+        fromAccount: String(r[2] || ''),
+        principal: parseSheetNumber(r[3]),
+        interestRate: parseSheetNumber(r[4]),
+        interestMode: String(r[5] || 'none'),
+        totalDue: parseSheetNumber(r[6]),
+        installments: Math.max(1, parseSheetNumber(r[7]) || 1),
+        frequency: String(r[8] || 'mensual'),
+        startDate: String(r[9] || '').slice(0, 10),
+        notes: String(r[10] || ''),
+        linkedMovementId: String(r[11] || ''),
+        createdAt: String(r[12] || new Date().toISOString()),
+      };
+    });
+
+    var loanPayments = (loanPayRaw || []).filter(function (r) { return r[0] && r[1]; }).map(function (r) {
+      return {
+        id: String(r[0]),
+        loanId: String(r[1] || ''),
+        date: String(r[2] || '').slice(0, 10),
+        toAccount: String(r[3] || ''),
+        amount: parseSheetNumber(r[4]),
+        notes: String(r[5] || ''),
+        linkedMovementId: String(r[6] || ''),
+        createdAt: String(r[7] || new Date().toISOString()),
+      };
+    });
+
     return {
       accounts: accounts,
       categories: categories,
@@ -255,83 +341,15 @@
       investmentAccounts: investmentAccounts,
       subInvestments: subInvestments,
       investmentMovements: investmentMovements,
+      loans: loans,
+      loanPayments: loanPayments,
     };
   }
 
-  async function findOrCreateSpreadsheet(token, preferredId) {
-    if (preferredId) {
-      try {
-        await apiFetch(SHEETS_API + '/' + preferredId + '?fields=spreadsheetId', token);
-        return { spreadsheetId: preferredId, isNew: false };
-      } catch (e) { /* buscar o crear */ }
+  function parseAppsScriptResponse(json) {
+    if (!json || json.ok === false) {
+      throw new Error((json && json.error) || 'No se pudo autenticar o leer el Google Sheet.');
     }
-
-    var q = encodeURIComponent("name='" + SPREADSHEET_TITLE + "' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
-    var search = await apiFetch(DRIVE_API + '?q=' + q + '&fields=files(id,name)', token);
-    if (search.files && search.files.length > 0) {
-      return { spreadsheetId: search.files[0].id, isNew: false };
-    }
-
-    var created = await apiFetch(SHEETS_API, token, {
-      method: 'POST',
-      body: JSON.stringify({
-        properties: { title: SPREADSHEET_TITLE, locale: 'es_CO' },
-        sheets: Object.keys(SHEET_HEADERS).map(function (title) { return { properties: { title: title } }; }),
-      }),
-    });
-    return { spreadsheetId: created.spreadsheetId, isNew: true };
-  }
-
-  async function writeAllToSpreadsheet(token, spreadsheetId, data) {
-    var rangesToClear = Object.keys(SHEET_HEADERS).map(function (name) { return name + '!A1:Z5000'; });
-    await apiFetch(SHEETS_API + '/' + spreadsheetId + '/values:batchClear', token, {
-      method: 'POST',
-      body: JSON.stringify({ ranges: rangesToClear }),
-    });
-    var serialized = serializeAppData(data);
-    await apiFetch(SHEETS_API + '/' + spreadsheetId + '/values:batchUpdate', token, {
-      method: 'POST',
-      body: JSON.stringify({
-        valueInputOption: 'USER_ENTERED',
-        data: [
-          { range: 'Cuentas!A1', values: [SHEET_HEADERS.Cuentas].concat(serialized.cuentas) },
-          { range: 'Tipos_Egresos!A1', values: [SHEET_HEADERS.Tipos_Egresos].concat(serialized.tiposEgresos) },
-          { range: 'Tipos_Ingresos!A1', values: [SHEET_HEADERS.Tipos_Ingresos].concat(serialized.tiposIngresos) },
-          { range: 'Tipos_Traspasos!A1', values: [SHEET_HEADERS.Tipos_Traspasos].concat(serialized.tiposTraspasos) },
-          { range: 'Movimientos!A1', values: [SHEET_HEADERS.Movimientos].concat(serialized.movimientos) },
-          { range: 'Obligaciones_Fijas!A1', values: [SHEET_HEADERS.Obligaciones_Fijas].concat(serialized.obligaciones) },
-          { range: 'Cierres_Mensuales!A1', values: [SHEET_HEADERS.Cierres_Mensuales].concat(serialized.cierres) },
-          { range: 'Cuentas_Inversion!A1', values: [SHEET_HEADERS.Cuentas_Inversion].concat(serialized.cuentasInversion) },
-          { range: 'Subinversiones!A1', values: [SHEET_HEADERS.Subinversiones].concat(serialized.subinversiones) },
-          { range: 'Movimientos_Inversion!A1', values: [SHEET_HEADERS.Movimientos_Inversion].concat(serialized.movimientosInversion) },
-        ],
-      }),
-    });
-  }
-
-  async function readAllFromSpreadsheet(token, spreadsheetId) {
-    var ranges = [
-      'Cuentas!A2:F100',
-      'Tipos_Egresos!A2:D500',
-      'Tipos_Ingresos!A2:C500',
-      'Tipos_Traspasos!A2:C500',
-      'Movimientos!A2:J5000',
-      'Obligaciones_Fijas!A2:E200',
-      'Cierres_Mensuales!A2:L500',
-      'Cuentas_Inversion!A2:G200',
-      'Subinversiones!A2:E500',
-      'Movimientos_Inversion!A2:N5000',
-    ].map(function (r) { return 'ranges=' + encodeURIComponent(r); }).join('&');
-
-    var res = await apiFetch(SHEETS_API + '/' + spreadsheetId + '/values:batchGet?' + ranges, token);
-    var vrs = res.valueRanges.map(function (vr) { return vr.values || []; });
-    return parseRawTables(vrs[0], vrs[1], vrs[2], vrs[3], vrs[4], vrs[5], vrs[6], vrs[7], vrs[8], vrs[9]);
-  }
-
-  async function readFromAppsScript(scriptUrl) {
-    var res = await fetch(scriptUrl, { method: 'GET' });
-    if (!res.ok) throw new Error('Error al leer Apps Script (' + res.status + ')');
-    var json = await res.json();
     return {
       spreadsheetUrl: json.spreadsheetUrl,
       data: parseRawTables(
@@ -344,29 +362,113 @@
         json.cierres || [],
         json.cuentasInversion || [],
         json.subinversiones || [],
-        json.movimientosInversion || []
+        json.movimientosInversion || [],
+        json.prestamos || [],
+        json.pagosPrestamos || []
       ),
     };
   }
 
-  async function writeToAppsScript(scriptUrl, data) {
+  async function readFromAppsScript(scriptUrl, auth) {
+    if (auth && ((auth.username && auth.passwordHash) || auth.email)) {
+      var postRes = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'pull', auth: auth }),
+      });
+      if (!postRes.ok) throw new Error('Error al leer Apps Script (' + postRes.status + ')');
+      return parseAppsScriptResponse(await postRes.json());
+    }
+    var res = await fetch(scriptUrl, { method: 'GET' });
+    if (!res.ok) throw new Error('Error al leer Apps Script (' + res.status + ')');
+    return parseAppsScriptResponse(await res.json());
+  }
+
+  async function registerAppsScriptUser(scriptUrl, auth, data) {
     var serialized = serializeAppData(data);
+    var body = Object.assign({ action: 'auth_register', auth: auth }, serialized);
     var res = await fetch(scriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(serialized),
+      body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error('Error al guardar en Apps Script (' + res.status + ')');
+    if (!res.ok) throw new Error('Error al registrar usuario en Apps Script (' + res.status + ')');
     var json = await res.json();
+    if (!json || json.ok === false) {
+      throw new Error((json && json.error) || 'No se pudo registrar el usuario.');
+    }
     return { spreadsheetUrl: json.spreadsheetUrl };
   }
 
+  async function loginAppsScriptUser(scriptUrl, auth) {
+    var res = await fetch(scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'auth_login', auth: auth }),
+    });
+    if (!res.ok) throw new Error('Error al iniciar sesión en Apps Script (' + res.status + ')');
+    var json = await res.json();
+    if (!json || json.ok === false) {
+      throw new Error((json && json.error) || 'Usuario o contraseña incorrectos.');
+    }
+    if (!json.authenticated) {
+      throw new Error('Tu Google Sheet tiene una versión anterior de Code.gs sin validación de usuario. Actualiza Code.gs en Extensiones > Apps Script > Implementar > Nueva versión.');
+    }
+    return parseAppsScriptResponse(json);
+  }
+
+  async function updateAppsScriptUser(scriptUrl, currentAuth, newAuth) {
+    var res = await fetch(scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'auth_update', auth: currentAuth || null, newAuth: newAuth }),
+    });
+    if (!res.ok) throw new Error('Error al actualizar credenciales en Apps Script (' + res.status + ')');
+    var json = await res.json();
+    if (!json || json.ok === false) {
+      throw new Error((json && json.error) || 'No se pudieron actualizar las credenciales.');
+    }
+    return json;
+  }
+
+  async function writeToAppsScript(scriptUrl, data, auth) {
+    var serialized = serializeAppData(data);
+    var payload = Object.assign({ action: 'push', auth: auth || null }, serialized);
+    var res = await fetch(scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Error al guardar en Apps Script (' + res.status + ')');
+    var json = await res.json();
+    if (!json || json.ok === false) {
+      throw new Error((json && json.error) || 'No autorizado para guardar en el Google Sheet.');
+    }
+    return { spreadsheetUrl: json.spreadsheetUrl };
+  }
+
+  async function manageAppsScriptUsers(scriptUrl, action, auth, extra) {
+    var payload = Object.assign({ action: action, auth: auth || null }, extra || {});
+    var res = await fetch(scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Error al gestionar usuarios (' + res.status + ')');
+    var json = await res.json();
+    if (!json || json.ok === false) {
+      throw new Error((json && json.error) || 'No se pudo completar la operación.');
+    }
+    return json;
+  }
+
   window.GoogleSheetsService = {
-    GOOGLE_SCOPES: GOOGLE_SCOPES,
-    findOrCreateSpreadsheet: findOrCreateSpreadsheet,
-    writeAllToSpreadsheet: writeAllToSpreadsheet,
-    readAllFromSpreadsheet: readAllFromSpreadsheet,
+    hashPassword: hashPassword,
     readFromAppsScript: readFromAppsScript,
+    registerAppsScriptUser: registerAppsScriptUser,
+    loginAppsScriptUser: loginAppsScriptUser,
+    updateAppsScriptUser: updateAppsScriptUser,
     writeToAppsScript: writeToAppsScript,
+    manageAppsScriptUsers: manageAppsScriptUsers,
   };
 })();

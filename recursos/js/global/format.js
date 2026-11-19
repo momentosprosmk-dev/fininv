@@ -1,18 +1,46 @@
 (function () {
   var BASE_CURRENCY_STORAGE_KEY = 'fininv_base_currency';
   var CUSTOM_CURRENCIES_STORAGE_KEY = 'fininv_custom_currencies';
+  var MONTH_CLOSE_DAY_STORAGE_KEY = 'fininv_month_close_day';
 
   var CURRENCY_CATALOG = {
-    COP: { code: 'COP', label: 'Peso Colombiano (COP)', symbol: '$', locale: 'es-CO', decimals: 0 },
-    USD: { code: 'USD', label: 'Dólar EEUU (USD)', symbol: 'US$', locale: 'en-US', decimals: 2 },
+    COP: { code: 'COP', label: 'Peso colombiano (COP)', symbol: '$', locale: 'es-CO', decimals: 0 },
+    USD: { code: 'USD', label: 'Dólar estadounidense (USD)', symbol: 'US$', locale: 'en-US', decimals: 2 },
     EUR: { code: 'EUR', label: 'Euro (EUR)', symbol: '€', locale: 'es-ES', decimals: 2 },
-    MXN: { code: 'MXN', label: 'Peso Mexicano (MXN)', symbol: 'MX$', locale: 'es-MX', decimals: 2 },
-    CLP: { code: 'CLP', label: 'Peso Chileno (CLP)', symbol: 'CL$', locale: 'es-CL', decimals: 0 },
-    PEN: { code: 'PEN', label: 'Sol Peruano (PEN)', symbol: 'S/', locale: 'es-PE', decimals: 2 },
-    ARS: { code: 'ARS', label: 'Peso Argentino (ARS)', symbol: 'AR$', locale: 'es-AR', decimals: 2 },
-    BRL: { code: 'BRL', label: 'Real Brasileño (BRL)', symbol: 'R$', locale: 'pt-BR', decimals: 2 },
-    GBP: { code: 'GBP', label: 'Libra Esterlina (GBP)', symbol: '£', locale: 'en-GB', decimals: 2 },
+    MXN: { code: 'MXN', label: 'Peso mexicano (MXN)', symbol: 'MX$', locale: 'es-MX', decimals: 2 },
+    CLP: { code: 'CLP', label: 'Peso chileno (CLP)', symbol: 'CL$', locale: 'es-CL', decimals: 0 },
+    PEN: { code: 'PEN', label: 'Sol peruano (PEN)', symbol: 'S/', locale: 'es-PE', decimals: 2 },
+    ARS: { code: 'ARS', label: 'Peso argentino (ARS)', symbol: 'AR$', locale: 'es-AR', decimals: 2 },
+    BRL: { code: 'BRL', label: 'Real brasileño (BRL)', symbol: 'R$', locale: 'pt-BR', decimals: 2 },
+    GBP: { code: 'GBP', label: 'Libra esterlina (GBP)', symbol: '£', locale: 'en-GB', decimals: 2 },
   };
+
+  // Cargar automáticamente todas las divisas ISO 4217 soportadas por el navegador
+  (function buildFullIsoCatalog() {
+    if (typeof Intl === 'undefined' || typeof Intl.supportedValuesOf !== 'function') return;
+    try {
+      var displayNames = typeof Intl.DisplayNames === 'function'
+        ? new Intl.DisplayNames(['es'], { type: 'currency' })
+        : null;
+      var codes = Intl.supportedValuesOf('currency');
+      codes.forEach(function (code) {
+        if (CURRENCY_CATALOG[code]) return;
+        var decimals = 2;
+        try {
+          decimals = new Intl.NumberFormat('en-US', { style: 'currency', currency: code }).resolvedOptions().maximumFractionDigits;
+        } catch (e) { /* default 2 */ }
+        var rawName = displayNames ? (displayNames.of(code) || code) : code;
+        var niceName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+        CURRENCY_CATALOG[code] = {
+          code: code,
+          label: niceName + ' (' + code + ')',
+          symbol: code + ' ',
+          locale: decimals === 0 ? 'es-CO' : 'en-US',
+          decimals: decimals,
+        };
+      });
+    } catch (e) { /* fallback al catálogo base */ }
+  })();
 
   var formattersCache = {};
 
@@ -134,11 +162,68 @@
     return label.charAt(0).toUpperCase() + label.slice(1);
   }
 
+  function getMonthCloseDay() {
+    var raw = Number(localStorage.getItem(MONTH_CLOSE_DAY_STORAGE_KEY) || 0);
+    if (!Number.isFinite(raw) || raw <= 0 || raw >= 31) return 0;
+    return Math.floor(raw);
+  }
+
+  function setMonthCloseDay(day) {
+    var n = Math.floor(Number(day) || 0);
+    if (n <= 0 || n >= 31) n = 0;
+    localStorage.setItem(MONTH_CLOSE_DAY_STORAGE_KEY, String(n));
+    return n;
+  }
+
+  function getAccountingMonthForDate(dateStr, closeDayOverride) {
+    var s = String(dateStr || '').trim();
+    if (s.length < 7) return s;
+    var closeDay = closeDayOverride != null ? Number(closeDayOverride) : getMonthCloseDay();
+    if (!closeDay || closeDay <= 0 || closeDay >= 31) return s.slice(0, 7);
+    var parts = s.slice(0, 10).split('-').map(Number);
+    var y = parts[0], m = parts[1], d = parts[2];
+    if (!y || !m || !d) return s.slice(0, 7);
+    var daysInM = new Date(y, m, 0).getDate();
+    var effClose = Math.min(closeDay, daysInM);
+    if (d >= effClose) {
+      m += 1;
+      if (m > 12) { m = 1; y += 1; }
+    }
+    return y + '-' + String(m).padStart(2, '0');
+  }
+
+  function getAccountingPeriodRange(monthKey, closeDayOverride) {
+    var parts = String(monthKey || '').split('-').map(Number);
+    var y = parts[0], m = parts[1];
+    if (!y || !m) return { startISO: '', endISO: '', label: '' };
+    var closeDay = closeDayOverride != null ? Number(closeDayOverride) : getMonthCloseDay();
+    var daysInM = new Date(y, m, 0).getDate();
+    var startDate, endDate;
+    if (!closeDay || closeDay <= 0 || closeDay >= 31) {
+      startDate = new Date(y, m - 1, 1);
+      endDate = new Date(y, m - 1, daysInM);
+    } else {
+      var py = m === 1 ? y - 1 : y;
+      var pm = m === 1 ? 12 : m - 1;
+      var prevDays = new Date(py, pm, 0).getDate();
+      var prevClose = Math.min(closeDay, prevDays);
+      var effClose = Math.min(closeDay, daysInM);
+      startDate = new Date(py, pm - 1, prevClose);
+      endDate = new Date(y, m - 1, effClose - 1);
+    }
+    var toISO = function (dt) {
+      return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+    };
+    var shortFmt = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+    return {
+      startISO: toISO(startDate),
+      endISO: toISO(endDate),
+      label: shortFmt.format(startDate) + ' al ' + shortFmt.format(endDate),
+    };
+  }
+
   function getCurrentMonthKey() {
-    var now = new Date();
-    var y = now.getFullYear();
-    var m = String(now.getMonth() + 1).padStart(2, '0');
-    return y + '-' + m;
+    return getAccountingMonthForDate(getTodayISO());
   }
 
   function getTodayISO() {
@@ -167,6 +252,10 @@
     formatCOP: formatCOP,
     maskCOP: maskCOP,
     formatMonthLabel: formatMonthLabel,
+    getMonthCloseDay: getMonthCloseDay,
+    setMonthCloseDay: setMonthCloseDay,
+    getAccountingMonthForDate: getAccountingMonthForDate,
+    getAccountingPeriodRange: getAccountingPeriodRange,
     getCurrentMonthKey: getCurrentMonthKey,
     getTodayISO: getTodayISO,
     parseDecimalInput: parseDecimalInput,

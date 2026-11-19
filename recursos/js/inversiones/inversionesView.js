@@ -44,7 +44,7 @@
           '<p class="text-muted" style="margin:0.15rem 0 0;font-size:0.84rem">En vivo: ' + esc(fmt.formatCOP(usdRate.live || 4300)) + (usdRate.custom ? ' &middot; Personalizada activa' : ' &middot; Usando tasa en vivo') + '</p>' +
         '</div>' +
         '<div class="inv-fx-controls">' +
-          '<input type="text" inputmode="decimal" id="inv-custom-usd" class="input" style="width:10.5rem;padding:0.45rem 0.7rem;font-size:0.88rem" placeholder="Tasa manual (ARQ)" value="' + esc(usdRate.custom ? String(usdRate.custom) : '') + '" />' +
+          '<input type="text" inputmode="decimal" id="inv-custom-usd" class="input" style="width:10.5rem;padding:0.45rem 0.7rem;font-size:0.88rem" placeholder="Tasa manual" value="' + esc(usdRate.custom ? String(usdRate.custom) : '') + '" />' +
           '<button type="button" id="btn-save-custom-usd" class="btn btn-secondary" style="padding:0.46rem 0.8rem;font-size:0.85rem">Aplicar</button>' +
           '<button type="button" id="btn-fetch-fx" class="btn btn-secondary" style="padding:0.46rem 0.8rem;font-size:0.85rem"><i class="fa-solid fa-rotate"></i> TRM en vivo</button>' +
         '</div>' +
@@ -229,8 +229,8 @@
       container.innerHTML =
         '<div class="inv-top-bar">' +
           '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">' +
-            '<select id="inv-mov-fund-filter" class="select" style="width:auto;padding:0.42rem 0.65rem;font-size:0.78rem">' + fundOptsHtml + '</select>' +
-            '<select id="inv-mov-type-filter" class="select" style="width:auto;padding:0.42rem 0.65rem;font-size:0.78rem">' + typeOptsHtml + '</select>' +
+            '<select id="inv-mov-fund-filter" class="select" style="width:auto;max-width:100%;padding:0.55rem 0.85rem;font-size:0.92rem">' + fundOptsHtml + '</select>' +
+            '<select id="inv-mov-type-filter" class="select" style="width:auto;max-width:100%;padding:0.55rem 0.85rem;font-size:0.92rem">' + typeOptsHtml + '</select>' +
           '</div>' +
           '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">' +
             '<div class="search-box" style="width:14rem">' +
