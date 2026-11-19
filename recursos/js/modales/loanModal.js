@@ -9,6 +9,8 @@
     var balances = opts.accountBalances || {};
 
     var state = {
+      isHistorical: false,
+      initialPaidStr: '',
       borrower: '',
       fromAccount: liquidAccounts[0] || '',
       principalStr: '',
@@ -50,8 +52,8 @@
       var prevScrollTop = prevScrollEl ? prevScrollEl.scrollTop : 0;
       var calc = calcTotals();
       var avail = state.fromAccount ? (balances[state.fromAccount] || 0) : 0;
-      var hasInsufficient = Boolean(state.fromAccount) && calc.principal > avail;
-      var canSave = Boolean(state.borrower.trim()) && Boolean(state.fromAccount) && calc.principal > 0 && !hasInsufficient;
+      var hasInsufficient = !state.isHistorical && Boolean(state.fromAccount) && calc.principal > avail;
+      var canSave = Boolean(state.borrower.trim()) && (state.isHistorical || Boolean(state.fromAccount)) && calc.principal > 0 && !hasInsufficient;
 
       var accOpts = '<option value="">Selecciona cuenta...</option>' + liquidAccounts.map(function (a) {
         return '<option value="' + esc(a) + '"' + (state.fromAccount === a ? ' selected' : '') + '>' + esc(a) + ' (' + esc(fmt.formatCOP(balances[a] || 0)) + ')</option>';
@@ -70,12 +72,21 @@
               '</div>' +
             '</div>' +
             '<div class="modal-body-scroll">' +
+              '<label class="config-item" style="cursor:pointer;margin-bottom:0.85rem;gap:0.65rem;justify-content:flex-start">' +
+                '<input type="checkbox" id="lm-historical" ' + (state.isHistorical ? 'checked' : '') + ' style="width:1.05rem;height:1.05rem" />' +
+                '<div>' +
+                  '<strong style="font-size:0.86rem;color:var(--text-strong)">Préstamo anterior a esta web</strong>' +
+                  '<p style="margin:0.1rem 0 0;font-size:0.76rem;color:var(--text-muted)">No descuenta saldo de tus cuentas actuales (ideal para préstamos ya entregados antes).</p>' +
+                '</div>' +
+              '</label>' +
               '<div class="form-grid-2">' +
                 '<div class="field-group"><label class="field-label">Persona / Deudor</label><input type="text" id="lm-borrower" class="input" placeholder="Ej. Juan Pérez" value="' + esc(state.borrower) + '" /></div>' +
                 '<div class="field-group"><label class="field-label">Fecha del préstamo</label><div id="lm-datepicker"></div></div>' +
               '</div>' +
               '<div class="form-grid-2">' +
-                '<div class="field-group"><label class="field-label">Sale de la cuenta</label><select id="lm-from" class="select">' + accOpts + '</select></div>' +
+                (state.isHistorical
+                  ? '<div class="field-group"><label class="field-label">Ya me han abonado antes (' + esc(fmt.getBaseCurrency()) + ')</label><input type="text" inputmode="decimal" id="lm-init-paid" class="input" placeholder="0" value="' + esc(state.initialPaidStr) + '" /></div>'
+                  : '<div class="field-group"><label class="field-label">Sale de la cuenta</label><select id="lm-from" class="select">' + accOpts + '</select></div>') +
                 '<div class="field-group"><label class="field-label">Capital prestado (' + esc(fmt.getBaseCurrency()) + ')</label><input type="text" inputmode="decimal" id="lm-principal" class="input" placeholder="Ej. 300000" value="' + esc(state.principalStr) + '" /></div>' +
               '</div>' +
               '<div class="config-box" style="margin-bottom:0.85rem">' +
@@ -141,8 +152,8 @@
       function updatePreview() {
         var c = calcTotals();
         var av = state.fromAccount ? (balances[state.fromAccount] || 0) : 0;
-        var ins = Boolean(state.fromAccount) && c.principal > av;
-        var ok = Boolean(state.borrower.trim()) && Boolean(state.fromAccount) && c.principal > 0 && !ins;
+        var ins = !state.isHistorical && Boolean(state.fromAccount) && c.principal > av;
+        var ok = Boolean(state.borrower.trim()) && (state.isHistorical || Boolean(state.fromAccount)) && c.principal > 0 && !ins;
         var totEl = document.getElementById('lm-total-due');
         if (totEl) totEl.textContent = fmt.formatCOP(c.totalDue);
         var qEl = document.getElementById('lm-quota-val');
@@ -153,8 +164,15 @@
         if (saveBtn) saveBtn.disabled = !ok;
       }
 
+      document.getElementById('lm-historical').addEventListener('change', function (e) {
+        state.isHistorical = e.target.checked;
+        render();
+      });
       document.getElementById('lm-borrower').addEventListener('input', function (e) { state.borrower = e.target.value; updatePreview(); });
-      document.getElementById('lm-from').addEventListener('change', function (e) { state.fromAccount = e.target.value; render(); });
+      var fromSel = document.getElementById('lm-from');
+      if (fromSel) fromSel.addEventListener('change', function (e) { state.fromAccount = e.target.value; render(); });
+      var initPaidInp = document.getElementById('lm-init-paid');
+      if (initPaidInp) initPaidInp.addEventListener('input', function (e) { state.initialPaidStr = e.target.value; });
       document.getElementById('lm-principal').addEventListener('input', function (e) { state.principalStr = e.target.value; updatePreview(); });
       document.getElementById('lm-int-mode').addEventListener('change', function (e) { state.interestMode = e.target.value; render(); });
       var rateInp = document.getElementById('lm-int-rate');
@@ -171,8 +189,10 @@
         var c = calcTotals();
         closeFn();
         opts.onSave({
+          isHistorical: state.isHistorical,
+          initialPaid: state.isHistorical ? fmt.parseDecimalInput(state.initialPaidStr) : 0,
           borrower: state.borrower.trim(),
-          fromAccount: state.fromAccount,
+          fromAccount: state.isHistorical ? '' : state.fromAccount,
           principal: c.principal,
           interestRate: c.rate,
           interestMode: state.interestMode,

@@ -139,7 +139,11 @@
         return [m.id, m.date, m.type, m.fundName, m.subName || '', m.normalAccount || '', m.description || '', m.amount || 0, m.commission || 0, m.commissionApply || 'moved', m.exchangeRate || 1, m.amountCOP || 0, m.linkedMovementId || '', m.createdAt || ''];
       }),
       prestamos: (data.loans || []).map(function (l) {
-        return [l.id, l.borrower || '', l.fromAccount || '', l.principal || 0, l.interestRate || 0, l.interestMode || 'none', l.totalDue || 0, l.installments || 1, l.frequency || 'mensual', l.startDate || '', l.notes || '', l.linkedMovementId || '', l.createdAt || ''];
+        var cleanNotes = String(l.notes || '').replace(/\s*\[previo:[^\]]+\]/g, '').trim();
+        if (l.isHistorical) {
+          cleanNotes = (cleanNotes ? cleanNotes + ' ' : '') + '[previo:' + (Number(l.initialPaid) || 0) + ']';
+        }
+        return [l.id, l.borrower || '', l.fromAccount || '', l.principal || 0, l.interestRate || 0, l.interestMode || 'none', l.totalDue || 0, l.installments || 1, l.frequency || 'mensual', l.startDate || '', cleanNotes, l.linkedMovementId || '', l.createdAt || ''];
       }),
       pagosPrestamos: (data.loanPayments || []).map(function (p) {
         return [p.id, p.loanId || '', p.date || '', p.toAccount || '', p.amount || 0, p.notes || '', p.linkedMovementId || '', p.createdAt || ''];
@@ -310,6 +314,9 @@
     });
 
     var loans = (loansRaw || []).filter(function (r) { return r[0] && r[1]; }).map(function (r) {
+      var rawLoanNotes = String(r[10] || '');
+      var prevMatch = rawLoanNotes.match(/\[previo:([\d.]+)\]/);
+      var cleanLoanNotes = rawLoanNotes.replace(/\s*\[previo:[^\]]+\]/g, '').trim();
       return {
         id: String(r[0]),
         borrower: String(r[1] || ''),
@@ -321,7 +328,9 @@
         installments: Math.max(1, parseSheetNumber(r[7]) || 1),
         frequency: String(r[8] || 'mensual'),
         startDate: String(r[9] || '').slice(0, 10),
-        notes: String(r[10] || ''),
+        notes: cleanLoanNotes,
+        isHistorical: Boolean(prevMatch),
+        initialPaid: prevMatch ? Number(prevMatch[1]) || 0 : 0,
         linkedMovementId: String(r[11] || ''),
         createdAt: String(r[12] || new Date().toISOString()),
       };

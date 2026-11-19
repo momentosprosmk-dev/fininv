@@ -5,11 +5,15 @@
     efectivo: { icon: 'fa-solid fa-wallet', cls: 'text-emerald' },
     debito: { icon: 'fa-regular fa-credit-card', cls: 'text-sky' },
     credito: { icon: 'fa-regular fa-credit-card', cls: 'text-amber' },
+    prestamo: { icon: 'fa-solid fa-file-invoice-dollar', cls: 'text-violet' },
   };
 
   function detectAccountIconKey(acc) {
     if (acc && acc.icon && acc.icon !== 'auto' && ACCOUNT_ICONS[acc.icon]) {
       return acc.icon;
+    }
+    if (acc && acc.kind === 'credito') {
+      return 'prestamo';
     }
     var lower = String((acc && acc.name) || '').toLowerCase();
     if ((acc && acc.kind === 'deuda') || lower.indexOf('crédito') !== -1 || lower.indexOf('credito') !== -1) {
@@ -73,16 +77,20 @@
         var totalPaidFull = st.totalPaidFull != null ? st.totalPaidFull : (capPaid + intPaid);
         var isMora = Boolean(st.isOverdue);
         var isPaidMonth = Boolean(st.isPaidThisMonth);
+        var notStartedYet = Boolean(st.notStartedYet);
         var dueDay = Number(acc.dueDay) || 0;
         var statusBadge = isMora
           ? '<span class="badge badge-rose">Estás en mora</span>'
-          : (isPaidMonth
-              ? '<span class="badge badge-emerald">Cuota pagada</span>'
-              : '<span class="badge badge-violet">' + (dueDay > 0 ? 'Vence día ' + dueDay : 'Pendiente') + '</span>');
+          : (notStartedYet
+              ? '<span class="badge badge-emerald">Al día (inicia ' + esc(fmt.formatMonthLabel(st.startMonth)) + ')</span>'
+              : (isPaidMonth
+                  ? '<span class="badge badge-emerald">Cuota pagada</span>'
+                  : '<span class="badge badge-violet">' + (dueDay > 0 ? 'Vence día ' + dueDay : 'Pendiente') + '</span>'));
         var pendingColor = pendingMonth > 0 ? (isMora ? 'var(--rose)' : 'var(--amber)') : 'var(--emerald)';
+        var crIc = getAccountIcon(acc);
         return (
           '<div class="account-card ' + (isMora ? 'debt' : '') + '">' +
-            '<div class="account-top"><span>' + esc(acc.name) + ' (Crédito)</span>' + statusBadge + '</div>' +
+            '<div class="account-top"><span><i class="' + crIc.icon + ' ' + crIc.cls + '" style="margin-right:0.4rem"></i>' + esc(acc.name) + ' (Crédito)</span>' + statusBadge + '</div>' +
             '<p class="account-balance tabular">' + esc(mCOP(Math.max(0, balance))) + '</p>' +
             '<div class="credit-meta" style="color:' + (isMora ? 'var(--rose)' : 'var(--text-muted)') + '">' +
               '<span>' + (cuota > 0 ? 'Cuota: ' + esc(mCOP(cuota)) : 'Sin cuota fija') + (dueDay > 0 ? ' · Lím: día ' + dueDay : '') + '</span>' +

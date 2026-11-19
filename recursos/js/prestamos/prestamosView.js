@@ -17,7 +17,7 @@
     var loanPayList = (payments || [])
       .filter(function (p) { return p.loanId === loan.id; })
       .sort(function (a, b) { return b.date.localeCompare(a.date); });
-    var paidTotal = loanPayList.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
+    var paidTotal = (Number(loan.initialPaid) || 0) + loanPayList.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
     var totalDue = Number(loan.totalDue) || Number(loan.principal) || 0;
     var installments = Math.max(1, Number(loan.installments) || 1);
     var quotaAmount = totalDue / installments;
@@ -157,6 +157,7 @@
       loans.forEach(function (l) { loanById[l.id] = l; });
       var timeline = [];
       loans.forEach(function (l) {
+        if (l.isHistorical) return;
         timeline.push({
           id: l.id,
           kind: 'egreso',

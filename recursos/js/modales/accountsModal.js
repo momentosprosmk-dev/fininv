@@ -15,6 +15,10 @@
       newAccMonths: '24',
       newAccInstallment: '',
       newAccDueDay: '15',
+      newAccStartMonth: window.AppFormat.getCurrentMonthKey(),
+      newAccPaidInstallments: '',
+      newAccPaidCapital: '',
+      newAccPaidInterest: '',
       catFilter: 'Egreso',
       newCatName: '',
       newCatIsArq: false,
@@ -39,11 +43,31 @@
           { value: 'efectivo', label: 'Efectivo' },
           { value: 'debito', label: 'Tarjeta de Débito' },
           { value: 'credito', label: 'Tarjeta de Crédito' },
+          { value: 'prestamo', label: 'Crédito Bancario (Cuotas)' },
         ];
         var renderIconSelect = function (cls, attr, selectedVal) {
           return '<select class="select ' + cls + '" ' + attr + ' style="padding:0.3rem 0.5rem;font-size:0.75rem">' +
             iconOptions.map(function (op) {
               return '<option value="' + op.value + '" ' + ((selectedVal || 'auto') === op.value ? 'selected' : '') + '>' + op.label + '</option>';
+            }).join('') +
+          '</select>';
+        };
+
+        var renderMonthSelect = function (cls, attr, selectedVal, styleStr) {
+          var baseKey = window.AppFormat.getCurrentMonthKey();
+          var baseParts = baseKey.split('-').map(Number);
+          var monthsList = [];
+          for (var offset = -3; offset <= 24; offset++) {
+            var d = new Date(baseParts[0], baseParts[1] - 1 + offset, 1);
+            var mk = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            monthsList.push(mk);
+          }
+          if (selectedVal && monthsList.indexOf(selectedVal) === -1) {
+            monthsList.unshift(selectedVal);
+          }
+          return '<select class="select ' + cls + '" ' + attr + (styleStr ? ' style="' + styleStr + '"' : '') + '>' +
+            monthsList.map(function (mk) {
+              return '<option value="' + mk + '"' + (selectedVal === mk ? ' selected' : '') + '>' + esc(window.AppFormat.formatMonthLabel(mk)) + '</option>';
             }).join('') +
           '</select>';
         };
@@ -59,6 +83,7 @@
                   '<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.78rem;color:var(--text-muted)">Cap. pagado:<input type="text" inputmode="decimal" class="input acc-paid-cap-inp" data-acc-idx="' + idx + '" value="' + (acc.initialPaidCapital || 0) + '" style="padding:0.3rem 0.45rem;font-size:0.8rem;width:6rem" /></label>' +
                   '<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.78rem;color:var(--text-muted)">Int. pagado:<input type="text" inputmode="decimal" class="input acc-paid-int-inp" data-acc-idx="' + idx + '" value="' + (acc.initialPaidInterest || 0) + '" style="padding:0.3rem 0.45rem;font-size:0.8rem;width:6rem" /></label>' +
                   '<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.78rem;color:var(--text-muted)">Día límite:<input type="text" inputmode="numeric" class="input acc-due-inp" data-acc-idx="' + idx + '" value="' + (acc.dueDay || '') + '" placeholder="15" style="padding:0.3rem 0.45rem;font-size:0.8rem;width:3.5rem" /></label>' +
+                  '<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.78rem;color:var(--text-muted)">Cobrar desde:' + renderMonthSelect('acc-start-month-inp', 'data-acc-idx="' + idx + '"', acc.startMonth || window.AppFormat.getCurrentMonthKey(), 'padding:0.25rem 0.45rem;font-size:0.78rem;width:auto') + '</label>' +
                   '<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.8rem;color:#fda4af;cursor:pointer"><input type="checkbox" class="acc-mora-chk" data-acc-idx="' + idx + '" ' + (acc.inMora ? 'checked' : '') + ' /> En mora</label>' +
                 '</div>'
               : '');
@@ -135,15 +160,22 @@
                         return '<option value="' + op.value + '" ' + (state.newAccIcon === op.value ? 'selected' : '') + '>' + op.label + '</option>';
                       }).join('') +
                     '</select>' +
-                    '<input type="text" id="new-acc-bal" class="input" inputmode="decimal" placeholder="Saldo inicial ' + esc(window.AppFormat.getBaseCurrency()) + '" value="' + esc(state.newAccBalance) + '" style="flex:1;min-width:8rem" />' +
-                    (state.newAccKind === 'deuda'
-                      ? '<input type="text" id="new-acc-limit" class="input" inputmode="numeric" placeholder="Cupo TC" value="' + esc(state.newAccLimit) + '" style="flex:1;min-width:8rem" />'
-                      : (state.newAccKind === 'credito'
-                        ? '<input type="text" id="new-acc-months" class="input" inputmode="numeric" placeholder="Meses (ej. 24)" value="' + esc(state.newAccMonths) + '" style="flex:1;min-width:6.5rem" />' +
-                          '<input type="text" id="new-acc-installment" class="input" inputmode="decimal" placeholder="Cuota mensual" value="' + esc(state.newAccInstallment) + '" style="flex:1;min-width:7.5rem" />' +
-                          '<input type="text" id="new-acc-due-day" class="input" inputmode="numeric" placeholder="Día límite (1-31)" value="' + esc(state.newAccDueDay) + '" style="flex:1;min-width:7.5rem" />'
-                        : '')) +
-                    '<button type="button" id="btn-add-acc" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Guardar cuenta</button>' +
+                    (state.newAccKind === 'credito'
+                      ? '<div class="form-grid-2" style="width:100%;gap:0.5rem">' +
+                          '<div><label class="field-label" style="font-size:0.75rem">Capital pendiente actual (' + esc(window.AppFormat.getBaseCurrency()) + ')</label><input type="text" id="new-acc-bal" class="input" inputmode="decimal" placeholder="Ej. 9000000" value="' + esc(state.newAccBalance) + '" /></div>' +
+                          '<div><label class="field-label" style="font-size:0.75rem">Cuota mensual (' + esc(window.AppFormat.getBaseCurrency()) + ')</label><input type="text" id="new-acc-installment" class="input" inputmode="decimal" placeholder="Ej. 250637" value="' + esc(state.newAccInstallment) + '" /></div>' +
+                          '<div><label class="field-label" style="font-size:0.75rem">Cuotas totales (meses)</label><input type="text" id="new-acc-months" class="input" inputmode="numeric" placeholder="Ej. 60" value="' + esc(state.newAccMonths) + '" /></div>' +
+                          '<div><label class="field-label" style="font-size:0.75rem">Cuotas ya pagadas</label><input type="text" id="new-acc-paid-inst" class="input" inputmode="numeric" placeholder="Ej. 0" value="' + esc(state.newAccPaidInstallments) + '" /></div>' +
+                          '<div><label class="field-label" style="font-size:0.75rem">Capital pagado antes</label><input type="text" id="new-acc-paid-cap" class="input" inputmode="decimal" placeholder="0" value="' + esc(state.newAccPaidCapital) + '" /></div>' +
+                          '<div><label class="field-label" style="font-size:0.75rem">Intereses pagados antes</label><input type="text" id="new-acc-paid-int" class="input" inputmode="decimal" placeholder="0" value="' + esc(state.newAccPaidInterest) + '" /></div>' +
+                          '<div><label class="field-label" style="font-size:0.75rem">Día límite de pago (1-31)</label><input type="text" id="new-acc-due-day" class="input" inputmode="numeric" placeholder="15" value="' + esc(state.newAccDueDay) + '" /></div>' +
+                          '<div><label class="field-label" style="font-size:0.75rem">Cobrar / alertar desde (mes)</label>' + renderMonthSelect('', 'id="new-acc-start-month"', state.newAccStartMonth, '') + '</div>' +
+                        '</div>'
+                      : '<input type="text" id="new-acc-bal" class="input" inputmode="decimal" placeholder="Saldo inicial ' + esc(window.AppFormat.getBaseCurrency()) + '" value="' + esc(state.newAccBalance) + '" style="flex:1;min-width:8rem" />' +
+                        (state.newAccKind === 'deuda'
+                          ? '<input type="text" id="new-acc-limit" class="input" inputmode="numeric" placeholder="Cupo TC" value="' + esc(state.newAccLimit) + '" style="flex:1;min-width:8rem" />'
+                          : '')) +
+                    '<button type="button" id="btn-add-acc" class="btn btn-primary" style="width:100%"><i class="fa-solid fa-plus"></i> Guardar cuenta</button>' +
                   '</div>' +
                 '</div>'
               : '') +
@@ -287,6 +319,12 @@
           state.draftAccounts[idx].dueDay = day > 31 ? 31 : day;
         });
       });
+      root.querySelectorAll('.acc-start-month-inp').forEach(function (inp) {
+        inp.addEventListener('change', function (e) {
+          var idx = Number(inp.getAttribute('data-acc-idx'));
+          state.draftAccounts[idx].startMonth = e.target.value || '';
+        });
+      });
       root.querySelectorAll('.acc-mora-chk').forEach(function (chk) {
         chk.addEventListener('change', function (e) {
           var idx = Number(chk.getAttribute('data-acc-idx'));
@@ -346,6 +384,14 @@
       if (newAccInst) newAccInst.addEventListener('input', function (e) { state.newAccInstallment = e.target.value; });
       var newAccDue = document.getElementById('new-acc-due-day');
       if (newAccDue) newAccDue.addEventListener('input', function (e) { state.newAccDueDay = e.target.value; });
+      var newAccStartM = document.getElementById('new-acc-start-month');
+      if (newAccStartM) newAccStartM.addEventListener('change', function (e) { state.newAccStartMonth = e.target.value; });
+      var newAccPaidInst = document.getElementById('new-acc-paid-inst');
+      if (newAccPaidInst) newAccPaidInst.addEventListener('input', function (e) { state.newAccPaidInstallments = e.target.value; });
+      var newAccPaidCap = document.getElementById('new-acc-paid-cap');
+      if (newAccPaidCap) newAccPaidCap.addEventListener('input', function (e) { state.newAccPaidCapital = e.target.value; });
+      var newAccPaidInt = document.getElementById('new-acc-paid-int');
+      if (newAccPaidInt) newAccPaidInt.addEventListener('input', function (e) { state.newAccPaidInterest = e.target.value; });
       var addAccBtn = document.getElementById('btn-add-acc');
       if (addAccBtn) {
         addAccBtn.addEventListener('click', function () {
@@ -362,9 +408,12 @@
           if (state.newAccKind === 'credito') {
             item.totalMonths = Math.max(1, Number(state.newAccMonths.replace(/[^0-9]/g, '')) || 12);
             item.monthlyInstallment = Number(state.newAccInstallment.replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
+            item.initialPaidInstallments = Math.max(0, Number(state.newAccPaidInstallments.replace(/[^0-9]/g, '')) || 0);
+            item.initialPaidCapital = Number(state.newAccPaidCapital.replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
+            item.initialPaidInterest = Number(state.newAccPaidInterest.replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
             var d = Number(state.newAccDueDay.replace(/[^0-9]/g, '')) || 0;
             item.dueDay = d > 31 ? 31 : d;
-            item.startMonth = window.AppFormat.getCurrentMonthKey();
+            item.startMonth = state.newAccStartMonth || window.AppFormat.getCurrentMonthKey();
             item.inMora = false;
           }
           state.draftAccounts.push(item);
@@ -372,6 +421,9 @@
           state.newAccIcon = 'auto';
           state.newAccBalance = '';
           state.newAccInstallment = '';
+          state.newAccPaidInstallments = '';
+          state.newAccPaidCapital = '';
+          state.newAccPaidInterest = '';
           state.showAddAccount = false;
           render();
         });

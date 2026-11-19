@@ -328,8 +328,11 @@
           appState.sheetWebUrl = remote.spreadsheetUrl;
           localStorage.setItem(SHEET_WEB_URL_STORAGE, remote.spreadsheetUrl);
         }
-        appState.data = remote.data;
-        window.AppStorage.saveLocalData(remote.data);
+        var mergedRemote = Object.assign({}, remote.data, {
+          exchangeRates: (appState.data && appState.data.exchangeRates) || { USD: { live: 4300, custom: null, updatedAt: null } },
+        });
+        appState.data = mergedRemote;
+        window.AppStorage.saveLocalData(mergedRemote);
       }
       renderApp();
       return true;
@@ -777,19 +780,21 @@
         onSave: function (loanInput) {
           var nowIso = new Date().toISOString();
           var loanId = 'loan-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
-          var movId = 'mov-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
-          var linkedMov = {
-            id: movId,
-            date: loanInput.startDate,
-            month: window.AppFormat.getAccountingMonthForDate(loanInput.startDate),
-            type: 'Egreso',
-            fromAccount: loanInput.fromAccount,
-            toAccount: 'Externo',
-            category: 'Préstamo otorgado',
-            description: 'Préstamo a ' + loanInput.borrower + (loanInput.notes ? ' - ' + loanInput.notes : ''),
-            amount: loanInput.principal,
-            createdAt: nowIso,
-          };
+          var movId = loanInput.isHistorical ? '' : ('mov-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6));
+          var linkedMov = loanInput.isHistorical
+            ? null
+            : {
+                id: movId,
+                date: loanInput.startDate,
+                month: window.AppFormat.getAccountingMonthForDate(loanInput.startDate),
+                type: 'Egreso',
+                fromAccount: loanInput.fromAccount,
+                toAccount: 'Externo',
+                category: 'Préstamo otorgado',
+                description: 'Préstamo a ' + loanInput.borrower + (loanInput.notes ? ' - ' + loanInput.notes : ''),
+                amount: loanInput.principal,
+                createdAt: nowIso,
+              };
           var newLoan = Object.assign({}, loanInput, {
             id: loanId,
             linkedMovementId: movId,
@@ -797,7 +802,7 @@
           });
           updateData(function (prev) {
             return Object.assign({}, prev, {
-              movements: (prev.movements || []).concat([linkedMov]),
+              movements: linkedMov ? (prev.movements || []).concat([linkedMov]) : (prev.movements || []),
               loans: (prev.loans || []).concat([newLoan]),
             });
           });

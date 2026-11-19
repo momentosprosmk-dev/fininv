@@ -214,7 +214,8 @@
       });
       creditPaidCounts[a.name] = (Number(a.initialPaidInstallments) || 0) + paidInstallmentsCount;
       var startM = a.startMonth || creditFirstMovMonth[a.name] || targetMonth;
-      var monthsSpan = listMonthsRange(startM, targetMonth, totalMonths);
+      var notStartedYet = Boolean(a.startMonth && targetMonth < a.startMonth);
+      var monthsSpan = notStartedYet ? [] : listMonthsRange(startM, targetMonth, totalMonths);
       var totalUnpaid = 0;
       var pastUnpaid = 0;
 
@@ -227,11 +228,11 @@
         if (mk < targetMonth && diff > 0) pastUnpaid += diff;
       });
 
-      var pendingInstallment = bal > 0 ? Math.min(bal, totalUnpaid) : 0;
+      var pendingInstallment = (!notStartedYet && bal > 0) ? Math.min(bal, totalUnpaid) : 0;
       var targetInfo = monthMap[targetMonth];
       var targetReq = (targetInfo && targetInfo.required > 0) ? targetInfo.required : cuota;
       var targetPaid = targetInfo ? targetInfo.paid : 0;
-      var isPaidThisMonth = bal <= 0 || (pendingInstallment <= 0 && (targetPaid > 0 || targetReq <= 0));
+      var isPaidThisMonth = notStartedYet || bal <= 0 || (pendingInstallment <= 0 && (targetPaid > 0 || targetReq <= 0));
       var dueDay = Number(a.dueDay) || 0;
       var isTodayPastDueInCurrentPeriod = false;
       if (dueDay > 0) {
@@ -258,6 +259,8 @@
         isPaidThisMonth: isPaidThisMonth,
         dueDay: dueDay,
         isOverdue: isOverdue,
+        notStartedYet: notStartedYet,
+        startMonth: a.startMonth || '',
         capitalPaid: capPaidTot,
         interestPaid: intPaidTot,
         totalPaidFull: capPaidTot + intPaidTot,
