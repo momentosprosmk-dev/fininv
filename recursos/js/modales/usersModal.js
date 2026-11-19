@@ -75,8 +75,9 @@
           listHtml = '<div style="display:flex;flex-direction:column;gap:0.6rem">' + state.users.map(function (u) {
             var isEditing = state.editingRow === u.rowIndex;
             var isConfirmDel = state.confirmDeleteRow === u.rowIndex;
-            var isCurrentSession = (opts.currentUsername && u.username.toLowerCase() === String(opts.currentUsername).trim().toLowerCase()) ||
-              (opts.currentEmail && u.email && u.email.toLowerCase() === String(opts.currentEmail).trim().toLowerCase());
+            var isCurrentSession = opts.currentUsername
+              ? (u.username.toLowerCase() === String(opts.currentUsername).trim().toLowerCase())
+              : Boolean(opts.currentEmail && u.email && u.email.toLowerCase() === String(opts.currentEmail).trim().toLowerCase());
             if (isEditing) {
               return (
                 '<div class="config-box" style="border-color:rgba(99,102,241,0.45)">' +
@@ -114,9 +115,7 @@
                     '</div>'
                   : '<div style="display:flex;gap:0.4rem">' +
                       '<button type="button" class="btn btn-secondary" data-um-edit="' + u.rowIndex + '" style="padding:0.35rem 0.65rem;font-size:0.8rem" ' + (state.busy ? 'disabled' : '') + '><i class="fa-regular fa-pen-to-square"></i> Editar</button>' +
-                      (!isCurrentSession
-                        ? '<button type="button" class="icon-delete-btn" data-um-ask-del="' + u.rowIndex + '" title="Eliminar usuario" ' + (state.busy ? 'disabled' : '') + '><i class="fa-regular fa-trash-can"></i></button>'
-                        : '') +
+                      '<button type="button" class="icon-delete-btn" ' + (isCurrentSession ? 'disabled title="No puedes eliminar el usuario de tu sesión actual" style="opacity:0.35;cursor:not-allowed"' : 'data-um-ask-del="' + u.rowIndex + '" title="Eliminar usuario"' + (state.busy ? ' disabled' : '')) + '><i class="fa-regular fa-trash-can"></i></button>' +
                     '</div>') +
               '</div>'
             );

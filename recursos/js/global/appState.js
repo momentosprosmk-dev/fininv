@@ -7,6 +7,7 @@
   var AUTH_PASS_HASH_STORAGE = 'fininv_auth_pass_hash';
   var THEME_STORAGE = 'contabilidad_theme';
   var HIDE_VALUES_STORAGE = 'contabilidad_hide_values';
+  var PENDING_SYNC_STORAGE = 'contabilidad_pending_sync';
 
   var appState = {
     data: window.AppStorage.loadLocalData(),
@@ -38,8 +39,18 @@
     authUser: localStorage.getItem(AUTH_USER_STORAGE) || '',
     authPassHash: localStorage.getItem(AUTH_PASS_HASH_STORAGE) || '',
     isSyncing: false,
+    pendingSync: localStorage.getItem(PENDING_SYNC_STORAGE) === 'true',
     syncError: null,
   };
+
+  function setPendingSync(flag) {
+    appState.pendingSync = Boolean(flag);
+    if (appState.pendingSync) {
+      localStorage.setItem(PENDING_SYNC_STORAGE, 'true');
+    } else {
+      localStorage.removeItem(PENDING_SYNC_STORAGE);
+    }
+  }
 
   function getConnectionMode() {
     if (appState.scriptUrl) return 'script';
@@ -132,6 +143,34 @@
     var googlePill = document.getElementById('google-status-pill');
     var menuDot = document.getElementById('menu-sheet-dot');
     var mode = getConnectionMode();
+    var isOnline = typeof navigator === 'undefined' ? true : navigator.onLine !== false;
+    var syncBtn = document.getElementById('btn-sync-status');
+    var syncIcon = document.getElementById('sync-status-icon');
+    if (syncBtn && syncIcon) {
+      if (mode === 'none') {
+        syncIcon.className = 'fa-solid fa-link-slash';
+        syncIcon.style.color = 'var(--text-dim)';
+        syncBtn.title = 'Sin Sheet conectado (toca para conectar)';
+      } else if (!isOnline) {
+        syncIcon.className = 'fa-solid fa-wifi';
+        syncIcon.style.color = 'var(--rose)';
+        syncBtn.title = appState.pendingSync
+          ? 'Sin señal: cambios guardados localmente, se sincronizarán al volver la señal'
+          : 'Sin señal de internet';
+      } else if (appState.isSyncing) {
+        syncIcon.className = 'fa-solid fa-rotate fa-spin';
+        syncIcon.style.color = 'var(--indigo-hover)';
+        syncBtn.title = 'Sincronizando con Google Sheet...';
+      } else if (appState.pendingSync || appState.syncError) {
+        syncIcon.className = 'fa-solid fa-cloud-arrow-up';
+        syncIcon.style.color = 'var(--amber)';
+        syncBtn.title = 'Cambios pendientes de sincronizar (toca para reintentar)';
+      } else {
+        syncIcon.className = 'fa-solid fa-signal';
+        syncIcon.style.color = 'var(--emerald)';
+        syncBtn.title = 'Conectado y sincronizado con Google Sheet';
+      }
+    }
     if (googleBtn && googleLbl) {
       googleBtn.classList.toggle('is-connected', mode !== 'none');
       if (mode !== 'none') {
@@ -284,8 +323,32 @@
     });
   }
 
+  function clearSessionAndPrompt(errMsg) {
+    appState.scriptUrl = '';
+    appState.sheetWebUrl = null;
+    appState.authMode = 'email';
+    appState.authEmail = '';
+    appState.authUser = '';
+    appState.authPassHash = '';
+    setPendingSync(false);
+    localStorage.removeItem(APPS_SCRIPT_URL_STORAGE);
+    localStorage.removeItem(SHEET_WEB_URL_STORAGE);
+    localStorage.removeItem(AUTH_MODE_STORAGE);
+    localStorage.removeItem(AUTH_EMAIL_STORAGE);
+    localStorage.removeItem(AUTH_USER_STORAGE);
+    localStorage.removeItem(AUTH_PASS_HASH_STORAGE);
+    appState.syncError = errMsg || 'Tu sesión expiró o las credenciales cambiaron. Vuelve a conectarte.';
+    renderHeader(computeDerived());
+    openGoogleConnect();
+  }
+
   async function syncDataToCloud(nextData) {
     if (!appState.scriptUrl) return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setPendingSync(true);
+      renderHeader(computeDerived());
+      return;
+    }
     appState.isSyncing = true;
     appState.syncError = null;
     renderHeader(computeDerived());
@@ -295,7 +358,14 @@
         appState.sheetWebUrl = res.spreadsheetUrl;
         localStorage.setItem(SHEET_WEB_URL_STORAGE, res.spreadsheetUrl);
       }
+      setPendingSync(false);
     } catch (err) {
+      if (err && err.isAuthOrLinkError) {
+        appState.isSyncing = false;
+        clearSessionAndPrompt(err.message);
+        return;
+      }
+      setPendingSync(true);
       appState.syncError = err && err.message ? err.message : 'Error al sincronizar con Apps Script';
     } finally {
       appState.isSyncing = false;
@@ -338,6 +408,10 @@
       return true;
     } catch (err) {
       appState.syncError = err && err.message ? err.message : 'No se pudo conectar. Verifica tus credenciales y la URL /exec.';
+      if (err && err.isAuthOrLinkError && appState.scriptUrl && appState.scriptUrl === url) {
+        appState.isSyncing = false;
+        clearSessionAndPrompt(appState.syncError);
+      }
       return false;
     } finally {
       appState.isSyncing = false;
@@ -348,6 +422,7 @@
   function updateData(updater) {
     appState.data = updater(appState.data);
     window.AppStorage.saveLocalData(appState.data);
+    if (appState.scriptUrl) setPendingSync(true);
     renderApp();
     syncDataToCloud(appState.data);
   }
@@ -385,11 +460,14 @@
           appState.authEmail = params.email || '';
           appState.authUser = mode === 'credentials' ? params.username : '';
           appState.authPassHash = mode === 'credentials' ? pwdHash : '';
+          setPendingSync(false);
+          appState.isSyncing = false;
           localStorage.setItem(APPS_SCRIPT_URL_STORAGE, url);
           localStorage.setItem(AUTH_MODE_STORAGE, appState.authMode);
           localStorage.setItem(AUTH_EMAIL_STORAGE, appState.authEmail);
           localStorage.setItem(AUTH_USER_STORAGE, appState.authUser);
           localStorage.setItem(AUTH_PASS_HASH_STORAGE, appState.authPassHash);
+          renderHeader(computeDerived());
           openGoogleConnect();
           return { ok: true };
         }
@@ -890,6 +968,19 @@
     }
     window.initFooter();
 
+    var syncStatusBtn = document.getElementById('btn-sync-status');
+    if (syncStatusBtn) {
+      syncStatusBtn.addEventListener('click', function () {
+        if (!appState.scriptUrl) {
+          openGoogleConnect();
+        } else if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          renderHeader(computeDerived());
+        } else {
+          syncDataToCloud(appState.data);
+        }
+      });
+    }
+
     document.getElementById('btn-toggle-privacy').addEventListener('click', function () {
       appState.hideValues = !appState.hideValues;
       localStorage.setItem(HIDE_VALUES_STORAGE, String(appState.hideValues));
@@ -1210,8 +1301,24 @@
       window.AppActions.refreshLiveFx();
     }
 
+    window.addEventListener('online', function () {
+      renderHeader(computeDerived());
+      if (appState.scriptUrl && appState.pendingSync) {
+        syncDataToCloud(appState.data);
+      }
+    });
+    window.addEventListener('offline', function () {
+      renderHeader(computeDerived());
+    });
+
     if (appState.scriptUrl) {
-      pullFromAppsScript(appState.scriptUrl, false);
+      if (appState.pendingSync && (typeof navigator === 'undefined' || navigator.onLine !== false)) {
+        syncDataToCloud(appState.data).then(function () {
+          pullFromAppsScript(appState.scriptUrl, false);
+        });
+      } else if (typeof navigator === 'undefined' || navigator.onLine !== false) {
+        pullFromAppsScript(appState.scriptUrl, false);
+      }
     }
   }
 

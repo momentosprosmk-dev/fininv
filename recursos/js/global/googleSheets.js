@@ -363,9 +363,22 @@
     };
   }
 
+  function authLinkError(msg) {
+    var err = new Error(msg);
+    err.isAuthOrLinkError = true;
+    return err;
+  }
+
+  function httpStatusError(res, fallbackMsg) {
+    if (res && (res.status === 401 || res.status === 403 || res.status === 404)) {
+      return authLinkError('El link de Apps Script es incorrecto o fue revocado (' + res.status + ').');
+    }
+    return new Error(fallbackMsg + ' (' + (res ? res.status : 'error') + ')');
+  }
+
   function parseAppsScriptResponse(json) {
     if (!json || json.ok === false) {
-      throw new Error((json && json.error) || 'No se pudo autenticar o leer el Google Sheet.');
+      throw authLinkError((json && json.error) || 'No se pudo autenticar o leer el Google Sheet.');
     }
     return {
       spreadsheetUrl: json.spreadsheetUrl,
@@ -393,11 +406,11 @@
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'pull', auth: auth }),
       });
-      if (!postRes.ok) throw new Error('Error al leer Apps Script (' + postRes.status + ')');
+      if (!postRes.ok) throw httpStatusError(postRes, 'Error al leer Apps Script');
       return parseAppsScriptResponse(await postRes.json());
     }
     var res = await fetch(scriptUrl, { method: 'GET' });
-    if (!res.ok) throw new Error('Error al leer Apps Script (' + res.status + ')');
+    if (!res.ok) throw httpStatusError(res, 'Error al leer Apps Script');
     return parseAppsScriptResponse(await res.json());
   }
 
@@ -423,13 +436,13 @@
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'auth_login', auth: auth }),
     });
-    if (!res.ok) throw new Error('Error al iniciar sesión en Apps Script (' + res.status + ')');
+    if (!res.ok) throw httpStatusError(res, 'Error al iniciar sesión en Apps Script');
     var json = await res.json();
     if (!json || json.ok === false) {
-      throw new Error((json && json.error) || 'Usuario o contraseña incorrectos.');
+      throw authLinkError((json && json.error) || 'Usuario o contraseña incorrectos.');
     }
     if (!json.authenticated) {
-      throw new Error('Tu Google Sheet tiene una versión anterior de Code.gs sin validación de usuario. Actualiza Code.gs en Extensiones > Apps Script > Implementar > Nueva versión.');
+      throw authLinkError('Tu Google Sheet tiene una versión anterior de Code.gs sin validación de usuario. Actualiza Code.gs en Extensiones > Apps Script > Implementar > Nueva versión.');
     }
     return parseAppsScriptResponse(json);
   }
@@ -456,10 +469,10 @@
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error('Error al guardar en Apps Script (' + res.status + ')');
+    if (!res.ok) throw httpStatusError(res, 'Error al guardar en Apps Script');
     var json = await res.json();
     if (!json || json.ok === false) {
-      throw new Error((json && json.error) || 'No autorizado para guardar en el Google Sheet.');
+      throw authLinkError((json && json.error) || 'No autorizado para guardar en el Google Sheet.');
     }
     return { spreadsheetUrl: json.spreadsheetUrl };
   }
@@ -471,10 +484,10 @@
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error('Error al gestionar usuarios (' + res.status + ')');
+    if (!res.ok) throw httpStatusError(res, 'Error al gestionar usuarios');
     var json = await res.json();
     if (!json || json.ok === false) {
-      throw new Error((json && json.error) || 'No se pudo completar la operación.');
+      throw authLinkError((json && json.error) || 'No se pudo completar la operación.');
     }
     return json;
   }
