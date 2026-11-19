@@ -28,6 +28,8 @@
       invEquivStr: '',
       invEquivManual: false,
       creditRequiredStr: '',
+      creditCapitalStr: '',
+      creditCapitalManual: false,
       description: preset.description || '',
       amountStr: preset.amount ? String(preset.amount) : '',
       amountManual: Boolean(preset.amount),
@@ -72,6 +74,8 @@
     }
 
     function render() {
+      var prevScrollEl = root.querySelector('.modal-body-scroll');
+      var prevScrollTop = prevScrollEl ? prevScrollEl.scrollTop : 0;
       var esc = window.escapeHTML;
       var fmt = window.AppFormat;
       var parsedAmount = fmt.parseDecimalInput(state.amountStr);
@@ -186,6 +190,10 @@
           var isReqLocked = Boolean(creditMonthState && creditMonthState.locked);
           var paidSoFar = creditMonthState ? creditMonthState.paidInMonth : 0;
           var diffInfo = getCreditDiffInfo(parsedCreditReq, paidSoFar, parsedAmount);
+          var parsedCapVal = state.creditCapitalManual
+            ? Math.min(parsedAmount, Math.max(0, fmt.parseDecimalInput(state.creditCapitalStr)))
+            : parsedAmount;
+          var parsedIntVal = Math.max(0, parsedAmount - parsedCapVal);
           var alreadyPaidLine = '';
           if (isReqLocked) {
             if (paidSoFar > parsedCreditReq && parsedCreditReq > 0) {
@@ -202,6 +210,11 @@
               '</div>' +
               alreadyPaidLine +
               amountFieldHtml +
+              '<div class="field-group" style="margin-top:0.45rem;margin-bottom:0.45rem">' +
+                '<label class="field-label" for="mm-credit-capital">Abono a capital (' + esc(baseCur) + ')</label>' +
+                '<input type="text" inputmode="decimal" id="mm-credit-capital" class="input" placeholder="Igual al total si no hay intereses" value="' + esc(state.creditCapitalManual ? state.creditCapitalStr : state.amountStr) + '" />' +
+                '<p id="mm-credit-int-hint" style="margin:0.25rem 0 0;font-size:0.78rem;color:var(--text-muted)">Intereses / gastos de este pago: <strong style="color:#fbbf24">' + esc(fmt.formatCOP(parsedIntVal)) + '</strong></p>' +
+              '</div>' +
               '<p id="mm-credit-diff-hint" style="margin:0;font-size:0.82rem;color:' + diffInfo.color + '">' + esc(diffInfo.text) + '</p>' +
             '</div>';
         }
@@ -262,17 +275,19 @@
 
       root.innerHTML =
         '<div class="modal-backdrop" id="mm-backdrop">' +
-          '<div class="modal-box">' +
-            '<div class="modal-header">' +
-              '<h2 class="modal-title">Registrar Movimiento</h2>' +
-              '<button type="button" class="modal-close" id="mm-close"><i class="fa-solid fa-xmark"></i></button>' +
+          '<form id="mm-form" class="modal-box modal-flex">' +
+            '<div class="modal-top-fixed">' +
+              '<div class="modal-header">' +
+                '<h2 class="modal-title">Registrar Movimiento</h2>' +
+                '<button type="button" class="modal-close" id="mm-close"><i class="fa-solid fa-xmark"></i></button>' +
+              '</div>' +
+              '<div class="segmented-tabs" style="margin-bottom:0">' +
+                '<button type="button" class="seg-btn ' + (state.type === 'Egreso' ? 'active-rose' : '') + '" data-mm-type="Egreso"><i class="fa-solid fa-arrow-trend-down"></i> Egreso</button>' +
+                '<button type="button" class="seg-btn ' + (state.type === 'Ingreso' ? 'active-emerald' : '') + '" data-mm-type="Ingreso"><i class="fa-solid fa-arrow-trend-up"></i> Ingreso</button>' +
+                '<button type="button" class="seg-btn ' + (state.type === 'Traspaso' ? 'active-sky' : '') + '" data-mm-type="Traspaso"><i class="fa-solid fa-right-left"></i> Traspaso</button>' +
+              '</div>' +
             '</div>' +
-            '<div class="segmented-tabs">' +
-              '<button type="button" class="seg-btn ' + (state.type === 'Egreso' ? 'active-rose' : '') + '" data-mm-type="Egreso"><i class="fa-solid fa-arrow-trend-down"></i> Egreso</button>' +
-              '<button type="button" class="seg-btn ' + (state.type === 'Ingreso' ? 'active-emerald' : '') + '" data-mm-type="Ingreso"><i class="fa-solid fa-arrow-trend-up"></i> Ingreso</button>' +
-              '<button type="button" class="seg-btn ' + (state.type === 'Traspaso' ? 'active-sky' : '') + '" data-mm-type="Traspaso"><i class="fa-solid fa-right-left"></i> Traspaso</button>' +
-            '</div>' +
-            '<form id="mm-form">' +
+            '<div class="modal-body-scroll">' +
               '<div class="field-group"><label class="field-label">Fecha</label><div id="mm-datepicker"></div></div>' +
               accountSectionHtml +
               '<div class="field-group">' +
@@ -284,18 +299,18 @@
               '</div>' +
               (state.type === 'Traspaso' && targetCreditAcc ? creditBoxHtml : amountFieldHtml) +
               invFundHtml +
-              '<div class="field-group">' +
+              '<div class="field-group" style="margin-bottom:0">' +
                 '<label class="field-label">Descripción (opcional)</label>' +
                 '<input type="text" id="mm-desc" class="input" placeholder="Ej. Mercado D1, Uber, Pago arriendo..." value="' + esc(state.description) + '" />' +
               '</div>' +
               arqBanner +
               insufficientBanner +
-              '<div class="modal-footer">' +
-                '<button type="button" class="btn btn-secondary" id="mm-cancel">Cancelar</button>' +
-                '<button type="submit" class="btn btn-primary" ' + (hasInsufficient || missingRequired ? 'disabled' : '') + '>Guardar movimiento</button>' +
-              '</div>' +
-            '</form>' +
-          '</div>' +
+            '</div>' +
+            '<div class="modal-bottom-fixed">' +
+              '<button type="button" class="btn btn-secondary" id="mm-cancel">Cancelar</button>' +
+              '<button type="submit" class="btn btn-primary" ' + (hasInsufficient || missingRequired ? 'disabled' : '') + '>Guardar movimiento</button>' +
+            '</div>' +
+          '</form>' +
         '</div>';
 
       // DatePicker
@@ -345,6 +360,8 @@
         toSel.addEventListener('change', function (e) {
           state.toAccount = e.target.value;
           state.amountManual = false;
+          state.creditCapitalManual = false;
+          state.creditCapitalStr = '';
           var cState = getCreditMonthState(state.toAccount, state.date);
           if (cState.requiredAmount > 0) {
             state.creditRequiredStr = String(cState.requiredAmount);
@@ -368,6 +385,15 @@
             state.amountStr = e.target.value;
             if (amtInput) amtInput.value = e.target.value;
           }
+          renderSubmitAndPreview();
+        });
+      }
+
+      var creditCapInp = document.getElementById('mm-credit-capital');
+      if (creditCapInp) {
+        creditCapInp.addEventListener('input', function (e) {
+          state.creditCapitalStr = e.target.value;
+          state.creditCapitalManual = state.creditCapitalStr.trim() !== '';
           renderSubmitAndPreview();
         });
       }
@@ -539,10 +565,19 @@
           if (targetCreditAcc && finalCreditReq > 0) {
             payload.creditRequiredAmount = finalCreditReq;
           }
+          if (targetCreditAcc) {
+            var finalCapAmt = state.creditCapitalManual
+              ? Math.min(amt, Math.max(0, fmt.parseDecimalInput(state.creditCapitalStr)))
+              : amt;
+            payload.capitalAmount = finalCapAmt;
+          }
         }
         opts.onSave(payload, invPayload);
         closeFn();
       });
+
+      var nextScrollEl = root.querySelector('.modal-body-scroll');
+      if (nextScrollEl) nextScrollEl.scrollTop = prevScrollTop;
 
       function renderSubmitAndPreview() {
         var amt = fmt.parseDecimalInput(state.amountStr);
@@ -584,6 +619,18 @@
           if (diffEl) {
             diffEl.style.color = diffInfoNow.color;
             diffEl.textContent = diffInfoNow.text;
+          }
+          var capInpEl = document.getElementById('mm-credit-capital');
+          if (capInpEl && !state.creditCapitalManual) {
+            capInpEl.value = state.amountStr;
+          }
+          var capNow = state.creditCapitalManual
+            ? Math.min(amt, Math.max(0, fmt.parseDecimalInput(state.creditCapitalStr)))
+            : amt;
+          var intNow = Math.max(0, amt - capNow);
+          var intHintEl = document.getElementById('mm-credit-int-hint');
+          if (intHintEl) {
+            intHintEl.innerHTML = 'Intereses / gastos de este pago: <strong style="color:#fbbf24">' + esc(fmt.formatCOP(intNow)) + '</strong>';
           }
         }
         var submitBtn = root.querySelector('#mm-form button[type="submit"]');

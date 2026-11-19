@@ -68,6 +68,9 @@
         var st = (summary.creditStatusByAccount && summary.creditStatusByAccount[acc.name]) || {};
         var cuota = st.cuota != null ? st.cuota : (Number(acc.monthlyInstallment) || 0);
         var pendingMonth = st.pendingInstallment != null ? st.pendingInstallment : Math.min(Math.max(0, balance), cuota);
+        var capPaid = st.capitalPaid != null ? st.capitalPaid : (Number(acc.initialPaidCapital) || 0);
+        var intPaid = st.interestPaid != null ? st.interestPaid : (Number(acc.initialPaidInterest) || 0);
+        var totalPaidFull = st.totalPaidFull != null ? st.totalPaidFull : (capPaid + intPaid);
         var isMora = Boolean(st.isOverdue);
         var isPaidMonth = Boolean(st.isPaidThisMonth);
         var dueDay = Number(acc.dueDay) || 0;
@@ -87,6 +90,11 @@
             '</div>' +
             '<div class="progress-track"><div class="progress-fill ' + (isMora ? 'high' : '') + '" style="width:' + progressPct + '%;' + (isMora ? '' : 'background:#6366f1;') + '"></div></div>' +
             '<p class="account-sub" style="margin-top:0.35rem;color:' + pendingColor + '">Pendiente cuota: <strong class="tabular">' + esc(mCOP(pendingMonth)) + '</strong></p>' +
+            '<div style="margin-top:0.45rem;padding-top:0.4rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.45rem 0.85rem;font-size:0.75rem;color:var(--text-muted)">' +
+              '<span>Total pagado: <strong class="tabular" style="color:var(--text-strong)">' + esc(mCOP(totalPaidFull)) + '</strong></span>' +
+              '<span>Capital: <strong class="tabular text-emerald">' + esc(mCOP(capPaid)) + '</strong></span>' +
+              '<span>Int/Gastos: <strong class="tabular text-amber">' + esc(mCOP(intPaid)) + '</strong></span>' +
+            '</div>' +
           '</div>'
         );
       }

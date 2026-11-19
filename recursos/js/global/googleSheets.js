@@ -96,7 +96,7 @@
         if (cleanDesc) parts.push(cleanDesc);
         if (a.icon && a.icon !== 'auto') parts.push('[icon:' + a.icon + ']');
         if (a.kind === 'credito') {
-          parts.push('[credito:' + (Number(a.totalMonths) || 12) + ':' + (Number(a.monthlyInstallment) || 0) + ':' + (a.inMora ? 1 : 0) + ':' + (Number(a.dueDay) || 0) + ':' + (a.startMonth || '') + ']');
+          parts.push('[credito:' + (Number(a.totalMonths) || 12) + ':' + (Number(a.monthlyInstallment) || 0) + ':' + (a.inMora ? 1 : 0) + ':' + (Number(a.dueDay) || 0) + ':' + (a.startMonth || '') + ':' + (Number(a.initialPaidInstallments) || 0) + ':' + (Number(a.initialPaidCapital) || 0) + ':' + (Number(a.initialPaidInterest) || 0) + ']');
         }
         if (idx === 0 && window.AppFormat && window.AppFormat.getMonthCloseDay) {
           var closeDay = window.AppFormat.getMonthCloseDay();
@@ -114,9 +114,12 @@
         return [c.id, c.name, c.description || ''];
       }),
       movimientos: (data.movements || []).map(function (m) {
-        var desc = String(m.description || '').replace(/\s*\[cuotaReq:[^\]]+\]/g, '').trim();
+        var desc = String(m.description || '').replace(/\s*\[cuotaReq:[^\]]+\]/g, '').replace(/\s*\[capPagado:[^\]]+\]/g, '').trim();
         if (Number(m.creditRequiredAmount) > 0) {
           desc = (desc ? desc + ' ' : '') + '[cuotaReq:' + Number(m.creditRequiredAmount) + ']';
+        }
+        if (m.capitalAmount != null && m.capitalAmount !== '' && Number.isFinite(Number(m.capitalAmount))) {
+          desc = (desc ? desc + ' ' : '') + '[capPagado:' + Number(m.capitalAmount) + ']';
         }
         return [m.id, m.date, m.month, m.type, m.fromAccount, m.toAccount, m.category, desc, m.amount, m.createdAt];
       }),
@@ -162,7 +165,8 @@
       var monthStr = r[2] ? String(r[2]).slice(0, 7) : dateStr.slice(0, 7);
       var rawMovDesc = String(r[7] || '');
       var cuotaReqMatch = rawMovDesc.match(/\[cuotaReq:([\d.]+)\]/);
-      var cleanMovDesc = rawMovDesc.replace(/\s*\[cuotaReq:[^\]]+\]/g, '').trim();
+      var capPagadoMatch = rawMovDesc.match(/\[capPagado:([\d.]+)\]/);
+      var cleanMovDesc = rawMovDesc.replace(/\s*\[cuotaReq:[^\]]+\]/g, '').replace(/\s*\[capPagado:[^\]]+\]/g, '').trim();
       var movItem = {
         id: String(r[0]),
         date: dateStr,
@@ -176,6 +180,7 @@
         createdAt: String(r[9] || new Date().toISOString()),
       };
       if (cuotaReqMatch) movItem.creditRequiredAmount = Number(cuotaReqMatch[1]) || 0;
+      if (capPagadoMatch) movItem.capitalAmount = Number(capPagadoMatch[1]) || 0;
       return movItem;
     });
 
@@ -217,6 +222,9 @@
         item.inMora = creditoMatch ? creditoMatch[3] === '1' : false;
         item.dueDay = creditoMatch && creditoMatch[4] ? Number(creditoMatch[4]) || 0 : 0;
         if (creditoMatch && creditoMatch[5]) item.startMonth = creditoMatch[5];
+        item.initialPaidInstallments = creditoMatch && creditoMatch[6] ? Number(creditoMatch[6]) || 0 : 0;
+        item.initialPaidCapital = creditoMatch && creditoMatch[7] ? Number(creditoMatch[7]) || 0 : 0;
+        item.initialPaidInterest = creditoMatch && creditoMatch[8] ? Number(creditoMatch[8]) || 0 : 0;
       }
       return item;
     });

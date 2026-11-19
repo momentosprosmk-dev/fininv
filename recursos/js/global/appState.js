@@ -217,6 +217,11 @@
   }
 
   function renderApp() {
+    var scrollBody = document.querySelector('.app-scroll-body');
+    var savedScrollTop = scrollBody ? scrollBody.scrollTop : 0;
+    var activeWrap = document.querySelector('.tab-view:not(.hidden) .table-wrap');
+    var savedScrollLeft = activeWrap ? activeWrap.scrollLeft : 0;
+
     var derived = computeDerived();
     renderHeader(derived);
 
@@ -247,6 +252,10 @@
     } else if (appState.activeTab === 'cierres') {
       window.renderCierresView(viewState);
     }
+
+    if (scrollBody) scrollBody.scrollTop = savedScrollTop;
+    var nextWrap = document.querySelector('.tab-view:not(.hidden) .table-wrap');
+    if (nextWrap && savedScrollLeft > 0) nextWrap.scrollLeft = savedScrollLeft;
     syncStickyTableHeaders();
   }
 

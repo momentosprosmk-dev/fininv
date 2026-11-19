@@ -46,6 +46,8 @@
     }
 
     function render() {
+      var prevScrollEl = root.querySelector('.modal-body-scroll');
+      var prevScrollTop = prevScrollEl ? prevScrollEl.scrollTop : 0;
       var calc = calcTotals();
       var avail = state.fromAccount ? (balances[state.fromAccount] || 0) : 0;
       var hasInsufficient = Boolean(state.fromAccount) && calc.principal > avail;
@@ -181,6 +183,9 @@
           notes: state.notes.trim(),
         });
       });
+
+      var nextScrollEl = root.querySelector('.modal-body-scroll');
+      if (nextScrollEl) nextScrollEl.scrollTop = prevScrollTop;
     }
 
     render();
@@ -262,6 +267,9 @@
           notes: state.notes.trim(),
         });
       });
+
+      var nextScrollEl = root.querySelector('.modal-body-scroll');
+      if (nextScrollEl) nextScrollEl.scrollTop = prevScrollTop;
     }
 
     render();

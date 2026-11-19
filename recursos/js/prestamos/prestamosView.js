@@ -84,7 +84,7 @@
 
     var freqLabels = { unico: 'Pago único', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' };
     var filterPills = ['Todos', 'Activos', 'Vencidos', 'Pagados'].map(function (f) {
-      return '<button type="button" class="filter-pill ' + (filter === f ? 'active' : '') + '" data-loan-filter="' + f + '">' + f + '</button>';
+      return '<button type="button" class="filter-pill ' + (filter === f ? 'active' : '') + '" data-loan-filter="' + f + '" style="padding:0.38rem 0.68rem;font-size:0.82rem">' + f + '</button>';
     }).join('');
 
     var cardsHtml = filtered.length === 0
@@ -133,7 +133,7 @@
     if (activeTab === 'lista') {
       container.innerHTML =
         '<div class="movimientos-toolbar" style="margin-bottom:1rem">' +
-          '<div class="filter-pills">' + filterPills + '</div>' +
+          '<div class="filter-pills" style="gap:0.35rem">' + filterPills + '</div>' +
           '<button type="button" id="btn-new-loan" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nuevo préstamo</button>' +
         '</div>' +
         cardsHtml;
@@ -213,7 +213,9 @@
           }).join('');
 
       container.innerHTML =
-        '<h2 class="section-title-upper" style="margin:0 0 0.85rem">Historial de Movimientos de Préstamos</h2>' +
+        '<div class="movimientos-toolbar" style="margin-bottom:0.85rem">' +
+          '<h2 class="section-title-upper" style="margin:0">Historial de Movimientos de Préstamos</h2>' +
+        '</div>' +
         '<div class="table-wrap">' +
           '<table class="data-table">' +
             '<thead><tr>' +

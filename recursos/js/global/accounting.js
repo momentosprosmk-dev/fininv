@@ -17,7 +17,12 @@
     if (mov.type === 'Ingreso') {
       if (mov.toAccount in balances) {
         if (isDebtLikeAccount(accounts, mov.toAccount)) {
-          balances[mov.toAccount] -= amount;
+          var targetAccObj = accounts.find(function (a) { return a.name === mov.toAccount; });
+          var isCreditAcc = targetAccObj && targetAccObj.kind === 'credito';
+          var capApplied = (isCreditAcc && mov.capitalAmount != null && mov.capitalAmount !== '')
+            ? Math.min(amount, Math.max(0, Number(mov.capitalAmount) || 0))
+            : amount;
+          balances[mov.toAccount] -= capApplied;
         } else {
           balances[mov.toAccount] += amount;
         }
@@ -46,7 +51,12 @@
       }
       if (mov.toAccount in balances) {
         if (isDebtLikeAccount(accounts, mov.toAccount)) {
-          balances[mov.toAccount] -= amount;
+          var targetAccObj = accounts.find(function (a) { return a.name === mov.toAccount; });
+          var isCreditAcc = targetAccObj && targetAccObj.kind === 'credito';
+          var capApplied = (isCreditAcc && mov.capitalAmount != null && mov.capitalAmount !== '')
+            ? Math.min(amount, Math.max(0, Number(mov.capitalAmount) || 0))
+            : amount;
+          balances[mov.toAccount] -= capApplied;
         } else {
           balances[mov.toAccount] += amount;
         }
@@ -88,11 +98,15 @@
     var creditPaidCounts = {};
     var creditMonthInfo = {};
     var creditFirstMovMonth = {};
+    var creditCapitalPaid = {};
+    var creditInterestPaid = {};
     (data.accounts || []).forEach(function (a) {
       if (a.kind === 'credito') {
         creditPaidCounts[a.name] = 0;
         creditMonthInfo[a.name] = {};
         creditFirstMovMonth[a.name] = '';
+        creditCapitalPaid[a.name] = Number(a.initialPaidCapital) || 0;
+        creditInterestPaid[a.name] = Number(a.initialPaidInterest) || 0;
       }
     });
 
@@ -100,10 +114,17 @@
       applyMovementToBalances(balances, data.accounts || [], mov);
       var movMonth = getMovMonth(mov);
       if (mov.type === 'Traspaso' && (mov.toAccount in creditPaidCounts)) {
+        var movAmt = Number(mov.amount) || 0;
+        var capPart = (mov.capitalAmount != null && mov.capitalAmount !== '')
+          ? Math.min(movAmt, Math.max(0, Number(mov.capitalAmount) || 0))
+          : movAmt;
+        var intPart = Math.max(0, movAmt - capPart);
+        creditCapitalPaid[mov.toAccount] += capPart;
+        creditInterestPaid[mov.toAccount] += intPart;
         if (!creditMonthInfo[mov.toAccount][movMonth]) {
           creditMonthInfo[mov.toAccount][movMonth] = { paid: 0, required: 0 };
         }
-        creditMonthInfo[mov.toAccount][movMonth].paid += (Number(mov.amount) || 0);
+        creditMonthInfo[mov.toAccount][movMonth].paid += movAmt;
         if (Number(mov.creditRequiredAmount) > 0) {
           creditMonthInfo[mov.toAccount][movMonth].required = Number(mov.creditRequiredAmount);
         }
@@ -191,7 +212,7 @@
           paidInstallmentsCount += 1;
         }
       });
-      creditPaidCounts[a.name] = paidInstallmentsCount;
+      creditPaidCounts[a.name] = (Number(a.initialPaidInstallments) || 0) + paidInstallmentsCount;
       var startM = a.startMonth || creditFirstMovMonth[a.name] || targetMonth;
       var monthsSpan = listMonthsRange(startM, targetMonth, totalMonths);
       var totalUnpaid = 0;
@@ -227,6 +248,8 @@
       );
       var isOverdue = bal > 0 && pendingInstallment > 0 && (Boolean(a.inMora) || pastUnpaid > 0 || pastDueDate);
 
+      var capPaidTot = creditCapitalPaid[a.name] || 0;
+      var intPaidTot = creditInterestPaid[a.name] || 0;
       totalPendingCreditInstallments += pendingInstallment;
       creditStatusByAccount[a.name] = {
         balance: bal,
@@ -235,6 +258,9 @@
         isPaidThisMonth: isPaidThisMonth,
         dueDay: dueDay,
         isOverdue: isOverdue,
+        capitalPaid: capPaidTot,
+        interestPaid: intPaidTot,
+        totalPaidFull: capPaidTot + intPaidTot,
       };
     });
 
