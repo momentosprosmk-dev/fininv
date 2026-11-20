@@ -124,12 +124,17 @@
 
 .inv-actions-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
   padding-top: 0.25rem;
 }
 
 .inv-actions-row .btn {
-  padding: 0.48rem 0.8rem;
-  font-size: 0.85rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.42rem 0.45rem;
+  font-size: 0.76rem;
+  white-space: nowrap;
+  justify-content: center;
 }
