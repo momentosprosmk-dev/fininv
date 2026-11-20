@@ -13,6 +13,8 @@
     };
 
     function render(focusId, selStart, selEnd) {
+      var prevScrollEl = root.querySelector('.modal-body-scroll');
+      var prevScrollTop = prevScrollEl ? prevScrollEl.scrollTop : 0;
       var esc = window.escapeHTML;
       var currencies = window.AppFormat.getSupportedCurrencies();
       var curOpts = currencies.map(function (c) {
@@ -21,12 +23,14 @@
 
       root.innerHTML =
         '<div class="modal-backdrop">' +
-          '<div class="modal-box">' +
-            '<div class="modal-header">' +
-              '<div><h2 class="modal-title">' + (existing ? 'Editar Cuenta de Inversión' : 'Nueva Cuenta de Inversión') + '</h2><p class="modal-subtitle">Configura un fondo simple (BBVA, CDT) o fragmentado (ARQ, acciones).</p></div>' +
-              '<button type="button" class="modal-close" id="ia-close"><i class="fa-solid fa-xmark"></i></button>' +
+          '<form id="ia-form" class="modal-box modal-flex">' +
+            '<div class="modal-top-fixed">' +
+              '<div class="modal-header" style="margin-bottom:0">' +
+                '<div><h2 class="modal-title">' + (existing ? 'Editar Cuenta de Inversión' : 'Nueva Cuenta de Inversión') + '</h2><p class="modal-subtitle">Configura un fondo simple (BBVA, CDT) o fragmentado (ARQ, acciones).</p></div>' +
+                '<button type="button" class="modal-close" id="ia-close"><i class="fa-solid fa-xmark"></i></button>' +
+              '</div>' +
             '</div>' +
-            '<form id="ia-form">' +
+            '<div class="modal-body-scroll">' +
               '<div class="field-group">' +
                 '<label class="field-label">Nombre del fondo / bróker</label>' +
                 '<input type="text" id="ia-name" class="input" placeholder="Ej. ARQ, Fondo BBVA, Cajita Nu" value="' + esc(state.name) + '" ' + (existing ? 'readonly' : '') + ' />' +
@@ -55,16 +59,16 @@
                   '<input type="text" inputmode="decimal" id="ia-goal" class="input" placeholder="Ej. 10000000" value="' + esc(state.goal) + '" />' +
                 '</div>' +
               '</div>' +
-              '<div class="field-group">' +
+              '<div class="field-group" style="margin-bottom:0">' +
                 '<label class="field-label">Notas (opcional)</label>' +
                 '<input type="text" id="ia-notes" class="input" placeholder="Ej. Fondo balanceado global, acciones tech..." value="' + esc(state.notes) + '" />' +
               '</div>' +
-              '<div class="modal-footer">' +
-                '<button type="button" class="btn btn-secondary" id="ia-cancel">Cancelar</button>' +
-                '<button type="submit" class="btn btn-primary">' + (existing ? 'Guardar cambios' : 'Crear cuenta') + '</button>' +
-              '</div>' +
-            '</form>' +
-          '</div>' +
+            '</div>' +
+            '<div class="modal-bottom-fixed">' +
+              '<button type="button" class="btn btn-secondary" id="ia-cancel">Cancelar</button>' +
+              '<button type="submit" class="btn btn-primary">' + (existing ? 'Guardar cambios' : 'Crear cuenta') + '</button>' +
+            '</div>' +
+          '</form>' +
         '</div>';
 
       var closeFn = function () { root.innerHTML = ''; };
@@ -104,23 +108,25 @@
 
     root.innerHTML =
       '<div class="modal-backdrop">' +
-        '<div class="modal-box">' +
-          '<div class="modal-header">' +
-            '<div><h2 class="modal-title">Nueva Sub-inversión en ' + esc(opts.fundName) + '</h2><p class="modal-subtitle">Crea un activo o acción individual (ej. Microsoft, Apple, S&amp;P 500).</p></div>' +
-            '<button type="button" class="modal-close" id="sub-close"><i class="fa-solid fa-xmark"></i></button>' +
+        '<form id="sub-form" class="modal-box modal-flex">' +
+          '<div class="modal-top-fixed">' +
+            '<div class="modal-header" style="margin-bottom:0">' +
+              '<div><h2 class="modal-title">Nueva Sub-inversión en ' + esc(opts.fundName) + '</h2><p class="modal-subtitle">Crea un activo o acción individual (ej. Microsoft, Apple, S&amp;P 500).</p></div>' +
+              '<button type="button" class="modal-close" id="sub-close"><i class="fa-solid fa-xmark"></i></button>' +
+            '</div>' +
           '</div>' +
-          '<form id="sub-form">' +
+          '<div class="modal-body-scroll">' +
             '<div class="field-group"><label class="field-label">Nombre del activo / acción</label><input type="text" id="sub-name" class="input" placeholder="Ej. Microsoft (MSFT)" required /></div>' +
             '<div class="form-grid-2">' +
-              '<div class="field-group"><label class="field-label">Saldo inicial ya invertido (' + esc(opts.currency) + ')</label><input type="text" inputmode="decimal" id="sub-init" class="input" placeholder="0" /></div>' +
-              '<div class="field-group"><label class="field-label">Notas (opcional)</label><input type="text" id="sub-notes" class="input" placeholder="Ej. Largo plazo" /></div>' +
+              '<div class="field-group" style="margin-bottom:0"><label class="field-label">Saldo inicial ya invertido (' + esc(opts.currency) + ')</label><input type="text" inputmode="decimal" id="sub-init" class="input" placeholder="0" /></div>' +
+              '<div class="field-group" style="margin-bottom:0"><label class="field-label">Notas (opcional)</label><input type="text" id="sub-notes" class="input" placeholder="Ej. Largo plazo" /></div>' +
             '</div>' +
-            '<div class="modal-footer">' +
-              '<button type="button" class="btn btn-secondary" id="sub-cancel">Cancelar</button>' +
-              '<button type="submit" class="btn btn-primary">Crear sub-inversión</button>' +
-            '</div>' +
-          '</form>' +
-        '</div>' +
+          '</div>' +
+          '<div class="modal-bottom-fixed">' +
+            '<button type="button" class="btn btn-secondary" id="sub-cancel">Cancelar</button>' +
+            '<button type="submit" class="btn btn-primary">Crear sub-inversión</button>' +
+          '</div>' +
+        '</form>' +
       '</div>';
 
     var closeFn = function () { root.innerHTML = ''; };
@@ -160,12 +166,14 @@
 
       root.innerHTML =
         '<div class="modal-backdrop">' +
-          '<div class="modal-box">' +
-            '<div class="modal-header">' +
-              '<div><h2 class="modal-title">Actualizar Valor Actual</h2><p class="modal-subtitle">' + esc(targetLabel) + ' (' + esc(cur) + ')</p></div>' +
-              '<button type="button" class="modal-close" id="uv-close"><i class="fa-solid fa-xmark"></i></button>' +
+          '<form id="uv-form" class="modal-box modal-flex">' +
+            '<div class="modal-top-fixed">' +
+              '<div class="modal-header" style="margin-bottom:0">' +
+                '<div><h2 class="modal-title">Actualizar Valor Actual</h2><p class="modal-subtitle">' + esc(targetLabel) + ' (' + esc(cur) + ')</p></div>' +
+                '<button type="button" class="modal-close" id="uv-close"><i class="fa-solid fa-xmark"></i></button>' +
+              '</div>' +
             '</div>' +
-            '<form id="uv-form">' +
+            '<div class="modal-body-scroll">' +
               '<div class="alert-banner alert-indigo">' +
                 'Capital neto aportado: <strong>' + esc(fmt.formatCurrency(netContributed, cur)) + '</strong> &middot; Saldo actual en sistema: <strong>' + esc(fmt.formatCurrency(currentBookValue, cur)) + '</strong>' +
               '</div>' +
@@ -173,16 +181,16 @@
                 '<label class="field-label">¿Cuánto marca hoy tu fondo / banco? (' + esc(cur) + ')</label>' +
                 '<input type="text" inputmode="decimal" id="uv-amount" class="input" value="' + esc(valueStr) + '" />' +
               '</div>' +
-              '<div id="uv-preview" class="alert-banner ' + (totalGain >= 0 ? 'alert-emerald' : 'alert-rose') + '">' +
+              '<div id="uv-preview" class="alert-banner ' + (totalGain >= 0 ? 'alert-emerald' : 'alert-rose') + '" style="margin-bottom:0">' +
                 'Ajuste por rendimiento: <strong>' + (diff >= 0 ? '+' : '') + esc(fmt.formatCurrency(diff, cur)) + '</strong><br/>' +
                 'Ganancia / Pérdida acumulada: <strong>' + (totalGain >= 0 ? '+' : '') + esc(fmt.formatCurrency(totalGain, cur)) + ' (' + totalPct + '%)</strong>' +
               '</div>' +
-              '<div class="modal-footer">' +
-                '<button type="button" class="btn btn-secondary" id="uv-cancel">Cancelar</button>' +
-                '<button type="submit" class="btn btn-primary" id="uv-submit" ' + (diff === 0 ? 'disabled' : '') + '>Guardar actualización</button>' +
-              '</div>' +
-            '</form>' +
-          '</div>' +
+            '</div>' +
+            '<div class="modal-bottom-fixed">' +
+              '<button type="button" class="btn btn-secondary" id="uv-cancel">Cancelar</button>' +
+              '<button type="submit" class="btn btn-primary" id="uv-submit" ' + (diff === 0 ? 'disabled' : '') + '>Guardar actualización</button>' +
+            '</div>' +
+          '</form>' +
         '</div>';
 
       var closeFn = function () { root.innerHTML = ''; };
@@ -263,6 +271,8 @@
     syncDefaultRate();
 
     function render(focusId, selStart, selEnd) {
+      var prevScrollEl = root.querySelector('.modal-body-scroll');
+      var prevScrollTop = prevScrollEl ? prevScrollEl.scrollTop : 0;
       var esc = window.escapeHTML;
       var f = getSelectedFund();
       var baseCur = fmt.getBaseCurrency();
@@ -412,22 +422,24 @@
 
       root.innerHTML =
         '<div class="modal-backdrop">' +
-          '<div class="modal-box">' +
-            '<div class="modal-header">' +
-              '<h2 class="modal-title">Operación de Inversión</h2>' +
-              '<button type="button" class="modal-close" id="io-close"><i class="fa-solid fa-xmark"></i></button>' +
+          '<form id="io-form" class="modal-box modal-flex">' +
+            '<div class="modal-top-fixed">' +
+              '<div class="modal-header" style="margin-bottom:0">' +
+                '<h2 class="modal-title">Operación de Inversión</h2>' +
+                '<button type="button" class="modal-close" id="io-close"><i class="fa-solid fa-xmark"></i></button>' +
+              '</div>' +
             '</div>' +
-            '<div class="field-group">' +
-              '<label class="field-label">Tipo de operación</label>' +
-              '<select id="io-type" class="select">' +
-                '<option value="Aporte" ' + (state.type === 'Aporte' ? 'selected' : '') + '>Aportar (Cuenta normal &rarr; Fondo)</option>' +
-                '<option value="Retiro" ' + (state.type === 'Retiro' ? 'selected' : '') + '>Retirar (Fondo &rarr; Cuenta normal)</option>' +
-                '<option value="AsignarSub" ' + (state.type === 'AsignarSub' ? 'selected' : '') + '>Invertir en Sub-activo (Disponible &rarr; Acción)</option>' +
-                '<option value="LiberarSub" ' + (state.type === 'LiberarSub' ? 'selected' : '') + '>Vender / Liberar Sub-activo (Acción &rarr; Disponible)</option>' +
-                '<option value="TraspasoInv" ' + (state.type === 'TraspasoInv' ? 'selected' : '') + '>Traspaso entre fondos de inversión</option>' +
-              '</select>' +
-            '</div>' +
-            '<form id="io-form">' +
+            '<div class="modal-body-scroll">' +
+              '<div class="field-group">' +
+                '<label class="field-label">Tipo de operación</label>' +
+                '<select id="io-type" class="select">' +
+                  '<option value="Aporte" ' + (state.type === 'Aporte' ? 'selected' : '') + '>Aportar (Cuenta normal &rarr; Fondo)</option>' +
+                  '<option value="Retiro" ' + (state.type === 'Retiro' ? 'selected' : '') + '>Retirar (Fondo &rarr; Cuenta normal)</option>' +
+                  '<option value="AsignarSub" ' + (state.type === 'AsignarSub' ? 'selected' : '') + '>Invertir en Sub-activo (Disponible &rarr; Acción)</option>' +
+                  '<option value="LiberarSub" ' + (state.type === 'LiberarSub' ? 'selected' : '') + '>Vender / Liberar Sub-activo (Acción &rarr; Disponible)</option>' +
+                  '<option value="TraspasoInv" ' + (state.type === 'TraspasoInv' ? 'selected' : '') + '>Traspaso entre fondos de inversión</option>' +
+                '</select>' +
+              '</div>' +
               accountFields +
               '<div class="form-grid-2">' +
                 '<div class="field-group"><label class="field-label">Fecha</label><div id="io-datepicker"></div></div>' +
@@ -467,15 +479,15 @@
                     '</select>'
                   : '') +
               '</div>' +
-              '<div class="field-group"><label class="field-label">Descripción (opcional)</label><input type="text" id="io-desc" class="input" placeholder="Ej. Compra MSFT, retiro ganancias..." value="' + esc(state.description) + '" /></div>' +
+              '<div class="field-group" style="margin-bottom:0"><label class="field-label">Descripción (opcional)</label><input type="text" id="io-desc" class="input" placeholder="Ej. Compra MSFT, retiro ganancias..." value="' + esc(state.description) + '" /></div>' +
               previewHtml +
-              (insufficientMsg ? '<div class="alert-banner alert-rose">' + esc(insufficientMsg) + '</div>' : '') +
-              '<div class="modal-footer">' +
-                '<button type="button" class="btn btn-secondary" id="io-cancel">Cancelar</button>' +
-                '<button type="submit" class="btn btn-primary" ' + (missing || insufficientMsg ? 'disabled' : '') + '>Guardar operación</button>' +
-              '</div>' +
-            '</form>' +
-          '</div>' +
+              (insufficientMsg ? '<div class="alert-banner alert-rose" style="margin-top:0.75rem;margin-bottom:0">' + esc(insufficientMsg) + '</div>' : '') +
+            '</div>' +
+            '<div class="modal-bottom-fixed">' +
+              '<button type="button" class="btn btn-secondary" id="io-cancel">Cancelar</button>' +
+              '<button type="submit" class="btn btn-primary" ' + (missing || insufficientMsg ? 'disabled' : '') + '>Guardar operación</button>' +
+            '</div>' +
+          '</form>' +
         '</div>';
 
       var dpEl = document.getElementById('io-datepicker');
@@ -539,6 +551,9 @@
         });
         closeFn();
       });
+
+      var nextScrollEl = root.querySelector('.modal-body-scroll');
+      if (nextScrollEl && prevScrollTop > 0) nextScrollEl.scrollTop = prevScrollTop;
 
       if (focusId) {
         var el = document.getElementById(focusId);

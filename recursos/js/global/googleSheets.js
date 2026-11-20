@@ -192,9 +192,10 @@
       var name = String(r[1] || r[0]);
       var rawKind = String(r[2] || '').toLowerCase().trim();
       var rawDesc = String(r[3] || '');
-      var creditoMatch = rawDesc.match(/\[credito:(\d+):([\d.]+):([01])(?::(\d+))?(?::(\d{4}-\d{2})?)?\]/);
+      var creditoTag = rawDesc.match(/\[credito:([^\]]+)\]/);
+      var creditoParts = creditoTag ? creditoTag[1].split(':') : null;
       var kind = 'liquidez';
-      if (rawKind === 'credito' || creditoMatch) {
+      if (rawKind === 'credito' || creditoParts) {
         kind = 'credito';
       } else if (rawKind.indexOf('deuda') !== -1 || rawKind.indexOf('crédito') !== -1 || rawKind.indexOf('credito') !== -1) {
         kind = 'deuda';
@@ -221,14 +222,14 @@
       };
       if (kind === 'deuda') item.creditLimit = parsedLimit > 0 ? parsedLimit : 2400000;
       if (kind === 'credito') {
-        item.totalMonths = creditoMatch ? Number(creditoMatch[1]) || 12 : 12;
-        item.monthlyInstallment = creditoMatch ? Number(creditoMatch[2]) || 0 : 0;
-        item.inMora = creditoMatch ? creditoMatch[3] === '1' : false;
-        item.dueDay = creditoMatch && creditoMatch[4] ? Number(creditoMatch[4]) || 0 : 0;
-        if (creditoMatch && creditoMatch[5]) item.startMonth = creditoMatch[5];
-        item.initialPaidInstallments = creditoMatch && creditoMatch[6] ? Number(creditoMatch[6]) || 0 : 0;
-        item.initialPaidCapital = creditoMatch && creditoMatch[7] ? Number(creditoMatch[7]) || 0 : 0;
-        item.initialPaidInterest = creditoMatch && creditoMatch[8] ? Number(creditoMatch[8]) || 0 : 0;
+        item.totalMonths = creditoParts ? Number(creditoParts[0]) || 12 : 12;
+        item.monthlyInstallment = creditoParts ? Number(creditoParts[1]) || 0 : 0;
+        item.inMora = creditoParts ? creditoParts[2] === '1' : false;
+        item.dueDay = creditoParts && creditoParts[3] ? Number(creditoParts[3]) || 0 : 0;
+        if (creditoParts && /^\d{4}-\d{2}$/.test(creditoParts[4] || '')) item.startMonth = creditoParts[4];
+        item.initialPaidInstallments = creditoParts && creditoParts[5] ? Number(creditoParts[5]) || 0 : 0;
+        item.initialPaidCapital = creditoParts && creditoParts[6] ? Number(creditoParts[6]) || 0 : 0;
+        item.initialPaidInterest = creditoParts && creditoParts[7] ? Number(creditoParts[7]) || 0 : 0;
       }
       return item;
     });
