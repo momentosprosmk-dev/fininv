@@ -157,7 +157,31 @@
       loans.forEach(function (l) { loanById[l.id] = l; });
       var timeline = [];
       loans.forEach(function (l) {
-        if (l.isHistorical) return;
+        if (l.isHistorical) {
+          timeline.push({
+            id: l.id,
+            kind: 'egreso_hist',
+            date: l.startDate,
+            createdAt: l.createdAt || '',
+            borrower: l.borrower,
+            account: 'Previo a la app',
+            amount: l.principal,
+            notes: l.notes || 'Préstamo anterior a la app',
+          });
+          if (Number(l.initialPaid) > 0) {
+            timeline.push({
+              id: l.id + '-initpaid',
+              kind: 'ingreso_hist',
+              date: l.startDate,
+              createdAt: l.createdAt || '',
+              borrower: l.borrower,
+              account: 'Previo a la app',
+              amount: Number(l.initialPaid),
+              notes: 'Abono previo al registro en la app',
+            });
+          }
+          return;
+        }
         timeline.push({
           id: l.id,
           kind: 'egreso',
@@ -189,21 +213,27 @@
       var rowsHtml = timeline.length === 0
         ? '<tr><td colspan="7" class="text-dim" style="text-align:center;padding:2.5rem 1rem">No hay movimientos vinculados a préstamos aún.</td></tr>'
         : timeline.map(function (item) {
-            var isIn = item.kind === 'ingreso';
-            var isConfirmMovDel = isIn
+            var isIn = item.kind === 'ingreso' || item.kind === 'ingreso_hist';
+            var isHistIn = item.kind === 'ingreso_hist';
+            var isHistOut = item.kind === 'egreso_hist';
+            var isConfirmMovDel = item.kind === 'ingreso'
               ? (state.pendingDeleteLoanPayId === item.id)
-              : (state.pendingDeleteLoanId === item.id);
-            var actionCell = isConfirmMovDel
-              ? '<div class="inline-confirm">' +
-                  '<span class="text-rose" style="font-weight:500">¿Eliminar?</span>' +
-                  '<button type="button" class="inline-confirm-btn no" ' + (isIn ? 'data-cancel-del-loan-pay="' + esc(item.id) + '"' : 'data-cancel-del-loan="' + esc(item.id) + '"') + '>No</button>' +
-                  '<button type="button" class="inline-confirm-btn yes" ' + (isIn ? 'data-confirm-del-loan-pay="' + esc(item.id) + '"' : 'data-confirm-del-loan="' + esc(item.id) + '"') + '>Sí</button>' +
-                '</div>'
-              : '<button type="button" class="icon-delete-btn" ' + (isIn ? 'data-ask-del-loan-pay="' + esc(item.id) + '" title="Eliminar cobro"' : 'data-ask-del-loan="' + esc(item.id) + '" title="Eliminar préstamo y su movimiento"') + '><i class="fa-regular fa-trash-can"></i></button>';
+              : (!isHistIn && state.pendingDeleteLoanId === item.id);
+            var actionCell = isHistIn
+              ? '<span class="text-dim" style="font-size:0.75rem">—</span>'
+              : (isConfirmMovDel
+                  ? '<div class="inline-confirm">' +
+                      '<span class="text-rose" style="font-weight:500">¿Eliminar?</span>' +
+                      '<button type="button" class="inline-confirm-btn no" ' + (item.kind === 'ingreso' ? 'data-cancel-del-loan-pay="' + esc(item.id) + '"' : 'data-cancel-del-loan="' + esc(item.id) + '"') + '>No</button>' +
+                      '<button type="button" class="inline-confirm-btn yes" ' + (item.kind === 'ingreso' ? 'data-confirm-del-loan-pay="' + esc(item.id) + '"' : 'data-confirm-del-loan="' + esc(item.id) + '"') + '>Sí</button>' +
+                    '</div>'
+                  : '<button type="button" class="icon-delete-btn" ' + (item.kind === 'ingreso' ? 'data-ask-del-loan-pay="' + esc(item.id) + '" title="Eliminar cobro"' : 'data-ask-del-loan="' + esc(item.id) + '" title="Eliminar préstamo"') + '><i class="fa-regular fa-trash-can"></i></button>');
+            var badgeCls = isHistIn ? 'badge-sky' : (isHistOut ? 'badge-amber' : (isIn ? 'badge-emerald' : 'badge-rose'));
+            var badgeTxt = isHistIn ? 'Abono previo' : (isHistOut ? 'Préstamo previo' : (isIn ? 'Cobro (Ingreso)' : 'Préstamo (Egreso)'));
             return (
               '<tr>' +
                 '<td class="text-muted" style="white-space:nowrap">' + esc(item.date) + '</td>' +
-                '<td><span class="badge ' + (isIn ? 'badge-emerald' : 'badge-rose') + '">' + (isIn ? 'Cobro (Ingreso)' : 'Préstamo (Egreso)') + '</span></td>' +
+                '<td><span class="badge ' + badgeCls + '">' + badgeTxt + '</span></td>' +
                 '<td style="font-weight:500;color:var(--text-strong)">' + esc(item.borrower) + '</td>' +
                 '<td class="text-muted">' + esc(item.notes) + '</td>' +
                 '<td class="text-muted" style="white-space:nowrap">' + esc(item.account) + '</td>' +

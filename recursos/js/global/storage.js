@@ -9,7 +9,7 @@
     { id: 'cat-e4', name: 'Auxilio para mamá', type: 'Egreso' },
     { id: 'cat-e5', name: 'Corte de cabello', type: 'Egreso' },
     { id: 'cat-e6', name: 'Gustos y entretenimiento', type: 'Egreso' },
-    { id: 'cat-e7', name: 'Aporte a Inversión', type: 'Egreso', isArq: true },
+    { id: 'cat-e7', name: 'Inversión de Activos', type: 'Egreso', isArq: true },
     { id: 'cat-e8', name: 'Servicios / Suscripciones', type: 'Egreso' },
     { id: 'cat-e9', name: 'Salud / Otros', type: 'Egreso' },
     { id: 'cat-i1', name: 'Salario / Nómina', type: 'Ingreso' },
@@ -106,11 +106,23 @@
       var raw = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (!raw) return getDefaultAppData();
       var parsed = JSON.parse(raw);
+      var cats = (parsed.categories && parsed.categories.length > 0
+        ? parsed.categories
+        : DEFAULT_CATEGORIES.map(function (c) { return Object.assign({}, c); })
+      ).map(function (c) {
+        if (c.type === 'Egreso' && (c.name === ARQ_CATEGORY || c.id === 'cat-e7' || c.id === 'egr-7')) {
+          return Object.assign({}, c, { name: 'Inversión de Activos', isArq: true });
+        }
+        return c;
+      });
+      var hasDefaultInv = cats.some(function (c) {
+        return c.type === 'Egreso' && c.name === 'Inversión de Activos';
+      });
+      if (!hasDefaultInv) {
+        cats.push({ id: 'cat-e7', name: 'Inversión de Activos', type: 'Egreso', isArq: true });
+      }
       return Object.assign({}, parsed, {
-        categories:
-          parsed.categories && parsed.categories.length > 0
-            ? parsed.categories
-            : DEFAULT_CATEGORIES.map(function (c) { return Object.assign({}, c); }),
+        categories: cats,
         investmentAccounts: parsed.investmentAccounts || [],
         subInvestments: parsed.subInvestments || [],
         investmentMovements: parsed.investmentMovements || [],

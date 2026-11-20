@@ -48,6 +48,40 @@
           );
         }).join('');
 
+    function bindRowDeleteActions(scope) {
+      scope.querySelectorAll('[data-ask-del]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          window.AppActions.askDeleteMovement(btn.getAttribute('data-ask-del'));
+        });
+      });
+
+      scope.querySelectorAll('[data-cancel-del]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          window.AppActions.askDeleteMovement(null);
+        });
+      });
+
+      scope.querySelectorAll('[data-confirm-del]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          window.AppActions.deleteMovement(btn.getAttribute('data-confirm-del'));
+        });
+      });
+    }
+
+    var existingInput = container.querySelector('#mov-search-input');
+    var existingTbody = container.querySelector('#mov-table-body');
+    if (existingInput && existingTbody) {
+      existingTbody.innerHTML = rowsHtml;
+      container.querySelectorAll('.filter-pill').forEach(function (btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-filter') === state.filterType);
+      });
+      if (document.activeElement !== existingInput && existingInput.value !== (state.searchTerm || '')) {
+        existingInput.value = state.searchTerm || '';
+      }
+      bindRowDeleteActions(existingTbody);
+      return;
+    }
+
     container.innerHTML =
       '<div class="movimientos-toolbar">' +
         '<div class="filter-pills">' + pillsHtml + '</div>' +
@@ -61,7 +95,7 @@
           '<thead><tr>' +
             '<th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Descripción</th><th>Flujo (Origen &rarr; Destino)</th><th class="text-right">Monto (' + esc(fmt.getBaseCurrency()) + ')</th><th class="text-right">Acción</th>' +
           '</tr></thead>' +
-          '<tbody>' + rowsHtml + '</tbody>' +
+          '<tbody id="mov-table-body">' + rowsHtml + '</tbody>' +
         '</table>' +
       '</div>';
 
@@ -78,23 +112,7 @@
       });
     }
 
-    container.querySelectorAll('[data-ask-del]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        window.AppActions.askDeleteMovement(btn.getAttribute('data-ask-del'));
-      });
-    });
-
-    container.querySelectorAll('[data-cancel-del]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        window.AppActions.askDeleteMovement(null);
-      });
-    });
-
-    container.querySelectorAll('[data-confirm-del]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        window.AppActions.deleteMovement(btn.getAttribute('data-confirm-del'));
-      });
-    });
+    bindRowDeleteActions(container);
   }
 
   window.renderMovimientosView = renderMovimientosView;

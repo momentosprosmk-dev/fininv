@@ -28,7 +28,7 @@
       '<div class="inv-top-bar">' +
         '<div>' +
           '<h2 class="section-title-upper" style="margin-bottom:0.2rem">Módulo de Inversiones</h2>' +
-          '<p class="text-muted" style="margin:0;font-size:0.9rem">Fondos simples (BBVA, CDT) y fragmentados (ARQ, acciones) con soporte multi-moneda.</p>' +
+          '<p class="text-muted" style="margin:0;font-size:0.9rem">Cartera gestionada (BBVA, CDT) y cartera libre (ARQ, acciones) con soporte multi-moneda.</p>' +
         '</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:0.5rem">' +
           '<button type="button" id="btn-inv-new-fund" class="btn btn-secondary"><i class="fa-solid fa-folder-plus"></i> Nueva Cuenta</button>' +
@@ -60,18 +60,23 @@
         '<div class="kpi-card"><div class="kpi-label ' + (gainPos ? 'text-emerald' : 'text-rose') + '"><i class="fa-solid fa-chart-line"></i> Ganancia / Pérdida Neta</div><p class="kpi-value tabular ' + (gainPos ? 'text-emerald' : 'text-rose') + '">' + (hide ? '' : (gainPos ? '+' : '')) + esc(mCOP(invSummary.totalGainLossCOP)) + '</p></div>' +
       '</section>';
 
-    // Tarjetas de fondos
+    // Tarjetas de inversiones (vista compacta con detalle desplegable)
+    var expandedMap = state.expandedInvFunds || {};
     var fundsHtml = invSummary.fundSummaries.length === 0
       ? '<div class="card" style="text-align:center;padding:2.5rem 1rem">' +
           '<p class="text-muted" style="margin:0 0 0.85rem">Aún no tienes cuentas de inversión creadas (ej. ARQ, Fondo BBVA, Cajita Nu).</p>' +
           '<button type="button" id="btn-empty-new-fund" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Crear primera cuenta de inversión</button>' +
         '</div>'
-      : '<div class="inv-funds-grid">' + invSummary.fundSummaries.map(function (f) {
+      : '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.25rem">' +
+          '<h3 class="section-title-upper" style="margin:0">Inversiones (' + invSummary.fundSummaries.length + ')</h3>' +
+        '</div>' +
+        '<div class="inv-funds-grid">' + invSummary.fundSummaries.map(function (f) {
           var acc = f.account;
           var cur = f.currency;
           var isFrag = f.mode === 'fragmentado';
           var fGainPos = f.gainLoss >= 0;
           var pctStr = (f.gainLoss >= 0 ? '+' : '') + f.gainLossPct.toFixed(1) + '%';
+          var isExpanded = Boolean(expandedMap[acc.id]);
 
           var goalHtml = '';
           if (acc.goal > 0) {
@@ -86,28 +91,29 @@
           var subsHtml = '';
           if (isFrag) {
             var subRows = f.subSummaries.length === 0
-              ? '<p class="text-dim" style="margin:0;font-size:0.85rem">Sin sub-inversiones aún. Crea posiciones como Microsoft, Apple o ETFs.</p>'
+              ? '<p class="text-dim" style="margin:0;font-size:0.85rem">Sin sub-inversiones aún. Usa <strong>Registrar Operación</strong> para crear e invertir en una subcuenta.</p>'
               : f.subSummaries.map(function (s) {
                   var sPos = s.gainLoss >= 0;
+                  var hasNoCapital = Math.abs(Number(s.currentValue) || 0) <= 0.001 && Math.abs(Number(s.netInvested) || 0) <= 0.001;
                   var isDelSub = state.pendingDeleteSubId === s.sub.id;
-                  var delSubCtrl = isDelSub
-                    ? '<div class="inline-confirm"><span class="text-rose">¿Eliminar?</span><button type="button" class="inline-confirm-btn no" data-cancel-del-sub="' + esc(s.sub.id) + '">No</button><button type="button" class="inline-confirm-btn yes" data-confirm-del-sub="' + esc(s.sub.id) + '">Sí</button></div>'
-                    : '<button type="button" class="icon-delete-btn" data-ask-del-sub="' + esc(s.sub.id) + '" title="Eliminar sub-inversión"><i class="fa-regular fa-trash-can"></i></button>';
+                  var delSubCtrl = hasNoCapital
+                    ? (isDelSub
+                        ? '<div class="inline-confirm"><span class="text-rose">¿Eliminar?</span><button type="button" class="inline-confirm-btn no" data-cancel-del-sub="' + esc(s.sub.id) + '">No</button><button type="button" class="inline-confirm-btn yes" data-confirm-del-sub="' + esc(s.sub.id) + '">Sí</button></div>'
+                        : '<button type="button" class="icon-delete-btn" data-ask-del-sub="' + esc(s.sub.id) + '" title="Eliminar sub-inversión"><i class="fa-regular fa-trash-can"></i></button>')
+                    : '';
 
                   return (
                     '<div class="inv-sub-item">' +
-                      '<div>' +
-                        '<p class="obligation-name" style="font-size:0.92rem">' + esc(s.sub.name) + '</p>' +
+                      '<div style="min-width:0;flex:1">' +
+                        '<p class="obligation-name" style="font-size:0.92rem;white-space:normal;word-break:break-word">' + esc(s.sub.name) + '</p>' +
                         '<p class="obligation-sub tabular">' +
                           'Actual: <strong style="color:var(--text-strong)">' + esc(mCur(s.currentValue, cur)) + '</strong>' +
                           ' &middot; Inv: ' + esc(mCur(s.netInvested, cur)) +
-                          ' &middot; <span class="' + (sPos ? 'text-emerald' : 'text-rose') + '">' + (hide ? '' : (sPos ? '+' : '') + esc(mCur(s.gainLoss, cur)) + ' (' + s.gainLossPct.toFixed(1) + '%)') + '</span>' +
+                          ' &middot; <span class="' + (sPos ? 'text-emerald' : 'text-rose') + '">' + (hide ? '••••' : (sPos ? '+' : '') + s.gainLossPct.toFixed(1) + '%') + '</span>' +
                         '</p>' +
                       '</div>' +
-                      '<div style="display:flex;align-items:center;gap:0.35rem">' +
-                        '<button type="button" class="btn btn-secondary btn-sub-update" data-fund="' + esc(acc.name) + '" data-sub="' + esc(s.sub.name) + '" style="padding:0.25rem 0.5rem;font-size:0.7rem" title="Actualizar valor actual"><i class="fa-solid fa-chart-line"></i> Valor</button>' +
-                        '<button type="button" class="btn btn-secondary btn-sub-assign" data-fund="' + esc(acc.name) + '" data-sub="' + esc(s.sub.name) + '" style="padding:0.25rem 0.5rem;font-size:0.7rem">+ Invertir</button>' +
-                        '<button type="button" class="btn btn-secondary btn-sub-release" data-fund="' + esc(acc.name) + '" data-sub="' + esc(s.sub.name) + '" style="padding:0.25rem 0.5rem;font-size:0.7rem">Liberar</button>' +
+                      '<div style="display:flex;align-items:center;gap:0.35rem;flex-shrink:0">' +
+                        (!hasNoCapital ? '<button type="button" class="btn btn-secondary btn-sub-update" data-fund="' + esc(acc.name) + '" data-sub="' + esc(s.sub.name) + '" style="padding:0.28rem 0.6rem;font-size:0.75rem" title="Actualizar valor actual"><i class="fa-solid fa-chart-line"></i> Valor</button>' : '') +
                         delSubCtrl +
                       '</div>' +
                     '</div>'
@@ -118,7 +124,6 @@
               '<div class="inv-subs-box">' +
                 '<div style="display:flex;align-items:center;justify-content:space-between">' +
                   '<span style="font-size:0.85rem;font-weight:600;color:var(--text-soft)">Sub-inversiones (' + f.subSummaries.length + ')</span>' +
-                  '<button type="button" class="link-btn btn-add-sub" data-fund="' + esc(acc.name) + '" data-cur="' + esc(cur) + '">+ Nueva sub-inversión</button>' +
                 '</div>' +
                 subRows +
               '</div>';
@@ -126,8 +131,25 @@
 
           var isDelFund = state.pendingDeleteFundId === acc.id;
           var delFundCtrl = isDelFund
-            ? '<div class="inline-confirm"><span class="text-rose">¿Eliminar fondo?</span><button type="button" class="inline-confirm-btn no" data-cancel-del-fund="' + esc(acc.id) + '">No</button><button type="button" class="inline-confirm-btn yes" data-confirm-del-fund="' + esc(acc.id) + '">Sí</button></div>'
+            ? '<div class="inline-confirm"><span class="text-rose">¿Eliminar?</span><button type="button" class="inline-confirm-btn no" data-cancel-del-fund="' + esc(acc.id) + '">No</button><button type="button" class="inline-confirm-btn yes" data-confirm-del-fund="' + esc(acc.id) + '">Sí</button></div>'
             : '<button type="button" class="icon-delete-btn" data-ask-del-fund="' + esc(acc.id) + '" title="Eliminar cuenta"><i class="fa-regular fa-trash-can"></i></button>';
+
+          var detailLabel = isFrag
+            ? (isExpanded ? 'Ocultar detalle' : 'Ver detalle (' + f.subSummaries.length + ')')
+            : (isExpanded ? 'Ocultar detalle' : 'Ver detalle');
+
+          var detailsHtml = !isExpanded ? '' : (
+            '<div class="inv-stats-row">' +
+              (isFrag
+                ? '<div class="inv-mini-stat"><p class="inv-mini-label">Por invertir (Disp.)</p><p class="inv-mini-val tabular text-sky">' + esc(mCur(f.availableCash, cur)) + '</p></div>' +
+                  '<div class="inv-mini-stat"><p class="inv-mini-label">En sub-inversiones</p><p class="inv-mini-val tabular">' + esc(mCur(f.investedInSubs, cur)) + '</p></div>'
+                : '<div class="inv-mini-stat"><p class="inv-mini-label">Aportado neto</p><p class="inv-mini-val tabular">' + esc(mCur(f.netContributed, cur)) + '</p></div>' +
+                  '<div class="inv-mini-stat"><p class="inv-mini-label">Comisiones</p><p class="inv-mini-val tabular text-amber">' + esc(mCur(f.totalComisiones, cur)) + '</p></div>') +
+              '<div class="inv-mini-stat"><p class="inv-mini-label">Ganancia / Pérdida</p><p class="inv-mini-val tabular ' + (fGainPos ? 'text-emerald' : 'text-rose') + '">' + (hide ? '' : (fGainPos ? '+' : '') + esc(mCur(f.gainLoss, cur)) + ' (' + pctStr + ')') + '</p></div>' +
+            '</div>' +
+            goalHtml +
+            subsHtml
+          );
 
           return (
             '<div class="inv-fund-card">' +
@@ -135,7 +157,7 @@
                 '<div>' +
                   '<h3 class="inv-fund-title">' + esc(acc.name) + '</h3>' +
                   '<div class="inv-fund-meta">' +
-                    '<span class="badge ' + (isFrag ? 'badge-violet' : 'badge-sky') + '">' + (isFrag ? 'Fragmentado' : 'Simple') + '</span>' +
+                    '<span class="badge ' + (isFrag ? 'badge-violet' : 'badge-sky') + '">' + (isFrag ? 'Cartera Libre' : 'Cartera Gestionada') + '</span>' +
                     '<span class="badge badge-emerald">' + esc(cur) + '</span>' +
                   '</div>' +
                 '</div>' +
@@ -144,25 +166,24 @@
                   delFundCtrl +
                 '</div>' +
               '</div>' +
-              '<div>' +
-                '<p class="inv-fund-balance tabular">' + esc(mCur(f.totalValue, cur)) + '</p>' +
-                (cur !== 'COP' ? '<p class="inv-fund-subval tabular">&approx; ' + esc(mCOP(f.totalValueCOP)) + ' COP</p>' : '') +
+              '<div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:0.5rem">' +
+                '<div>' +
+                  '<p class="inv-fund-balance tabular">' + esc(mCur(f.totalValue, cur)) + '</p>' +
+                  (cur !== fmt.getBaseCurrency() ? '<p class="inv-fund-subval tabular">&approx; ' + esc(mCOP(f.totalValueCOP)) + ' ' + esc(fmt.getBaseCurrency()) + '</p>' : '') +
+                '</div>' +
+                '<span class="tabular ' + (fGainPos ? 'text-emerald' : 'text-rose') + '" style="font-size:0.86rem;font-weight:600">' +
+                  (hide ? '••••' : (fGainPos ? '+' : '') + esc(mCur(f.gainLoss, cur)) + ' (' + pctStr + ')') +
+                '</span>' +
               '</div>' +
-              '<div class="inv-stats-row">' +
-                (isFrag
-                  ? '<div class="inv-mini-stat"><p class="inv-mini-label">Por invertir (Disp.)</p><p class="inv-mini-val tabular text-sky">' + esc(mCur(f.availableCash, cur)) + '</p></div>' +
-                    '<div class="inv-mini-stat"><p class="inv-mini-label">En sub-inversiones</p><p class="inv-mini-val tabular">' + esc(mCur(f.investedInSubs, cur)) + '</p></div>'
-                  : '<div class="inv-mini-stat"><p class="inv-mini-label">Aportado neto</p><p class="inv-mini-val tabular">' + esc(mCur(f.netContributed, cur)) + '</p></div>' +
-                    '<div class="inv-mini-stat"><p class="inv-mini-label">Comisiones</p><p class="inv-mini-val tabular text-amber">' + esc(mCur(f.totalComisiones, cur)) + '</p></div>') +
-                '<div class="inv-mini-stat"><p class="inv-mini-label">Ganancia / Pérdida</p><p class="inv-mini-val tabular ' + (fGainPos ? 'text-emerald' : 'text-rose') + '">' + (hide ? '' : (fGainPos ? '+' : '') + esc(mCur(f.gainLoss, cur)) + ' (' + pctStr + ')') + '</p></div>' +
-              '</div>' +
-              goalHtml +
               '<div class="inv-actions-row">' +
                 '<button type="button" class="btn btn-secondary btn-fund-op" data-op="Aporte" data-fund="' + esc(acc.name) + '"><i class="fa-solid fa-plus"></i> Aportar</button>' +
                 '<button type="button" class="btn btn-secondary btn-fund-op" data-op="Retiro" data-fund="' + esc(acc.name) + '"><i class="fa-solid fa-arrow-up-right-from-square"></i> Retirar</button>' +
-                (!isFrag ? '<button type="button" class="btn btn-secondary btn-fund-update" data-fund="' + esc(acc.name) + '"><i class="fa-solid fa-chart-line"></i> Actualizar valor</button>' : '') +
+                (!isFrag && (Math.abs(Number(f.totalValue) || 0) > 0.001 || Math.abs(Number(f.netContributed) || 0) > 0.001) ? '<button type="button" class="btn btn-secondary btn-fund-update" data-fund="' + esc(acc.name) + '"><i class="fa-solid fa-chart-line"></i> Actualizar valor</button>' : '') +
+                '<button type="button" class="btn btn-secondary btn-toggle-fund-detail" data-fund-id="' + esc(acc.id) + '">' +
+                  '<i class="fa-solid ' + (isExpanded ? 'fa-chevron-up' : 'fa-chevron-down') + '"></i> ' + esc(detailLabel) +
+                '</button>' +
               '</div>' +
-              subsHtml +
+              detailsHtml +
             '</div>'
           );
         }).join('') + '</div>';
@@ -175,7 +196,7 @@
       var curSearch = state.invSearchTerm || '';
 
       var fundOptsHtml = fundNames.map(function (fn) {
-        return '<option value="' + esc(fn) + '" ' + (curFundFilter === fn ? 'selected' : '') + '>' + (fn === 'Todas' ? 'Cuenta: Todas' : esc(fn)) + '</option>';
+        return '<option value="' + esc(fn) + '" ' + (curFundFilter === fn ? 'selected' : '') + '>' + (fn === 'Todas' ? 'Inversión: Todas' : esc(fn)) + '</option>';
       }).join('');
 
       var invTypes = ['Todos', 'Aporte', 'Retiro', 'Rendimiento', 'AsignarSub', 'LiberarSub', 'TraspasoInv'];
@@ -226,6 +247,26 @@
             );
           }).join('');
 
+      function bindInvMovRowDeletes(scope) {
+        scope.querySelectorAll('[data-ask-del-im]').forEach(function (b) {
+          b.addEventListener('click', function () { window.AppActions.askDeleteInvMov(b.getAttribute('data-ask-del-im')); });
+        });
+        scope.querySelectorAll('[data-cancel-del-im]').forEach(function (b) {
+          b.addEventListener('click', function () { window.AppActions.askDeleteInvMov(null); });
+        });
+        scope.querySelectorAll('[data-confirm-del-im]').forEach(function (b) {
+          b.addEventListener('click', function () { window.AppActions.deleteInvMov(b.getAttribute('data-confirm-del-im')); });
+        });
+      }
+
+      var existingInvSearch = container.querySelector('#inv-mov-search');
+      var existingInvTbody = container.querySelector('#inv-mov-table-body');
+      if (existingInvSearch && existingInvTbody && document.activeElement === existingInvSearch) {
+        existingInvTbody.innerHTML = movRows;
+        bindInvMovRowDeletes(existingInvTbody);
+        return;
+      }
+
       container.innerHTML =
         '<div class="inv-top-bar">' +
           '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">' +
@@ -235,15 +276,15 @@
           '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">' +
             '<div class="search-box" style="width:14rem">' +
               '<i class="fa-solid fa-magnifying-glass"></i>' +
-              '<input type="text" id="inv-mov-search" class="input" placeholder="Buscar fondo o detalle..." value="' + esc(curSearch) + '" />' +
+              '<input type="text" id="inv-mov-search" class="input" placeholder="Buscar inversión o detalle..." value="' + esc(curSearch) + '" />' +
             '</div>' +
             '<button type="button" id="btn-inv-new-op-tab" class="btn btn-primary" ' + (invSummary.fundSummaries.length === 0 ? 'disabled' : '') + '><i class="fa-solid fa-plus"></i> Operación</button>' +
           '</div>' +
         '</div>' +
         '<div class="table-wrap">' +
           '<table class="data-table">' +
-            '<thead><tr><th>Fecha</th><th>Tipo</th><th>Fondo / Activo</th><th>Descripción</th><th class="text-right">Monto</th><th class="text-right">Acción</th></tr></thead>' +
-            '<tbody>' + movRows + '</tbody>' +
+            '<thead><tr><th>Fecha</th><th>Tipo</th><th>Inversión / Activo</th><th>Descripción</th><th class="text-right">Monto</th><th class="text-right">Acción</th></tr></thead>' +
+            '<tbody id="inv-mov-table-body">' + movRows + '</tbody>' +
           '</table>' +
         '</div>';
 
@@ -255,31 +296,25 @@
       });
       var invSearchInp = document.getElementById('inv-mov-search');
       invSearchInp.addEventListener('input', function (e) {
-        var pos = e.target.selectionStart;
         window.AppActions.setInvSearchTerm(e.target.value);
-        var el = document.getElementById('inv-mov-search');
-        if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (err) {} }
       });
       var newOpTabBtn = document.getElementById('btn-inv-new-op-tab');
       if (newOpTabBtn) newOpTabBtn.addEventListener('click', function () { window.AppActions.openInvOpModal({}); });
 
-      container.querySelectorAll('[data-ask-del-im]').forEach(function (b) {
-        b.addEventListener('click', function () { window.AppActions.askDeleteInvMov(b.getAttribute('data-ask-del-im')); });
-      });
-      container.querySelectorAll('[data-cancel-del-im]').forEach(function (b) {
-        b.addEventListener('click', function () { window.AppActions.askDeleteInvMov(null); });
-      });
-      container.querySelectorAll('[data-confirm-del-im]').forEach(function (b) {
-        b.addEventListener('click', function () { window.AppActions.deleteInvMov(b.getAttribute('data-confirm-del-im')); });
-      });
+      bindInvMovRowDeletes(container);
       return;
     }
 
-    container.innerHTML = topBarHtml + legacyBanner + fxBarHtml + kpisHtml + fundsHtml;
+    if (state.invActiveTab === 'cuentas') {
+      container.innerHTML = topBarHtml + fundsHtml;
+    } else {
+      container.innerHTML = topBarHtml + legacyBanner + fxBarHtml + kpisHtml;
+    }
 
     // Bind events
     var openNewFund = function () { window.AppActions.openInvAccountModal(null); };
-    document.getElementById('btn-inv-new-fund').addEventListener('click', openNewFund);
+    var newFundBtn = document.getElementById('btn-inv-new-fund');
+    if (newFundBtn) newFundBtn.addEventListener('click', openNewFund);
     var emptyBtn = document.getElementById('btn-empty-new-fund');
     if (emptyBtn) emptyBtn.addEventListener('click', openNewFund);
 
@@ -289,8 +324,10 @@
     var importBtn = document.getElementById('btn-import-legacy-arq');
     if (importBtn) importBtn.addEventListener('click', function () { window.AppActions.importLegacyArq(); });
 
-    document.getElementById('btn-fetch-fx').addEventListener('click', function () { window.AppActions.refreshLiveFx(); });
-    document.getElementById('btn-save-custom-usd').addEventListener('click', function () {
+    var fetchFxBtn = document.getElementById('btn-fetch-fx');
+    if (fetchFxBtn) fetchFxBtn.addEventListener('click', function () { window.AppActions.refreshLiveFx(); });
+    var saveUsdBtn = document.getElementById('btn-save-custom-usd');
+    if (saveUsdBtn) saveUsdBtn.addEventListener('click', function () {
       var val = document.getElementById('inv-custom-usd').value;
       window.AppActions.setCustomFxRate('USD', val);
     });
@@ -300,6 +337,12 @@
         var id = b.getAttribute('data-fund-id');
         var acc = (state.data.investmentAccounts || []).find(function (a) { return a.id === id; });
         if (acc) window.AppActions.openInvAccountModal(acc);
+      });
+    });
+
+    container.querySelectorAll('.btn-toggle-fund-detail').forEach(function (b) {
+      b.addEventListener('click', function () {
+        window.AppActions.toggleInvFundExpand(b.getAttribute('data-fund-id'));
       });
     });
 

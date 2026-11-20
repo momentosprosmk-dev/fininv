@@ -19,6 +19,7 @@
     invFilterFund: 'Todas',
     invFilterType: 'Todos',
     invSearchTerm: '',
+    expandedInvFunds: {},
     filterType: 'Todos',
     searchTerm: '',
     pendingDeleteMovementId: null,
@@ -240,6 +241,11 @@
     document.querySelectorAll('[data-prest-tab]').forEach(function (btn) {
       btn.classList.toggle('active', btn.getAttribute('data-prest-tab') === appState.prestActiveTab);
     });
+    var invAccCount = (appState.data.investmentAccounts || []).length;
+    var invAccBadge = document.getElementById('inv-tab-acc-badge');
+    if (invAccBadge) invAccBadge.textContent = String(invAccCount);
+    var invAccLabelPc = document.getElementById('inv-tab-acc-label-pc');
+    if (invAccLabelPc) invAccLabelPc.textContent = 'Inversiones (' + invAccCount + ')';
     var invMovCount = (appState.data.investmentMovements || []).length;
     var invBadge = document.getElementById('inv-tab-mov-badge');
     if (invBadge) invBadge.textContent = String(invMovCount);
@@ -643,10 +649,18 @@
         },
       });
     },
+    toggleInvFundExpand: function (fundId) {
+      if (!fundId) return;
+      appState.expandedInvFunds[fundId] = !appState.expandedInvFunds[fundId];
+      renderApp();
+    },
     openSubModal: function (fundName, currency) {
+      var invSummary = window.AppInvestments.calculateInvestmentSummary(appState.data);
+      var f = invSummary.fundSummaries.find(function (x) { return x.account.name === fundName; });
       window.InvestmentModals.openSubModal({
         fundName: fundName,
         currency: currency,
+        availableCash: f ? f.availableCash : 0,
         onSave: function (sub) {
           updateData(function (prev) {
             return Object.assign({}, prev, { subInvestments: (prev.subInvestments || []).concat([sub]) });
@@ -706,6 +720,15 @@
         initialType: preset.initialType,
         initialFund: preset.initialFund,
         initialSub: preset.initialSub,
+        onCreateSub: function (sub) {
+          updateData(function (prev) {
+            var exists = (prev.subInvestments || []).some(function (s) {
+              return s.fundName === sub.fundName && s.name.toLowerCase() === sub.name.toLowerCase();
+            });
+            if (exists) return prev;
+            return Object.assign({}, prev, { subInvestments: (prev.subInvestments || []).concat([sub]) });
+          });
+        },
         onSave: function (op) {
           var nowIso = new Date().toISOString();
           var invId = 'invmov-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
@@ -718,7 +741,7 @@
               type: 'Egreso',
               fromAccount: op.normalAccount,
               toAccount: op.fundName,
-              category: 'Aporte a Inversión',
+              category: 'Inversión de Activos',
               description: op.description || ('Aporte a ' + op.fundName),
               amount: op.amountCOP,
               createdAt: nowIso,

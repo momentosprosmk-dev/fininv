@@ -21,7 +21,6 @@
       newAccPaidInterest: '',
       catFilter: 'Egreso',
       newCatName: '',
-      newCatIsArq: false,
       confirmReset: false,
       editingAccIdx: null,
       showAddAccount: false,
@@ -183,10 +182,16 @@
       } else {
         var filteredCats = state.draftCategories.filter(function (c) { return c.type === state.catFilter; });
         var catItems = filteredCats.map(function (c) {
+          var isProtectedDefaultInv = c.type === 'Egreso' && (c.name === 'Inversión de Activos' || c.id === 'cat-e7' || c.id === 'egr-7');
           return (
             '<div class="config-item">' +
-              '<div style="font-size:0.85rem;color:#fff">' + esc(c.name) + (c.isArq ? ' <span class="badge badge-violet">Inversión</span>' : '') + '</div>' +
-              '<button type="button" class="icon-delete-btn ask-del-cat" data-cat-id="' + esc(c.id) + '" data-cat-name="' + esc(c.name) + '" title="Eliminar concepto"><i class="fa-regular fa-trash-can"></i></button>' +
+              '<div style="font-size:0.85rem;color:#fff">' + esc(c.name) +
+                (c.isArq ? ' <span class="badge badge-violet">Inversión</span>' : '') +
+                (isProtectedDefaultInv ? ' <span class="badge badge-sky">Por defecto</span>' : '') +
+              '</div>' +
+              (isProtectedDefaultInv
+                ? '<span class="text-dim" title="Concepto por defecto (no eliminable)" style="padding:0.25rem 0.45rem;font-size:0.8rem"><i class="fa-solid fa-lock"></i></span>'
+                : '<button type="button" class="icon-delete-btn ask-del-cat" data-cat-id="' + esc(c.id) + '" data-cat-name="' + esc(c.name) + '" title="Eliminar concepto"><i class="fa-regular fa-trash-can"></i></button>') +
             '</div>'
           );
         }).join('');
@@ -215,9 +220,6 @@
                     '<input type="text" id="new-cat-name" class="input" placeholder="Nombre del concepto..." value="' + esc(state.newCatName) + '" />' +
                     '<button type="button" id="btn-add-cat" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Agregar</button>' +
                   '</div>' +
-                  (state.catFilter === 'Egreso'
-                    ? '<label style="display:flex;align-items:center;gap:0.45rem;margin-top:0.5rem;font-size:0.75rem;color:#cbd5e1"><input type="checkbox" id="new-cat-arq" ' + (state.newCatIsArq ? 'checked' : '') + ' /> Contabilizar como Inversión</label>'
-                    : '') +
                 '</div>'
               : '') +
           '</div>';
@@ -449,8 +451,6 @@
       });
       var newCatName = document.getElementById('new-cat-name');
       if (newCatName) newCatName.addEventListener('input', function (e) { state.newCatName = e.target.value; });
-      var newCatArq = document.getElementById('new-cat-arq');
-      if (newCatArq) newCatArq.addEventListener('change', function (e) { state.newCatIsArq = e.target.checked; });
       var addCatBtn = document.getElementById('btn-add-cat');
       if (addCatBtn) {
         addCatBtn.addEventListener('click', function () {
@@ -464,10 +464,9 @@
             id: 'cat-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5),
             name: trimmed,
             type: state.catFilter,
-            isArq: state.catFilter === 'Egreso' ? state.newCatIsArq : false,
+            isArq: false,
           });
           state.newCatName = '';
-          state.newCatIsArq = false;
           state.showAddCat = false;
           render();
         });

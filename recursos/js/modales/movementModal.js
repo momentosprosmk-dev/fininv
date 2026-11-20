@@ -31,6 +31,7 @@
       creditCapitalStr: '',
       creditCapitalManual: false,
       description: preset.description || '',
+      showObs: Boolean(preset.description),
       amountStr: preset.amount ? String(preset.amount) : '',
       amountManual: Boolean(preset.amount),
       isCreatingCat: false,
@@ -179,7 +180,7 @@
             '<select id="mm-to" class="select">' + toOpts + '</select>' +
           '</div>';
       } else {
-        var tFromOpts = '<option value="">Selecciona origen...</option>' + liquidAccounts.map(function (a) {
+        var tFromOpts = '<option value="">Selecciona origen...</option>' + egresoAccounts.map(function (a) {
           return '<option value="' + esc(a) + '" ' + (state.fromAccount === a ? 'selected' : '') + '>' + esc(a) + '</option>';
         }).join('');
         var tToOpts = '<option value="">Selecciona destino...</option>' + allAccounts.filter(function (a) { return a !== state.fromAccount; }).map(function (a) {
@@ -220,7 +221,13 @@
         }
         accountSectionHtml =
           '<div class="form-grid-2">' +
-            '<div class="field-group"><label class="field-label">Desde</label><select id="mm-from" class="select">' + tFromOpts + '</select></div>' +
+            '<div class="field-group">' +
+              '<label class="field-label">Desde</label>' +
+              '<select id="mm-from" class="select">' + tFromOpts + '</select>' +
+              (debtNames.has(state.fromAccount)
+                ? '<div class="alert-banner alert-amber" style="margin-top:0.5rem;margin-bottom:0">Avance desde <strong>' + esc(state.fromAccount) + '</strong>: aumenta tu deuda en la tarjeta de crédito e ingresa el dinero a la cuenta destino.</div>'
+                : '') +
+            '</div>' +
             '<div class="field-group"><label class="field-label">Hacia</label><select id="mm-to" class="select">' + tToOpts + '</select></div>' +
           '</div>';
       }
@@ -300,8 +307,13 @@
               (state.type === 'Traspaso' && targetCreditAcc ? creditBoxHtml : amountFieldHtml) +
               invFundHtml +
               '<div class="field-group" style="margin-bottom:0">' +
-                '<label class="field-label">Descripción (opcional)</label>' +
-                '<input type="text" id="mm-desc" class="input" placeholder="Ej. Mercado D1, Uber, Pago arriendo..." value="' + esc(state.description) + '" />' +
+                '<label class="obs-toggle-row">' +
+                  '<span class="obs-toggle-label">Agregar observaciones</span>' +
+                  '<span class="obs-switch ' + (state.showObs ? 'is-on' : '') + '"><input type="checkbox" id="mm-obs-toggle" ' + (state.showObs ? 'checked' : '') + ' /><span class="obs-switch-thumb"></span></span>' +
+                '</label>' +
+                (state.showObs
+                  ? '<input type="text" id="mm-desc" class="input" style="margin-top:0.5rem" placeholder="Ej. Mercado D1, Uber, Pago arriendo..." value="' + esc(state.description) + '" />'
+                  : '') +
               '</div>' +
               arqBanner +
               insufficientBanner +
@@ -439,10 +451,25 @@
         });
       }
 
+      var obsToggle = document.getElementById('mm-obs-toggle');
+      if (obsToggle) {
+        obsToggle.addEventListener('change', function (e) {
+          state.showObs = Boolean(e.target.checked);
+          if (!state.showObs) state.description = '';
+          render();
+          if (state.showObs) {
+            var dEl = document.getElementById('mm-desc');
+            if (dEl) dEl.focus();
+          }
+        });
+      }
+
       var descInput = document.getElementById('mm-desc');
-      descInput.addEventListener('input', function (e) {
-        state.description = e.target.value;
-      });
+      if (descInput) {
+        descInput.addEventListener('input', function (e) {
+          state.description = e.target.value;
+        });
+      }
 
       var toggleCatBtn = document.getElementById('mm-toggle-cat');
       toggleCatBtn.addEventListener('click', function () {

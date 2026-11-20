@@ -81,6 +81,8 @@
       (data.categories || []).filter(function (c) { return c.isArq; }).map(function (c) { return c.name; })
     );
     arqCategoryNames.add(window.AppStorage.ARQ_CATEGORY);
+    arqCategoryNames.add('Inversión de Activos');
+    arqCategoryNames.add('Aporte a Inversión');
 
     var relevantMovements = (data.movements || [])
       .filter(function (m) { return getMovMonth(m) <= targetMonth; })

@@ -101,7 +101,7 @@ var INITIAL_CATALOG_DATA = {
     ['egr-4', 'Auxilio para mamá', 'Apoyo mensual', 'NO'],
     ['egr-5', 'Corte de cabello', 'Barbería / peluquería', 'NO'],
     ['egr-6', 'Gustos y entretenimiento', 'Salidas, cine, compras', 'NO'],
-    ['egr-7', 'Aporte a Inversión', 'Envío a fondo o bolsa de inversión', 'SI'],
+    ['egr-7', 'Inversión de Activos', 'Envío a fondo o bolsa de inversión', 'SI'],
   ],
   Tipos_Ingresos: [
     ['ing-1', 'Salario / Nómina', 'Ingreso principal'],

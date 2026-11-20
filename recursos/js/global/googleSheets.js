@@ -241,6 +241,15 @@
     );
 
     var categories = parsedCategories.length > 0 ? parsedCategories : window.AppStorage.DEFAULT_CATEGORIES.slice();
+    categories = categories.map(function (c) {
+      if (c.type === 'Egreso' && (c.name === window.AppStorage.ARQ_CATEGORY || c.id === 'cat-e7' || c.id === 'egr-7')) {
+        return Object.assign({}, c, { name: 'Inversión de Activos', isArq: true });
+      }
+      return c;
+    });
+    if (!categories.some(function (c) { return c.type === 'Egreso' && c.name === 'Inversión de Activos'; })) {
+      categories.push({ id: 'cat-e7', name: 'Inversión de Activos', type: 'Egreso', isArq: true });
+    }
 
     var obligations = (obRaw || []).filter(function (r) { return r[1] || r[0]; }).map(function (r, idx) {
       var name = String(r[1] || r[0]).trim();

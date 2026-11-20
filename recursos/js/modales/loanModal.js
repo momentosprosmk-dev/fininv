@@ -20,6 +20,7 @@
       installmentsStr: '1',
       startDate: fmt.getTodayISO(),
       notes: '',
+      showObs: false,
     };
 
     function calcTotals() {
@@ -120,8 +121,13 @@
                 '</div>' +
               '</div>' +
               '<div class="field-group">' +
-                '<label class="field-label">Notas (opcional)</label>' +
-                '<input type="text" id="lm-notes" class="input" placeholder="Ej. Préstamo a 1 mes..." value="' + esc(state.notes) + '" />' +
+                '<label class="obs-toggle-row">' +
+                  '<span class="obs-toggle-label">Agregar observaciones</span>' +
+                  '<span class="obs-switch ' + (state.showObs ? 'is-on' : '') + '"><input type="checkbox" id="lm-obs-toggle" ' + (state.showObs ? 'checked' : '') + ' /><span class="obs-switch-thumb"></span></span>' +
+                '</label>' +
+                (state.showObs
+                  ? '<input type="text" id="lm-notes" class="input" style="margin-top:0.5rem" placeholder="Ej. Préstamo a 1 mes..." value="' + esc(state.notes) + '" />'
+                  : '') +
               '</div>' +
               '<div id="lm-summary-box" class="config-box" style="margin-bottom:0">' +
                 '<p style="margin:0;font-size:0.82rem;color:var(--text-muted)">Total a cobrar: <strong id="lm-total-due" style="color:var(--emerald)">' + esc(fmt.formatCOP(calc.totalDue)) + '</strong>' +
@@ -183,7 +189,18 @@
         render();
       });
       document.getElementById('lm-installments').addEventListener('input', function (e) { state.installmentsStr = e.target.value; updatePreview(); });
-      document.getElementById('lm-notes').addEventListener('input', function (e) { state.notes = e.target.value; });
+      var lmObsToggle = document.getElementById('lm-obs-toggle');
+      if (lmObsToggle) lmObsToggle.addEventListener('change', function (e) {
+        state.showObs = Boolean(e.target.checked);
+        if (!state.showObs) state.notes = '';
+        render();
+        if (state.showObs) {
+          var el = document.getElementById('lm-notes');
+          if (el) el.focus();
+        }
+      });
+      var lmNotesInp = document.getElementById('lm-notes');
+      if (lmNotesInp) lmNotesInp.addEventListener('input', function (e) { state.notes = e.target.value; });
 
       document.getElementById('lm-save').addEventListener('click', function () {
         var c = calcTotals();
@@ -226,6 +243,7 @@
       toAccount: liquidAccounts[0] || '',
       amountStr: suggested > 0 ? String(suggested) : '',
       notes: '',
+      showObs: false,
     };
 
     function render() {
@@ -253,7 +271,15 @@
               '<input type="text" inputmode="decimal" id="lpm-amt" class="input" value="' + esc(state.amountStr) + '" />' +
               '<p style="margin:0.25rem 0 0;font-size:0.76rem;color:var(--text-muted)">Puedes ingresar el total o un abono parcial.</p>' +
             '</div>' +
-            '<div class="field-group"><label class="field-label">Notas (opcional)</label><input type="text" id="lpm-notes" class="input" placeholder="Ej. Abono cuota 1" value="' + esc(state.notes) + '" /></div>' +
+            '<div class="field-group">' +
+              '<label class="obs-toggle-row">' +
+                '<span class="obs-toggle-label">Agregar observaciones</span>' +
+                '<span class="obs-switch ' + (state.showObs ? 'is-on' : '') + '"><input type="checkbox" id="lpm-obs-toggle" ' + (state.showObs ? 'checked' : '') + ' /><span class="obs-switch-thumb"></span></span>' +
+              '</label>' +
+              (state.showObs
+                ? '<input type="text" id="lpm-notes" class="input" style="margin-top:0.5rem" placeholder="Ej. Abono cuota 1" value="' + esc(state.notes) + '" />'
+                : '') +
+            '</div>' +
             '<div class="modal-footer">' +
               '<button type="button" class="btn btn-secondary" id="lpm-cancel">Cancelar</button>' +
               '<button type="button" class="btn btn-emerald" id="lpm-save" ' + (!canSave ? 'disabled' : '') + '>Registrar Ingreso</button>' +
@@ -274,7 +300,18 @@
         state.amountStr = e.target.value;
         document.getElementById('lpm-save').disabled = !(state.toAccount && fmt.parseDecimalInput(state.amountStr) > 0);
       });
-      document.getElementById('lpm-notes').addEventListener('input', function (e) { state.notes = e.target.value; });
+      var lpmObsToggle = document.getElementById('lpm-obs-toggle');
+      if (lpmObsToggle) lpmObsToggle.addEventListener('change', function (e) {
+        state.showObs = Boolean(e.target.checked);
+        if (!state.showObs) state.notes = '';
+        render();
+        if (state.showObs) {
+          var el = document.getElementById('lpm-notes');
+          if (el) el.focus();
+        }
+      });
+      var lpmNotesInp = document.getElementById('lpm-notes');
+      if (lpmNotesInp) lpmNotesInp.addEventListener('input', function (e) { state.notes = e.target.value; });
       document.getElementById('lpm-save').addEventListener('click', function () {
         var amount = fmt.parseDecimalInput(state.amountStr);
         if (!state.toAccount || amount <= 0) return;

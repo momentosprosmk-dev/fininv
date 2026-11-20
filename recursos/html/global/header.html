@@ -133,10 +133,16 @@
     </button>
   </nav>
 
-  <nav id="inv-tabs" class="header-tabs cols-2 hidden" aria-label="Secciones de Inversiones">
-    <button type="button" class="tab-btn active" data-inv-tab="resumen" title="Portafolio">
+  <nav id="inv-tabs" class="header-tabs hidden" aria-label="Secciones de Inversiones">
+    <button type="button" class="tab-btn active" data-inv-tab="resumen" title="Estado Financiero">
       <i class="fa-solid fa-chart-pie"></i>
-      <span class="tab-label-pc">Portafolio</span>
+      <span class="tab-label-pc">Estado Financiero</span>
+    </button>
+
+    <button type="button" class="tab-btn" data-inv-tab="cuentas" title="Cuentas de Inversión">
+      <i class="fa-solid fa-layer-group"></i>
+      <span id="inv-tab-acc-badge" class="tab-badge-mobile">0</span>
+      <span id="inv-tab-acc-label-pc" class="tab-label-pc">Inversiones (0)</span>
     </button>
 
     <button type="button" class="tab-btn" data-inv-tab="movimientos" title="Movimientos de Inversión">

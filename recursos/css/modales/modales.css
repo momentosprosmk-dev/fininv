@@ -473,3 +473,59 @@
   color: var(--text-soft);
   white-space: pre;
 }
+
+.obs-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-subtle);
+  cursor: pointer;
+  user-select: none;
+}
+
+.obs-toggle-label {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-soft);
+}
+
+.obs-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 2.35rem;
+  height: 1.3rem;
+  border-radius: 9999px;
+  background: var(--border-subtle);
+  transition: background 0.18s ease;
+  flex-shrink: 0;
+}
+
+.obs-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.obs-switch-thumb {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 9999px;
+  background: #fff;
+  transform: translateX(0.18rem);
+  transition: transform 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.obs-switch.is-on {
+  background: var(--indigo);
+}
+
+.obs-switch.is-on .obs-switch-thumb {
+  transform: translateX(1.22rem);
+}
