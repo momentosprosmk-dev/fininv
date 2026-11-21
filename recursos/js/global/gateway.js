@@ -36,6 +36,14 @@
       .replace(/'/g, '&#39;');
   };
 
+  window.sortAlpha = function (arr, getLabel) {
+    return (arr || []).slice().sort(function (a, b) {
+      var la = String(typeof getLabel === 'function' ? getLabel(a) : a || '');
+      var lb = String(typeof getLabel === 'function' ? getLabel(b) : b || '');
+      return la.localeCompare(lb, 'es', { sensitivity: 'base' });
+    });
+  };
+
   window.loadHTMLFragment = async function (url, targetId) {
     var container = document.getElementById(targetId);
     if (!container) return false;

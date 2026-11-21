@@ -238,6 +238,18 @@
           dest.availableCash += convertedDest;
           dest.netContributed += convertedDest;
         }
+      } else if (m.type === 'TraspasoSub') {
+        var sFrom = resolveSub(f, m.subId, m.subName);
+        var sTo = resolveSub(f, m.destSubId, m.normalAccount);
+        if (sFrom) {
+          sFrom.currentValue -= amt;
+          sFrom.netInvested -= amt;
+        }
+        var netToSub = apply === 'moved' ? Math.max(0, amt - comm) : amt;
+        if (sTo) {
+          sTo.currentValue += netToSub;
+          sTo.netInvested += netToSub;
+        }
       }
     });
 

@@ -745,17 +745,43 @@
         },
       });
     },
+    openSubTransfer: function (fundId, subId) {
+      var invSummary = window.AppInvestments.calculateInvestmentSummary(appState.data);
+      var f = invSummary.fundSummaries.find(function (x) { return x.account.id === fundId; });
+      if (!f) return;
+      var origin = (f.subSummaries || []).find(function (s) { return s.sub.id === subId; });
+      if (!origin) return;
+      window.InvestmentModals.openSubTransferModal({
+        fundSummary: f,
+        originSubSummary: origin,
+        onSave: function (op) {
+          var nowIso = new Date().toISOString();
+          var invId = 'invmov-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+          var newInvMov = Object.assign({}, op, {
+            id: invId,
+            linkedMovementId: '',
+            createdAt: nowIso,
+          });
+          updateData(function (prev) {
+            return Object.assign({}, prev, {
+              investmentMovements: (prev.investmentMovements || []).concat([newInvMov]),
+            });
+          });
+        },
+      });
+    },
     openUpdateValue: function (fundName, subName) {
       var invSummary = window.AppInvestments.calculateInvestmentSummary(appState.data);
       var f = invSummary.fundSummaries.find(function (x) { return x.account.name === fundName; });
       if (!f) return;
       var bookVal = f.totalValue;
       var netContrib = f.netContributed;
+      var subObjForUpdate = null;
       if (subName) {
-        var s = f.subSummaries.find(function (x) { return x.sub.name === subName; });
-        if (!s) return;
-        bookVal = s.currentValue;
-        netContrib = s.netInvested;
+        subObjForUpdate = f.subSummaries.find(function (x) { return x.sub.name === subName; });
+        if (!subObjForUpdate) return;
+        bookVal = subObjForUpdate.currentValue;
+        netContrib = subObjForUpdate.netInvested;
       }
       window.InvestmentModals.openUpdateValueModal({
         fundName: fundName,
@@ -768,7 +794,9 @@
             id: 'invmov-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
             date: window.AppFormat.getTodayISO(),
             type: 'Rendimiento',
+            fundId: f.account.id,
             fundName: fundName,
+            subId: subObjForUpdate ? subObjForUpdate.sub.id : '',
             subName: subName || '',
             normalAccount: '',
             description: 'Actualización de valor' + (subName ? ' (' + subName + ')' : ''),

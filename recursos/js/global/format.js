@@ -114,7 +114,11 @@
 
   function getSupportedCurrencies() {
     var all = getAllCurrenciesMap();
-    return Object.keys(all).map(function (k) { return all[k]; });
+    return Object.keys(all)
+      .map(function (k) { return all[k]; })
+      .sort(function (a, b) {
+        return String(a.label || a.code).localeCompare(String(b.label || b.code), 'es', { sensitivity: 'base' });
+      });
   }
 
   function formatCurrency(value, currencyCode) {

@@ -138,3 +138,20 @@
   white-space: nowrap;
   justify-content: center;
 }
+
+.btn-toggle-fund-detail {
+  border-color: rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.12);
+  color: #a5b4fc;
+}
+
+.btn-toggle-fund-detail:hover {
+  border-color: rgba(99, 102, 241, 0.55);
+  background: rgba(99, 102, 241, 0.2);
+}
+
+.btn-toggle-fund-detail.is-expanded {
+  border-color: rgba(139, 92, 246, 0.45);
+  background: rgba(139, 92, 246, 0.16);
+  color: #c4b5fd;
+}

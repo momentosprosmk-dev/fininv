@@ -5,7 +5,7 @@
 
     var esc = window.escapeHTML;
     var fmt = window.AppFormat;
-    var liquidAccounts = opts.liquidAccounts || [];
+    var liquidAccounts = window.sortAlpha(opts.liquidAccounts || []);
     var balances = opts.accountBalances || {};
 
     var state = {
@@ -242,7 +242,7 @@
     var esc = window.escapeHTML;
     var fmt = window.AppFormat;
     var loan = opts.loan;
-    var liquidAccounts = opts.liquidAccounts || [];
+    var liquidAccounts = window.sortAlpha(opts.liquidAccounts || []);
     var suggested = opts.suggestedAmount > 0 ? opts.suggestedAmount : opts.remainingTotal;
 
     var state = {

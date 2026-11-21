@@ -163,7 +163,9 @@
           var sid = m.subId || (m.subName ? (subIdByKey[fid + '::' + m.subName] || subIdByKey['::' + m.subName] || m.subName) : '');
           var normalOrDest = m.type === 'TraspasoInv'
             ? (m.destFundId || accIdByName[m.normalAccount] || m.normalAccount || '')
-            : (m.normalAccount || '');
+            : (m.type === 'TraspasoSub'
+                ? (m.destSubId || (m.normalAccount ? (subIdByKey[fid + '::' + m.normalAccount] || subIdByKey['::' + m.normalAccount] || m.normalAccount) : ''))
+                : (m.normalAccount || ''));
           return [m.id, m.date, m.type, fid, sid, normalOrDest, m.description || '', m.amount || 0, m.commission || 0, m.commissionApply || 'moved', m.exchangeRate || 1, m.amountCOP || 0, m.linkedMovementId || '', m.createdAt || ''];
         });
       })(),
@@ -364,6 +366,7 @@
       var matchedSub = rawSubRef ? (subById[rawSubRef] || subByKey[resolvedFundId + '::' + rawSubRef] || subByKey['::' + rawSubRef] || null) : null;
       var rawNormalRef = String(r[5] || '');
       var matchedDest = (mType === 'TraspasoInv' && rawNormalRef) ? (accById[rawNormalRef] || accByName[rawNormalRef] || null) : null;
+      var matchedDestSub = (mType === 'TraspasoSub' && rawNormalRef) ? (subById[rawNormalRef] || subByKey[resolvedFundId + '::' + rawNormalRef] || subByKey['::' + rawNormalRef] || null) : null;
       return {
         id: String(r[0]),
         date: String(r[1]).slice(0, 10),
@@ -373,7 +376,8 @@
         subId: matchedSub ? matchedSub.id : rawSubRef,
         subName: matchedSub ? matchedSub.name : rawSubRef,
         destFundId: matchedDest ? matchedDest.id : '',
-        normalAccount: matchedDest ? matchedDest.name : rawNormalRef,
+        destSubId: matchedDestSub ? matchedDestSub.id : '',
+        normalAccount: matchedDest ? matchedDest.name : (matchedDestSub ? matchedDestSub.name : rawNormalRef),
         description: String(r[6] || ''),
         amount: parseSheetNumber(r[7]),
         commission: parseSheetNumber(r[8]),

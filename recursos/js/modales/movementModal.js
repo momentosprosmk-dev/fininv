@@ -12,9 +12,9 @@
     var preset = opts.preset || {};
     var currentCcDebt = opts.currentCcDebt || 0;
 
-    var liquidAccounts = accounts.filter(function (a) { return a.kind === 'liquidez'; }).map(function (a) { return a.name; });
-    var egresoAccounts = accounts.filter(function (a) { return a.kind === 'liquidez' || a.kind === 'deuda'; }).map(function (a) { return a.name; });
-    var allAccounts = accounts.map(function (a) { return a.name; });
+    var liquidAccounts = window.sortAlpha(accounts.filter(function (a) { return a.kind === 'liquidez'; }).map(function (a) { return a.name; }));
+    var egresoAccounts = window.sortAlpha(accounts.filter(function (a) { return a.kind === 'liquidez' || a.kind === 'deuda'; }).map(function (a) { return a.name; }));
+    var allAccounts = window.sortAlpha(accounts.map(function (a) { return a.name; }));
     var debtNames = new Set(accounts.filter(function (a) { return a.kind === 'deuda'; }).map(function (a) { return a.name; }));
 
     var state = {
@@ -94,7 +94,7 @@
       var isOutflow = state.type === 'Egreso' || state.type === 'Traspaso';
       var hasInsufficient = isOutflow && Boolean(state.fromAccount) && (availableFrom <= 0 || parsedAmount > availableFrom);
 
-      var catsForType = categories.filter(function (c) { return c.type === state.type; });
+      var catsForType = window.sortAlpha(categories.filter(function (c) { return c.type === state.type; }), function (c) { return c.name; });
       var selectedCatObj = categories.find(function (c) { return c.type === state.type && c.name === state.category; });
       var isInvExpense = state.type === 'Egreso' && selectedCatObj && selectedCatObj.isArq && investmentAccounts.length > 0;
       var lowerCat = String(state.category || '').toLowerCase();
@@ -253,7 +253,7 @@
 
       var invFundHtml = '';
       if (needsInvFund) {
-        var invOpts = '<option value="">Selecciona fondo de inversión...</option>' + investmentAccounts.map(function (ia) {
+        var invOpts = '<option value="">Selecciona fondo de inversión...</option>' + window.sortAlpha(investmentAccounts, function (ia) { return ia.name; }).map(function (ia) {
           return '<option value="' + esc(ia.name) + '" ' + (state.invFund === ia.name ? 'selected' : '') + '>' + esc(ia.name) + ' (' + esc(ia.currency || baseCur) + ')</option>';
         }).join('');
         invFundHtml =
@@ -531,7 +531,9 @@
             invPayload = {
               date: state.date,
               type: 'Retiro',
+              fundId: selectedInvObj ? selectedInvObj.id : '',
               fundName: state.invFund,
+              subId: '',
               subName: '',
               normalAccount: state.toAccount,
               description: payload.description,
@@ -562,7 +564,9 @@
             invPayload = {
               date: state.date,
               type: 'Aporte',
+              fundId: selectedInvObj ? selectedInvObj.id : '',
               fundName: state.invFund,
+              subId: '',
               subName: '',
               normalAccount: state.fromAccount,
               description: payload.description,

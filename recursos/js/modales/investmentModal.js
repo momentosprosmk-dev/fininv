@@ -442,7 +442,7 @@
               })
             : fundSummaries);
 
-      var fundOpts = '<option value="">Selecciona fondo...</option>' + fundListForType.map(function (x) {
+      var fundOpts = '<option value="">Selecciona fondo...</option>' + window.sortAlpha(fundListForType, function (x) { return x.account.name; }).map(function (x) {
         return '<option value="' + esc(x.account.name) + '" ' + (state.fundName === x.account.name ? 'selected' : '') + '>' + esc(x.account.name) + ' (' + esc(x.currency) + ')</option>';
       }).join('');
 
@@ -450,14 +450,17 @@
         (state.type === 'Retiro'
           ? '<option value="__externo__" ' + (state.normalAccount === '__externo__' ? 'selected' : '') + '>Externo / Vaciar saldo (no afecta cuentas)</option>'
           : '') +
-        liquidAccounts.map(function (a) {
+        window.sortAlpha(liquidAccounts, function (a) { return a.name; }).map(function (a) {
           return '<option value="' + esc(a.name) + '" ' + (state.normalAccount === a.name ? 'selected' : '') + '>' + esc(a.name) + '</option>';
         }).join('');
 
       var visibleSubs = f
-        ? (state.type === 'LiberarSub'
-            ? f.subSummaries.filter(function (s) { return (Number(s.currentValue) || 0) > 0.001; })
-            : f.subSummaries)
+        ? window.sortAlpha(
+            state.type === 'LiberarSub'
+              ? f.subSummaries.filter(function (s) { return (Number(s.currentValue) || 0) > 0.001; })
+              : f.subSummaries,
+            function (s) { return s.sub.name; }
+          )
         : [];
       var subOpts = f
         ? '<option value="">Selecciona sub-inversión...</option>' + visibleSubs.map(function (s) {
@@ -465,7 +468,7 @@
           }).join('')
         : '<option value="">Selecciona fondo primero...</option>';
 
-      var destFundOpts = '<option value="">Selecciona fondo destino...</option>' + fundSummaries.filter(function (x) { return x.account.name !== state.fundName; }).map(function (x) {
+      var destFundOpts = '<option value="">Selecciona fondo destino...</option>' + window.sortAlpha(fundSummaries.filter(function (x) { return x.account.name !== state.fundName; }), function (x) { return x.account.name; }).map(function (x) {
         return '<option value="' + esc(x.account.name) + '" ' + (state.destFundName === x.account.name ? 'selected' : '') + '>' + esc(x.account.name) + ' (' + esc(x.currency) + ')</option>';
       }).join('');
 
@@ -833,10 +836,157 @@
     render();
   }
 
+  function openSubTransferModal(opts) {
+    var root = document.getElementById('modales-root');
+    if (!root) return;
+    var fmt = window.AppFormat;
+    var esc = window.escapeHTML;
+    var fund = opts.fundSummary;
+    var origin = opts.originSubSummary;
+    if (!fund || !origin) return;
+
+    var cur = fund.currency || 'COP';
+    var isOriginPocket = Boolean(origin.sub.isPocket);
+    var avail = Math.round(Math.max(0, origin.currentValue) * 100) / 100;
+    var destSubs = window.sortAlpha((fund.subSummaries || []).filter(function (s) {
+      if (s.sub.id === origin.sub.id) return false;
+      return isOriginPocket ? true : Boolean(s.sub.isPocket);
+    }), function (s) { return s.sub.name; });
+
+    var state = {
+      date: fmt.getTodayISO(),
+      destSubId: destSubs.length === 1 ? destSubs[0].sub.id : '',
+      amountStr: '',
+      description: '',
+      showObs: false,
+    };
+
+    function render(focusId, selStart, selEnd) {
+      var prevScrollEl = root.querySelector('.modal-body-scroll');
+      var prevScrollTop = prevScrollEl ? prevScrollEl.scrollTop : 0;
+      var amountVal = fmt.parseDecimalInput(state.amountStr);
+      var hasInsuf = amountVal > avail + 0.001;
+      var canSave = Boolean(state.destSubId) && amountVal > 0 && !hasInsuf;
+      var destOpts = '<option value="">Selecciona subcuenta destino...</option>' + destSubs.map(function (s) {
+        return '<option value="' + esc(s.sub.id) + '" ' + (state.destSubId === s.sub.id ? 'selected' : '') + '>' +
+          esc(s.sub.name) + (s.sub.isPocket ? ' [Bolsillo]' : '') + ' (' + esc(fmt.formatCurrency(s.currentValue, cur)) + ')' +
+        '</option>';
+      }).join('');
+
+      root.innerHTML =
+        '<div class="modal-backdrop">' +
+          '<form id="st-form" class="modal-box modal-flex" style="max-width:460px">' +
+            '<div class="modal-top-fixed">' +
+              '<div class="modal-header" style="margin-bottom:0">' +
+                '<div><h2 class="modal-title">Mover entre Subcuentas</h2><p class="modal-subtitle">' + esc(fund.account.name) + ' (' + esc(cur) + ')</p></div>' +
+                '<button type="button" class="modal-close" id="st-close"><i class="fa-solid fa-xmark"></i></button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="modal-body-scroll">' +
+              '<div class="alert-banner alert-indigo">' +
+                'Origen: <strong>' + esc(origin.sub.name) + '</strong>' + (isOriginPocket ? ' (Bolsillo)' : '') +
+                '<br/>Disponible para mover: <strong class="tabular">' + esc(fmt.formatCurrency(avail, cur)) + '</strong>' +
+              '</div>' +
+              '<div class="field-group">' +
+                '<label class="field-label">' + (isOriginPocket ? 'Hacia subcuenta destino' : 'Hacia bolsillo destino') + '</label>' +
+                '<select id="st-dest" class="select">' + destOpts + '</select>' +
+              '</div>' +
+              '<div class="form-grid-2">' +
+                '<div class="field-group"><label class="field-label">Fecha</label><div id="st-datepicker"></div></div>' +
+                '<div class="field-group">' +
+                  '<label class="field-label">Monto (' + esc(cur) + ')</label>' +
+                  '<input type="text" inputmode="decimal" id="st-amount" class="input" placeholder="Ej. 50" value="' + esc(state.amountStr) + '" />' +
+                  (amountVal > 0 ? '<p style="margin:0.25rem 0 0;font-size:0.75rem;color:#a5b4fc">' + esc(fmt.formatCurrency(amountVal, cur)) + '</p>' : '') +
+                  (hasInsuf ? '<div class="alert-banner alert-rose" style="margin-top:0.5rem;margin-bottom:0">Saldo insuficiente en ' + esc(origin.sub.name) + '. Disponible: ' + esc(fmt.formatCurrency(avail, cur)) + '</div>' : '') +
+                '</div>' +
+              '</div>' +
+              '<div class="field-group" style="margin-bottom:0">' +
+                '<label class="obs-toggle-row">' +
+                  '<span class="obs-toggle-label">Agregar observaciones</span>' +
+                  '<span class="obs-switch ' + (state.showObs ? 'is-on' : '') + '"><input type="checkbox" id="st-obs-toggle" ' + (state.showObs ? 'checked' : '') + ' /><span class="obs-switch-thumb"></span></span>' +
+                '</label>' +
+                (state.showObs
+                  ? '<input type="text" id="st-desc" class="input" style="margin-top:0.5rem" placeholder="Ej. Mover a inversión..." value="' + esc(state.description) + '" />'
+                  : '') +
+              '</div>' +
+            '</div>' +
+            '<div class="modal-bottom-fixed">' +
+              '<button type="button" class="btn btn-secondary" id="st-cancel">Cancelar</button>' +
+              '<button type="submit" class="btn btn-primary" ' + (!canSave ? 'disabled' : '') + '>Mover dinero</button>' +
+            '</div>' +
+          '</form>' +
+        '</div>';
+
+      var closeFn = function () { root.innerHTML = ''; };
+      document.getElementById('st-close').addEventListener('click', closeFn);
+      document.getElementById('st-cancel').addEventListener('click', closeFn);
+      var dpEl = document.getElementById('st-datepicker');
+      if (dpEl) window.createDatePicker(dpEl, state.date, function (d) { state.date = d; });
+      document.getElementById('st-dest').addEventListener('change', function (e) {
+        state.destSubId = e.target.value;
+        render();
+      });
+      document.getElementById('st-amount').addEventListener('input', function (e) {
+        state.amountStr = e.target.value;
+        render('st-amount', e.target.selectionStart, e.target.selectionEnd);
+      });
+      var stObs = document.getElementById('st-obs-toggle');
+      if (stObs) stObs.addEventListener('change', function (e) {
+        state.showObs = Boolean(e.target.checked);
+        if (!state.showObs) state.description = '';
+        render();
+        if (state.showObs) {
+          var el = document.getElementById('st-desc');
+          if (el) el.focus();
+        }
+      });
+      var stDesc = document.getElementById('st-desc');
+      if (stDesc) stDesc.addEventListener('input', function (e) { state.description = e.target.value; });
+      document.getElementById('st-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (!canSave) return;
+        var destObj = destSubs.find(function (s) { return s.sub.id === state.destSubId; });
+        if (!destObj) return;
+        opts.onSave({
+          date: state.date,
+          type: 'TraspasoSub',
+          fundId: fund.account.id,
+          fundName: fund.account.name,
+          subId: origin.sub.id,
+          subName: origin.sub.name,
+          destSubId: destObj.sub.id,
+          normalAccount: destObj.sub.name,
+          description: state.description.trim() || (origin.sub.name + ' → ' + destObj.sub.name),
+          amount: Math.round(amountVal * 100) / 100,
+          commission: 0,
+          commissionApply: 'moved',
+          exchangeRate: fund.rate || 1,
+          amountCOP: Math.round(amountVal * (fund.rate || 1)),
+        });
+        closeFn();
+      });
+
+      var nextScrollEl = root.querySelector('.modal-body-scroll');
+      if (nextScrollEl && prevScrollTop > 0) nextScrollEl.scrollTop = prevScrollTop;
+      if (focusId) {
+        var fEl = document.getElementById(focusId);
+        if (fEl) {
+          fEl.focus();
+          if (typeof selStart === 'number' && fEl.setSelectionRange) {
+            try { fEl.setSelectionRange(selStart, selEnd); } catch (err) {}
+          }
+        }
+      }
+    }
+
+    render();
+  }
+
   window.InvestmentModals = {
     openAccountModal: openInvestmentAccountModal,
     openSubModal: openSubInvestmentModal,
     openUpdateValueModal: openUpdateValueModal,
     openOpModal: openInvestmentOpModal,
+    openSubTransferModal: openSubTransferModal,
   };
 })();

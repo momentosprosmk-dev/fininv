@@ -95,6 +95,10 @@
                   var isPocket = Boolean(s.sub.isPocket);
                   var sPos = s.gainLoss >= 0;
                   var hasNoCapital = (Number(s.currentValue) || 0) <= 0.001;
+                  var hasValidTransferDest = !hasNoCapital && f.subSummaries.some(function (other) {
+                    if (other.sub.id === s.sub.id) return false;
+                    return isPocket ? true : Boolean(other.sub.isPocket);
+                  });
                   var isDelSub = state.pendingDeleteSubId === s.sub.id;
                   var delSubCtrl = hasNoCapital
                     ? (isDelSub
@@ -118,6 +122,7 @@
                       '</div>' +
                       '<div style="display:flex;align-items:center;gap:0.35rem;flex-shrink:0">' +
                         (!isPocket && !hasNoCapital ? '<button type="button" class="btn btn-secondary btn-sub-update" data-fund="' + esc(acc.name) + '" data-sub="' + esc(s.sub.name) + '" style="padding:0.28rem 0.6rem;font-size:0.75rem" title="Actualizar valor actual"><i class="fa-solid fa-chart-line"></i> Valor</button>' : '') +
+                        (hasValidTransferDest ? '<button type="button" class="btn btn-secondary btn-sub-transfer" data-fund-id="' + esc(acc.id) + '" data-sub-id="' + esc(s.sub.id) + '" style="padding:0.28rem 0.5rem;font-size:0.75rem" title="' + (isPocket ? 'Mover a subcuenta' : 'Mover a bolsillo') + '"><i class="fa-solid fa-right-left"></i></button>' : '') +
                         delSubCtrl +
                       '</div>' +
                     '</div>'
@@ -189,7 +194,7 @@
                 '<button type="button" class="btn btn-secondary btn-fund-op" data-op="Aporte" data-fund="' + esc(acc.name) + '"><i class="fa-solid fa-plus"></i> Aportar</button>' +
                 '<button type="button" class="btn btn-secondary btn-fund-op" data-op="Retiro" data-fund="' + esc(acc.name) + '"><i class="fa-solid fa-arrow-up-right-from-square"></i> Retirar</button>' +
                 (!isFrag && (Math.abs(Number(f.totalValue) || 0) > 0.001 || Math.abs(Number(f.netContributed) || 0) > 0.001) ? '<button type="button" class="btn btn-secondary btn-fund-update" data-fund="' + esc(acc.name) + '"><i class="fa-solid fa-chart-line"></i> Actualizar valor</button>' : '') +
-                '<button type="button" class="btn btn-secondary btn-toggle-fund-detail" data-fund-id="' + esc(acc.id) + '">' +
+                '<button type="button" class="btn btn-secondary btn-toggle-fund-detail' + (isExpanded ? ' is-expanded' : '') + '" data-fund-id="' + esc(acc.id) + '">' +
                   '<i class="fa-solid ' + (isExpanded ? 'fa-chevron-up' : 'fa-chevron-down') + '"></i> ' + esc(detailLabel) +
                 '</button>' +
               '</div>' +
@@ -200,7 +205,7 @@
 
     // Si estamos en la pestaña Movimientos de Inversiones
     if (state.invActiveTab === 'movimientos') {
-      var fundNames = ['Todas'].concat((state.data.investmentAccounts || []).map(function (a) { return a.name; }));
+      var fundNames = ['Todas'].concat(window.sortAlpha((state.data.investmentAccounts || []).map(function (a) { return a.name; })));
       var curFundFilter = state.invFilterFund || 'Todas';
       var curTypeFilter = state.invFilterType || 'Todos';
       var curSearch = state.invSearchTerm || '';
@@ -209,7 +214,7 @@
         return '<option value="' + esc(fn) + '" ' + (curFundFilter === fn ? 'selected' : '') + '>' + (fn === 'Todas' ? 'Inversión: Todas' : esc(fn)) + '</option>';
       }).join('');
 
-      var invTypes = ['Todos', 'Aporte', 'Retiro', 'Rendimiento', 'AsignarSub', 'LiberarSub', 'TraspasoInv'];
+      var invTypes = ['Todos'].concat(window.sortAlpha(['Aporte', 'Retiro', 'Rendimiento', 'AsignarSub', 'LiberarSub', 'TraspasoInv', 'TraspasoSub']));
       var typeOptsHtml = invTypes.map(function (t) {
         return '<option value="' + esc(t) + '" ' + (curTypeFilter === t ? 'selected' : '') + '>Tipo: ' + esc(t) + '</option>';
       }).join('');
@@ -244,7 +249,9 @@
               ? '<div class="inline-confirm"><span class="text-rose">¿Eliminar?</span><button type="button" class="inline-confirm-btn no" data-cancel-del-im="' + esc(m.id) + '">No</button><button type="button" class="inline-confirm-btn yes" data-confirm-del-im="' + esc(m.id) + '">Sí</button></div>'
               : '<button type="button" class="icon-delete-btn" data-ask-del-im="' + esc(m.id) + '" title="Eliminar operación"><i class="fa-regular fa-trash-can"></i></button>';
 
-            var detail = m.fundName + (m.subName ? ' → ' + m.subName : '') + (m.normalAccount ? ' (' + m.normalAccount + ')' : '');
+            var detail = m.type === 'TraspasoSub'
+              ? (m.fundName + ': ' + (m.subName || '') + ' → ' + (m.normalAccount || ''))
+              : (m.fundName + (m.subName ? ' → ' + m.subName : '') + (m.normalAccount ? ' (' + m.normalAccount + ')' : ''));
             return (
               '<tr>' +
                 '<td class="text-muted" style="white-space:nowrap">' + esc(m.date) + '</td>' +
@@ -378,6 +385,12 @@
     container.querySelectorAll('.btn-sub-update').forEach(function (b) {
       b.addEventListener('click', function () {
         window.AppActions.openUpdateValue(b.getAttribute('data-fund'), b.getAttribute('data-sub'));
+      });
+    });
+
+    container.querySelectorAll('.btn-sub-transfer').forEach(function (b) {
+      b.addEventListener('click', function () {
+        window.AppActions.openSubTransfer(b.getAttribute('data-fund-id'), b.getAttribute('data-sub-id'));
       });
     });
 
