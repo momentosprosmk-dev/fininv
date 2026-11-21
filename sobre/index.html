@@ -71,12 +71,12 @@
     <section class="sobre-hero">
       <div class="sobre-badge">
         <i class="fa-solid fa-shield-halved"></i>
-        <span>100% Privado · Offline-First · Tus datos en tu Google Drive</span>
+        <span>100% Privado · Sin conexión o con Google Sheets · Respaldos cifrados</span>
       </div>
       <h1>Finanzas, Inversiones y Préstamos en un solo lugar</h1>
       <p>
         <strong>FinInv</strong> es una aplicación web instalable (PWA) que te da claridad total sobre tu dinero en
-        <strong>cualquier divisa (COP, USD, EUR y más)</strong>, funciona incluso sin internet y sincroniza directamente con tu propio <strong>Google Sheets</strong> sin intermediarios.
+        <strong>cualquier divisa (COP, USD, EUR y más)</strong>. Úsala <strong>100% sin conexión</strong> con copias de seguridad cifradas o conéctala a tu propio <strong>Google Sheets</strong> sin intermediarios.
       </p>
       <div class="sobre-hero-actions">
         <a href="/" class="sobre-btn primary">
@@ -128,9 +128,33 @@
 
         <article class="sobre-arch-node">
           <div class="sobre-card-icon emerald"><i class="fa-solid fa-table"></i></div>
-          <h3 style="margin:0;font-size:1rem;color:var(--text-strong)">3. Tu Google Sheet</h3>
+          <h3 style="margin:0;font-size:1rem;color:var(--text-strong)">3. Tu Google Sheet o Respaldo Cifrado</h3>
           <p style="margin:0;font-size:0.88rem;color:#cbd5e1">
-            Almacena 13 hojas organizadas con <code>ID</code> únicos (cuentas, movimientos, inversiones, subcuentas, préstamos y cierres) bajo tu control absoluto.
+            Sincroniza 13 hojas con <code>ID</code> únicos en tu Drive, o trabaja sin Sheet exportando copias <code>.json</code> cifradas (<strong>AES-256</strong>) desde <strong>Administrar Datos</strong>.
+          </p>
+        </article>
+      </div>
+
+      <div class="sobre-grid" style="margin-top:1.15rem">
+        <article class="sobre-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
+            <div class="sobre-card-icon violet"><i class="fa-solid fa-laptop-file"></i></div>
+            <span class="sobre-pill violet">Sin Google Sheets</span>
+          </div>
+          <h3>Modo Local + Copias Cifradas</h3>
+          <p>
+            Ideal si no deseas vincular una cuenta de Google. Todo (movimientos, inversiones, préstamos y cierres de mes) se guarda en tu navegador y puedes exportar o restaurar respaldos cifrados con contraseña.
+          </p>
+        </article>
+
+        <article class="sobre-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
+            <div class="sobre-card-icon emerald"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+            <span class="sobre-pill active">Con Google Sheets</span>
+          </div>
+          <h3>Nube Propia + Auto-Sync Offline</h3>
+          <p>
+            Ideal si usas varios dispositivos. Tus datos viven en tu Google Drive; si te quedas sin internet, sigues registrando normalmente y al volver la conexión se sincroniza todo automáticamente.
           </p>
         </article>
       </div>
@@ -253,36 +277,95 @@
 
     <!-- Cómo empezar -->
     <section class="sobre-segment is-hidden" data-sobre-panel="empezar">
-      <h2 class="sobre-section-title">¿Cómo empezar en 3 pasos?</h2>
-      <p class="sobre-section-sub">En menos de dos minutos puedes tener tu control financiero funcionando.</p>
-      <div class="sobre-steps">
-        <div class="sobre-step">
-          <div class="sobre-step-num">1</div>
-          <h3>Configura tus cuentas</h3>
-          <p>Desde <strong>Cuentas y Conceptos</strong> ajusta tus cuentas de liquidez, tarjetas de crédito, créditos a cuotas y conceptos.</p>
-        </div>
-        <div class="sobre-step">
-          <div class="sobre-step-num">2</div>
-          <h3>Conecta tu Google Sheet (opcional)</h3>
-          <p>En <strong>Conectar Gmail</strong> pega la URL <code>/exec</code> de tu Google Apps Script y protege el acceso con usuario y contraseña.</p>
-        </div>
-        <div class="sobre-step">
-          <div class="sobre-step-num">3</div>
-          <h3>Registra y analiza</h3>
-          <p>Usa <strong>+ Nuevo movimiento</strong>, <strong>Inversiones</strong> o <strong>Préstamos</strong>; activa el modo privacidad (<i class="fa-regular fa-eye"></i>) cuando estés en público.</p>
-        </div>
+      <h2 class="sobre-section-title">¿Cómo empezar? Elige tu modo de trabajo</h2>
+      <p class="sobre-section-sub">
+        Despliega la opción que prefieras para ver el paso a paso completo. Ambos modos funcionan incluso sin internet.
+      </p>
+
+      <div class="sobre-faq">
+        <!-- Opción 1: Sin Google -->
+        <details>
+          <summary>
+            <span style="display:inline-flex;align-items:center;gap:0.65rem;flex-wrap:wrap">
+              <span class="sobre-pill violet"><i class="fa-solid fa-lock"></i> Sin Google</span>
+              <span>Usar FinInv en Modo Local con Copias Cifradas</span>
+            </span>
+          </summary>
+          <div style="margin-top:0.9rem;display:flex;flex-direction:column;gap:0.75rem">
+            <p style="margin:0;color:#cbd5e1">
+              Ideal si no deseas vincular una cuenta de Google. Toda tu información se guarda en el navegador de tu dispositivo y puedes respaldarla o moverla entre equipos mediante archivos cifrados.
+            </p>
+            <div class="sobre-mini-ui" style="gap:0.65rem">
+              <div class="sobre-flow-rule" style="align-items:flex-start;flex-direction:column;gap:0.25rem;padding:0.7rem 0.85rem">
+                <strong style="color:var(--text-strong)"><span class="sobre-pill violet" style="margin-right:0.35rem">1</span> Entra directo sin registrarte</strong>
+                <span style="color:#cbd5e1">Abre FinInv, acepta los Términos y Condiciones y empieza a usar la app de inmediato sin crear cuentas ni conectar hojas externas.</span>
+              </div>
+              <div class="sobre-flow-rule" style="align-items:flex-start;flex-direction:column;gap:0.25rem;padding:0.7rem 0.85rem">
+                <strong style="color:var(--text-strong)"><span class="sobre-pill violet" style="margin-right:0.35rem">2</span> Configura tus cuentas y registra movimientos</strong>
+                <span style="color:#cbd5e1">Ajusta tus cuentas de liquidez, tarjetas y conceptos en <strong>Cuentas y Conceptos</strong>. Todo lo que agregues, edites o cierres (movimientos, inversiones, préstamos y cierres de mes) se guarda al instante en <code>localStorage</code>.</span>
+              </div>
+              <div class="sobre-flow-rule" style="align-items:flex-start;flex-direction:column;gap:0.25rem;padding:0.7rem 0.85rem">
+                <strong style="color:var(--text-strong)"><span class="sobre-pill violet" style="margin-right:0.35rem">3</span> Crea o restaura copias cifradas entre dispositivos</strong>
+                <span style="color:#cbd5e1">En <strong>Administrar Datos → Copia de Seguridad</strong>, ingresa una contraseña (mín. 4 caracteres) para cifrar tu archivo <code>.json</code> (AES-GCM 256 bits) y elige <strong>Descargar</strong> o <strong>Compartir</strong>. Para abrirlo en otro equipo, usa <strong>Restaurar copia</strong> e ingresa la misma contraseña.</span>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- Opción 2: Conectado a Google -->
+        <details>
+          <summary>
+            <span style="display:inline-flex;align-items:center;gap:0.65rem;flex-wrap:wrap">
+              <span class="sobre-pill active"><i class="fa-solid fa-table"></i> Conectado a Google</span>
+              <span>Configurar tu Google Sheet desde cero y sincronizar</span>
+            </span>
+          </summary>
+          <div style="margin-top:0.9rem;display:flex;flex-direction:column;gap:0.75rem">
+            <p style="margin:0;color:#cbd5e1">
+              Ideal si usas varios dispositivos (celular y computador) y quieres que tus datos vivan en tu propio <strong>Google Drive</strong> con sincronización automática incluso si trabajas temporalmente sin internet.
+            </p>
+            <div class="sobre-mini-ui" style="gap:0.65rem">
+              <div class="sobre-flow-rule" style="align-items:flex-start;flex-direction:column;gap:0.25rem;padding:0.7rem 0.85rem">
+                <strong style="color:var(--text-strong)"><span class="sobre-pill active" style="margin-right:0.35rem">1</span> Crea tu hoja de cálculo en Google Drive</strong>
+                <span style="color:#cbd5e1">Ingresa a Google Sheets y crea una <strong>hoja de cálculo en blanco</strong> (por ejemplo, <em>FinInv Personal</em>). No necesitas crear columnas ni pestañas manualmente; FinInv las generará por ti.</span>
+              </div>
+              <div class="sobre-flow-rule" style="align-items:flex-start;flex-direction:column;gap:0.25rem;padding:0.7rem 0.85rem">
+                <strong style="color:var(--text-strong)"><span class="sobre-pill active" style="margin-right:0.35rem">2</span> Pega el código en Apps Script</strong>
+                <span style="color:#cbd5e1">Dentro de tu hoja, abre el menú <strong>Extensiones &gt; Apps Script</strong>. Borra el código inicial y pega el contenido de <code>Code.gs</code> (puedes copiarlo con un clic usando el botón <strong>Copiar Code.gs</strong> dentro del modal de conexión de FinInv). Guarda el proyecto.</span>
+              </div>
+              <div class="sobre-flow-rule" style="align-items:flex-start;flex-direction:column;gap:0.25rem;padding:0.7rem 0.85rem">
+                <strong style="color:var(--text-strong)"><span class="sobre-pill active" style="margin-right:0.35rem">3</span> Implementa como Aplicación web y copia el enlace</strong>
+                <span style="color:#cbd5e1">Haz clic en <strong>Implementar &gt; Nueva implementación</strong>, elige tipo <strong>Aplicación web</strong>, en <em>Ejecutar como</em> selecciona <strong>Yo</strong> y en <em>Quién tiene acceso</em> selecciona <strong>Cualquier persona</strong> (tus datos siguen protegidos por tus credenciales en <code>t_user</code>). Autoriza los permisos de Google y copia la URL terminada en <code>/exec</code>.</span>
+              </div>
+              <div class="sobre-flow-rule" style="align-items:flex-start;flex-direction:column;gap:0.25rem;padding:0.7rem 0.85rem">
+                <strong style="color:var(--text-strong)"><span class="sobre-pill active" style="margin-right:0.35rem">4</span> Vincula tu proyecto en FinInv</strong>
+                <span style="color:#cbd5e1">En FinInv abre <strong>Conectar Sheet</strong>, selecciona <strong>Proyecto nuevo</strong>, pega primero tu enlace <code>/exec</code>, luego configura tu <strong>correo</strong> o <strong>usuario y contraseña</strong> y pulsa conectar. La app creará automáticamente las 13 hojas necesarias en tu Google Sheet.</span>
+              </div>
+              <div class="sobre-flow-rule" style="align-items:flex-start;flex-direction:column;gap:0.25rem;padding:0.7rem 0.85rem">
+                <strong style="color:var(--text-strong)"><span class="sobre-pill active" style="margin-right:0.35rem">5</span> Abre en otros dispositivos y trabaja offline</strong>
+                <span style="color:#cbd5e1">En otro celular o PC solo elige <strong>Proyecto existente</strong>, pega el mismo enlace <code>/exec</code> e inicia sesión. Si te quedas sin internet, tus cambios se guardan localmente (<code>pendingSync</code>) y se suben solos al volver la conexión.</span>
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
     </section>
 
     <!-- Preguntas Frecuentes -->
     <section class="sobre-segment is-hidden" data-sobre-panel="faq">
       <h2 class="sobre-section-title">Preguntas frecuentes</h2>
-      <p class="sobre-section-sub">Respuestas rápidas sobre privacidad, modo sin conexión y funcionamiento.</p>
+      <p class="sobre-section-sub">Respuestas rápidas sobre privacidad, copias cifradas, modo sin conexión y funcionamiento.</p>
       <div class="sobre-faq">
         <details>
-          <summary>¿Qué pasa si registro un movimiento cuando no tengo internet?</summary>
+          <summary>¿Puedo usar FinInv sin conectarme nunca a Google Sheets?</summary>
           <p>
-            El movimiento se guarda al instante en tu dispositivo (<code>localStorage</code>) y se marca como pendiente de envío (<code>pendingSync</code>) sin cerrar tu sesión. En cuanto recuperes la conexión, la app sincroniza automáticamente los cambios con tu Google Sheet.
+            Sí. Todos los módulos funcionan al 100% en modo local guardando tu información en el navegador. Cuando quieras respaldar tus datos o pasarlos a otro dispositivo, entra a <strong>Administrar Datos → Copia de Seguridad</strong>, protege tu archivo <code>.json</code> con una contraseña (cifrado AES-GCM 256 bits) y descárgalo o compártelo directamente.
+          </p>
+        </details>
+        <details>
+          <summary>¿Qué pasa si registro o cierro el mes cuando no tengo internet?</summary>
+          <p>
+            Cualquier movimiento, inversión, préstamo o cierre de mes se guarda al instante en tu dispositivo (<code>localStorage</code>). Si estás conectado a un Sheet, queda marcado como pendiente (<code>pendingSync</code>) sin cerrar tu sesión y se sincroniza automáticamente en cuanto recuperes internet.
           </p>
         </details>
         <details>
@@ -294,7 +377,7 @@
         <details>
           <summary>¿Momentos Pro puede ver mis saldos, movimientos o contraseñas?</summary>
           <p>
-            No. FinInv no tiene servidores propios de base de datos. Tu información vive exclusivamente en tu navegador y en tu propio Google Sheet, y tu contraseña se valida directamente contra tu hoja <code>t_user</code> usando hash SHA-256.
+            No. FinInv no tiene servidores propios de base de datos. Tu información vive exclusivamente en tu navegador y en tu propio Google Sheet; tu acceso se valida contra tu hoja <code>t_user</code> (SHA-256) y las copias de seguridad se cifran localmente en tu dispositivo sin enviar la contraseña a ningún servidor.
           </p>
         </details>
       </div>

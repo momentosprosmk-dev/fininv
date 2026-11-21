@@ -1,8 +1,13 @@
-var CACHE_NAME = 'fininv-v11';
+var CACHE_NAME = 'fininv-v12';
 var CORE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/sobre/',
+  '/tyc/',
+  '/recursos/html/global/header.html',
+  '/recursos/html/tyc/tyc.html',
+  '/recursos/css/sobre/sobre.css',
   '/recursos/media/global/pwa_fininv_256x256.png',
   '/recursos/media/global/favicon_fininv.png'
 ];

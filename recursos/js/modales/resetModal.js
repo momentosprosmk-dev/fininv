@@ -361,6 +361,7 @@
           try {
             var payload = {
               data: curData,
+              customCurrencies: window.AppFormat && window.AppFormat.getCustomCurrencies ? window.AppFormat.getCustomCurrencies() : {},
               baseCurrency: window.AppFormat && window.AppFormat.getBaseCurrency ? window.AppFormat.getBaseCurrency() : 'COP',
               monthCloseDay: window.AppFormat && window.AppFormat.getMonthCloseDay ? window.AppFormat.getMonthCloseDay() : 0,
             };

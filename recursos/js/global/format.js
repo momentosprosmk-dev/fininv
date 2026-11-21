@@ -244,10 +244,21 @@
     return Number.isFinite(n) ? n : 0;
   }
 
+  function restoreCustomCurrencies(map) {
+    if (!map || typeof map !== 'object') return;
+    var merged = Object.assign({}, loadCustomCurrencies(), map);
+    try {
+      localStorage.setItem(CUSTOM_CURRENCIES_STORAGE_KEY, JSON.stringify(merged));
+    } catch (e) { /* ignore */ }
+    formattersCache = {};
+  }
+
   window.AppFormat = {
     CURRENCY_CATALOG: CURRENCY_CATALOG,
     getBaseCurrency: getBaseCurrency,
     setBaseCurrency: setBaseCurrency,
+    getCustomCurrencies: loadCustomCurrencies,
+    restoreCustomCurrencies: restoreCustomCurrencies,
     addCustomCurrency: addCustomCurrency,
     getCurrencyMeta: getCurrencyMeta,
     getSupportedCurrencies: getSupportedCurrencies,

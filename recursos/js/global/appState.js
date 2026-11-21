@@ -181,7 +181,7 @@
         if (googlePill) googlePill.classList.remove('hidden');
         if (menuDot) menuDot.classList.remove('hidden');
       } else {
-        googleLbl.textContent = 'Conectar Gmail';
+        googleLbl.textContent = 'Conectar Sheet';
         if (googlePill) googlePill.classList.add('hidden');
         if (menuDot) menuDot.classList.add('hidden');
       }
@@ -1347,14 +1347,19 @@
           data: appState.data,
           onRestoreBackup: function (backupPayload) {
             if (!backupPayload || !backupPayload.data) return;
+            if (backupPayload.customCurrencies && window.AppFormat && window.AppFormat.restoreCustomCurrencies) {
+              window.AppFormat.restoreCustomCurrencies(backupPayload.customCurrencies);
+            }
             if (backupPayload.baseCurrency && window.AppFormat && window.AppFormat.setBaseCurrency) {
               window.AppFormat.setBaseCurrency(backupPayload.baseCurrency);
             }
             if (backupPayload.monthCloseDay != null && window.AppFormat && window.AppFormat.setMonthCloseDay) {
               window.AppFormat.setMonthCloseDay(backupPayload.monthCloseDay);
             }
+            appState.selectedMonth = window.AppFormat.getCurrentMonthKey();
+            var normalized = Object.assign({}, window.AppStorage.getCleanAppData(), backupPayload.data);
             updateData(function () {
-              return backupPayload.data;
+              return normalized;
             });
           },
           onResetSelected: function (keys) {
