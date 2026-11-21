@@ -213,7 +213,7 @@
               (state.showCode ? '<pre id="gm-code-preview" class="code-preview">' + esc(state.codeText) + '</pre>' : '') +
             '</div>';
 
-          if (!isNew && effectiveAuthMode === 'credentials') {
+          if (isNew || (!isNew && effectiveAuthMode === 'credentials')) {
             if (state.wizardStep === 2) {
               bodyHtml =
                 '<div class="field-group">' +
@@ -229,19 +229,29 @@
                 '</div>';
             } else {
               var canLoginCred = Boolean(state.draftScriptUrl.trim()) && Boolean(state.draftUser.trim()) && Boolean(state.draftPassword);
-              bodyHtml =
-                '<div class="config-box" style="margin-bottom:0">' +
-                  '<p class="field-label" style="margin:0 0 0.5rem;color:var(--text-strong)"><i class="fa-solid fa-user-shield text-indigo"></i> Ingresa tu Usuario y Contraseña</p>' +
-                  '<div class="form-grid-2">' +
-                    '<div><label class="field-label">Usuario</label><input type="text" id="gm-user" class="input" placeholder="Tu usuario" value="' + esc(state.draftUser) + '" /></div>' +
-                    '<div><label class="field-label">Contraseña</label>' + renderPwdInput('gm-password', '••••••••', state.draftPassword, false) + '</div>' +
-                  '</div>' +
-                '</div>';
+              bodyHtml = isNew
+                ? '<div class="config-box" style="margin-bottom:0">' +
+                    '<p class="field-label" style="margin:0 0 0.5rem;color:var(--text-strong)"><i class="fa-solid fa-user-plus text-emerald"></i> Crear usuario y contraseña de acceso</p>' +
+                    '<div class="form-grid-2" style="margin-bottom:0.5rem">' +
+                      '<div><label class="field-label">Usuario</label><input type="text" id="gm-user" class="input" placeholder="Ej. esandoval" value="' + esc(state.draftUser) + '" /></div>' +
+                      '<div><label class="field-label">Contraseña</label>' + renderPwdInput('gm-password', '••••••••', state.draftPassword, false) + '</div>' +
+                    '</div>' +
+                    '<div><label class="field-label">Correo electrónico (opcional)</label><input type="email" id="gm-email" class="input" placeholder="tucorreo@gmail.com" value="' + esc(state.draftEmail) + '" /></div>' +
+                  '</div>'
+                : '<div class="config-box" style="margin-bottom:0">' +
+                    '<p class="field-label" style="margin:0 0 0.5rem;color:var(--text-strong)"><i class="fa-solid fa-user-shield text-indigo"></i> Ingresa tu Usuario y Contraseña</p>' +
+                    '<div class="form-grid-2">' +
+                      '<div><label class="field-label">Usuario</label><input type="text" id="gm-user" class="input" placeholder="Tu usuario" value="' + esc(state.draftUser) + '" /></div>' +
+                      '<div><label class="field-label">Contraseña</label>' + renderPwdInput('gm-password', '••••••••', state.draftPassword, false) + '</div>' +
+                    '</div>' +
+                  '</div>';
 
               bottomFooterHtml =
                 '<div class="modal-bottom-fixed">' +
                   '<button type="button" class="btn btn-secondary" id="gm-back-cred">&larr; Atrás</button>' +
-                  '<button type="button" id="gm-connect-script" class="btn btn-emerald" ' + (!canLoginCred ? 'disabled' : '') + '>Iniciar sesión y conectar</button>' +
+                  '<button type="button" id="gm-connect-script" class="btn btn-emerald" ' + (!canLoginCred ? 'disabled' : '') + '>' +
+                    (isNew ? 'Crear usuario y conectar' : 'Iniciar sesión y conectar') +
+                  '</button>' +
                 '</div>';
             }
           } else {

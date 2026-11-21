@@ -278,18 +278,21 @@ function doPost(e) {
     var regUser = String(regAuth.username || '').trim();
     var regHash = String(regAuth.passwordHash || '').trim();
     var regEmail = String(regAuth.email || '').trim();
-    if (!regUser || !regHash) {
-      return jsonOut_({ ok: false, error: 'Debes indicar usuario y contraseña.' });
+    if ((!regUser || !regHash) && !regEmail) {
+      return jsonOut_({ ok: false, error: 'Debes indicar usuario y contraseña, o un correo.' });
     }
+    var effectiveUser = regUser || regEmail.split('@')[0];
     var existingUsers = getUsersRows_(ss);
     var alreadyExists = existingUsers.some(function (r) {
-      return String(r[0] || '').trim().toLowerCase() === regUser.toLowerCase();
+      var sameU = effectiveUser && String(r[0] || '').trim().toLowerCase() === effectiveUser.toLowerCase();
+      var sameE = regEmail && String(r[2] || '').trim().toLowerCase() === regEmail.toLowerCase();
+      return sameU || sameE;
     });
     if (alreadyExists) {
-      return jsonOut_({ ok: false, error: 'Ese usuario ya existe. Usa Iniciar sesión.' });
+      return jsonOut_({ ok: false, error: 'Ese usuario o correo ya existe. Usa Iniciar sesión.' });
     }
     var userSheet = ss.getSheetByName('t_user');
-    userSheet.appendRow([regUser, regHash, regEmail, new Date().toISOString()]);
+    userSheet.appendRow([effectiveUser, regHash, regEmail, new Date().toISOString()]);
   } else if (action === 'auth_update') {
     var updNew = body.newAuth || {};
     var nextUser = String(updNew.username || '').trim();

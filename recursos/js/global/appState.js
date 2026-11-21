@@ -1344,6 +1344,19 @@
         closeDropdown();
         window.openResetModal({
           currentUser: appState.authUser || '',
+          data: appState.data,
+          onRestoreBackup: function (backupPayload) {
+            if (!backupPayload || !backupPayload.data) return;
+            if (backupPayload.baseCurrency && window.AppFormat && window.AppFormat.setBaseCurrency) {
+              window.AppFormat.setBaseCurrency(backupPayload.baseCurrency);
+            }
+            if (backupPayload.monthCloseDay != null && window.AppFormat && window.AppFormat.setMonthCloseDay) {
+              window.AppFormat.setMonthCloseDay(backupPayload.monthCloseDay);
+            }
+            updateData(function () {
+              return backupPayload.data;
+            });
+          },
           onResetSelected: function (keys) {
             var clean = window.AppStorage.getCleanAppData();
             if (keys.indexOf('default_all') !== -1) {

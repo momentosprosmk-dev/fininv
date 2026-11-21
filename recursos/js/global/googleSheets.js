@@ -518,13 +518,11 @@
   async function registerAppsScriptUser(scriptUrl, auth, data) {
     var serialized = serializeAppData(data);
     var body = Object.assign({ action: 'auth_register', auth: auth }, serialized);
-    var res = await fetch(scriptUrl, {
+    var json = await fetchAppsScriptJson(scriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error('Error al registrar usuario en Apps Script (' + res.status + ')');
-    var json = await res.json();
+    }, 'Error al registrar usuario en Apps Script');
     if (!json || json.ok === false) {
       throw new Error((json && json.error) || 'No se pudo registrar el usuario.');
     }
