@@ -24,21 +24,28 @@
 
     <h2>2. Naturaleza de la Plataforma y Exención de Asesoría</h2>
     <ul>
-      <li><strong>FinInv</strong> es una herramienta digital de registro personal orientada al control de finanzas en múltiples divisas (COP, USD, EUR y cualquier otra moneda), cuentas, obligaciones, cierres mensuales y seguimiento de inversiones.</li>
+      <li><strong>FinInv</strong> es una herramienta digital de registro personal estructurada en tres módulos principales:
+        <ul>
+          <li><strong>Finanzas:</strong> control de cuentas de liquidez, tarjetas de crédito (incluidos avances), créditos a cuotas, ingresos, egresos, traspasos, obligaciones fijas, día de corte contable personalizado y cierres mensuales.</li>
+          <li><strong>Inversiones:</strong> gestión de portafolios en múltiples divisas (COP, USD, EUR y cualquier moneda ISO 4217 o personalizada) mediante <strong>Cartera Gestionada</strong> y <strong>Cartera Libre</strong> (con subcuentas de inversión, subcuentas tipo <strong>Bolsillo</strong> sin rendimientos, traspasos internos, comisiones y aportes/retiros vinculados).</li>
+          <li><strong>Préstamos:</strong> registro y seguimiento de préstamos otorgados a terceros (incluidos préstamos previos a la app), intereses, cuotas, vencimientos y cobros vinculados.</li>
+        </ul>
+      </li>
       <li>La información, gráficos, balances, variaciones cambiarias (TRM) y cálculos mostrados tienen carácter estrictamente <strong>informativo y personal</strong>.</li>
       <li><strong>FinInv</strong> y <strong>MomentosPro</strong> <strong>no prestan asesoría financiera, contable, tributaria, cambiaria ni de inversión</strong>. Cada usuario toma sus propias decisiones económicas bajo su exclusivo criterio y riesgo.</li>
     </ul>
 
     <h2>3. Responsabilidad Exclusiva del Usuario sobre sus Datos y Google Sheets</h2>
     <ul>
-      <li><strong>Almacenamiento local y en Google Drive del usuario:</strong> La Plataforma funciona directamente en el navegador del usuario utilizando almacenamiento local (<code>localStorage</code> y caché PWA) y ofrece sincronización opcional directa con una hoja de cálculo de <strong>Google Sheets</strong> alojada en la cuenta personal de <strong>Google Drive</strong> del propio usuario (mediante Google Identity Services / OAuth o Google Apps Script configurado por el usuario).</li>
-      <li><strong>No custodia en servidores propios:</strong> <strong>MomentosPro</strong> y <strong>FinInv</strong> <strong>no recolectan, no almacenan, no custodian, no leen ni tienen acceso</strong> en servidores propios a los saldos, movimientos, cuentas, inversiones, credenciales ni hojas de cálculo de los usuarios.</li>
+      <li><strong>Almacenamiento local, modo sin conexión y Google Drive del usuario:</strong> La Plataforma funciona directamente en el navegador del usuario utilizando almacenamiento local (<code>localStorage</code> y caché PWA), permitiendo registrar operaciones sin conexión (<code>pendingSync</code>) y sincronizar de forma directa y opcional con una hoja de cálculo de <strong>Google Sheets</strong> alojada en la cuenta personal de <strong>Google Drive</strong> del usuario mediante un script de <strong>Google Apps Script</strong> (<code>/exec</code>) desplegado por el propio usuario.</li>
+      <li><strong>Control de acceso y autenticación propia:</strong> El acceso al Google Sheet del usuario puede protegerse mediante credenciales propias (usuario y contraseña con hash <strong>SHA-256</strong> o correo autorizado en la hoja <code>t_user</code>), gestionadas exclusivamente dentro del Google Sheet del usuario.</li>
+      <li><strong>No custodia en servidores propios:</strong> <strong>MomentosPro</strong> y <strong>FinInv</strong> <strong>no recolectan, no almacenan, no custodian, no leen ni tienen acceso</strong> en servidores propios a los saldos, movimientos, cuentas, inversiones, préstamos, credenciales ni hojas de cálculo de los usuarios.</li>
       <li><strong>Responsabilidad total del usuario:</strong> Cada usuario es el <strong>único y exclusivo responsable</strong> de:
         <ul>
-          <li>La veracidad, exactitud y legalidad de los datos financieros que registre.</li>
-          <li>La configuración, permisos de acceso, compartición y seguridad de su hoja de cálculo en Google Drive y su cuenta de Google.</li>
+          <li>La veracidad, exactitud y legalidad de los datos financieros, de inversión y de préstamos que registre.</li>
+          <li>La configuración, despliegue del script, permisos de acceso, compartición y seguridad de su hoja de cálculo en Google Drive, su cuenta de Google y sus credenciales de acceso en <code>t_user</code>.</li>
           <li>Realizar copias de seguridad o respaldos periódicos de su información.</li>
-          <li>Cualquier pérdida, alteración, eliminación accidental o filtración derivada de borrar el historial o caché del navegador, revocar permisos, modificar manualmente el Google Sheet o sufrir un acceso no autorizado en su dispositivo o cuenta de Google.</li>
+          <li>Cualquier pérdida, alteración, eliminación accidental o filtración derivada de borrar el almacenamiento o caché del navegador sin haber sincronizado cambios pendientes, modificar manualmente el Google Sheet o sufrir un acceso no autorizado en su dispositivo o cuenta.</li>
         </ul>
       </li>
       <li><strong>Exoneración de responsabilidad:</strong> <strong>MomentosPro</strong> no será responsable por pérdidas económicas, pérdida de información, inconsistencias en cálculos ocasionadas por ediciones externas en Google Sheets ni por interrupciones atribuibles a servicios de terceros.</li>
@@ -46,14 +53,14 @@
 
     <h2>4. Uso de Almacenamiento Local, Caché y PWA</h2>
     <ul>
-      <li>La Plataforma utiliza <code>localStorage</code> y <strong>Service Worker</strong> (caché del navegador) para guardar preferencias de tema, aceptación de estos Términos y Condiciones, y los datos locales mientras el usuario los sincroniza o consulta.</li>
+      <li>La Plataforma utiliza <code>localStorage</code> y <strong>Service Worker</strong> (caché PWA) para guardar preferencias de tema, ocultamiento de valores, aceptación de estos Términos y Condiciones, credenciales de conexión configuradas por el usuario y los datos locales (incluidos los cambios pendientes de sincronización mientras no haya conexión a internet).</li>
       <li>El usuario puede limpiar el almacenamiento del navegador en cualquier momento bajo su propia responsabilidad, entendiendo que ello eliminará los datos locales no respaldados en su Google Sheet.</li>
     </ul>
 
     <h2>5. Servicios de Terceros y Tasas de Cambio (TRM)</h2>
     <ul>
-      <li>La conexión con <strong>Google Drive / Google Sheets</strong> y <strong>Google Identity Services</strong> se rige adicionalmente por los Términos de Servicio y Políticas de Privacidad de Google.</li>
-      <li>La consulta de la tasa de cambio USD/COP en vivo se realiza a través de proveedores externos de referencia; su disponibilidad o exactitud en tiempo real depende de dichos terceros y puede ser ajustada manualmente por el usuario.</li>
+      <li>La conexión con <strong>Google Drive / Google Sheets</strong> y <strong>Google Apps Script</strong> se rige adicionalmente por los Términos de Servicio y Políticas de Privacidad de Google.</li>
+      <li>La consulta de tasas de cambio en vivo se realiza a través de proveedores externos de referencia (<code>open.er-api.com</code> y, cuando la moneda base es COP, la TRM oficial de <strong>Datos Abiertos de Colombia</strong>); su disponibilidad o exactitud en tiempo real depende de dichos terceros y puede ser ajustada manualmente por el usuario.</li>
       <li>La función de compartir enlace utiliza la API nativa del navegador del usuario y su uso es totalmente voluntario.</li>
     </ul>
 

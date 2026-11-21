@@ -301,3 +301,306 @@ a {
   color: var(--text-strong);
   font-weight: 600;
 }
+
+/* Hero Split + Mini Dashboard Mockup */
+.sobre-hero-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: center;
+  text-align: left;
+}
+
+@media (min-width: 860px) {
+  .sobre-hero-split {
+    grid-template-columns: 1.15fr 0.85fr;
+    padding: 2.25rem 2rem;
+  }
+}
+
+.sobre-hero-split .sobre-hero-actions {
+  justify-content: flex-start;
+}
+
+.sobre-mockup {
+  border: 1px solid var(--border-strong);
+  border-radius: 1rem;
+  background: #060d1f;
+  padding: 1rem;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.65);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sobre-mockup-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.6rem;
+}
+
+.sobre-mockup-dots {
+  display: flex;
+  gap: 0.32rem;
+}
+
+.sobre-mockup-dots span {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 9999px;
+  background: var(--border-strong);
+}
+
+.sobre-mockup-pills {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.sobre-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text-muted);
+}
+
+.sobre-pill.active {
+  background: var(--indigo-soft);
+  border-color: rgba(99, 102, 241, 0.5);
+  color: #a5b4fc;
+}
+
+.sobre-pill.emerald {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: var(--emerald);
+}
+
+.sobre-pill.sky {
+  background: rgba(56, 189, 248, 0.14);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: var(--sky);
+}
+
+.sobre-pill.violet {
+  background: rgba(139, 92, 246, 0.14);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: var(--violet);
+}
+
+.sobre-mockup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.sobre-mockup-stat {
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--bg-card);
+  padding: 0.55rem 0.7rem;
+}
+
+.sobre-mockup-stat small {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.sobre-mockup-stat strong {
+  font-size: 0.92rem;
+  color: var(--text-strong);
+}
+
+.sobre-progress {
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: var(--border);
+  overflow: hidden;
+  margin-top: 0.35rem;
+}
+
+.sobre-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--indigo), var(--emerald));
+}
+
+/* Diagrama de Arquitectura */
+.sobre-arch-flow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+  align-items: stretch;
+}
+
+@media (min-width: 820px) {
+  .sobre-arch-flow {
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+  }
+}
+
+.sobre-arch-node {
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--bg-card);
+  padding: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sobre-arch-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--indigo-hover);
+  font-size: 1.15rem;
+}
+
+@media (max-width: 819px) {
+  .sobre-arch-arrow i {
+    transform: rotate(90deg);
+  }
+}
+
+/* Mini UI dentro de módulos */
+.sobre-mini-ui {
+  margin-top: 0.95rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.85rem;
+  background: #060d1f;
+  padding: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.sobre-mini-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.sobre-flow-rules {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+}
+
+.sobre-flow-rule {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.42rem 0.65rem;
+  border-radius: 0.55rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+
+/* FAQ Acordeón */
+.sobre-faq {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.sobre-faq details {
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--bg-card);
+  padding: 0.85rem 1.1rem;
+}
+
+.sobre-faq summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-strong);
+  font-size: 0.96rem;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.sobre-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.sobre-faq summary::after {
+  content: "+";
+  font-size: 1.15rem;
+  color: var(--indigo-hover);
+  font-weight: 700;
+}
+
+.sobre-faq details[open] summary::after {
+  content: "−";
+}
+
+.sobre-faq details p {
+  margin: 0.65rem 0 0;
+  font-size: 0.9rem;
+  color: #cbd5e1;
+}
+
+/* Barra de pestañas interactiva en Sobre */
+.sobre-tabs-bar {
+  position: sticky;
+  top: 3.75rem;
+  z-index: 15;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.6rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(8px);
+}
+
+.sobre-tab-btn {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 0.7rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.sobre-tab-btn:hover {
+  color: var(--text-strong);
+  background: rgba(30, 41, 59, 0.7);
+}
+
+.sobre-tab-btn.is-active {
+  background: var(--indigo-soft);
+  border-color: rgba(99, 102, 241, 0.5);
+  color: #c7d2fe;
+}
+
+.sobre-segment.is-hidden {
+  display: none;
+}

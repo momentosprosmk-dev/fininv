@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sobre FinInv — Misión, Visión, Objetivos y Funciones</title>
-  <meta name="description" content="Conoce la misión, visión, objetivos y funciones de FinInv: empoderar tu control financiero personal e inversiones en múltiples divisas (COP, USD, EUR y cualquier moneda) con privacidad total y sincronización directa en tu Google Sheets." />
-  <meta name="keywords" content="FinInv, misión FinInv, visión FinInv, objetivos FinInv, qué es FinInv, control financiero multi-divisa, finanzas personales, inversiones multi-moneda, COP, USD, EUR, soberanía de datos, Google Sheets, Momentos Pro" />
+  <title>Sobre FinInv — Control Financiero, Inversiones y Préstamos</title>
+  <meta name="description" content="Conoce cómo funciona FinInv: plataforma PWA privada para controlar tus finanzas personales, inversiones multi-divisa (Cartera Gestionada, Cartera Libre y Bolsillos) y préstamos con respaldo en tu propio Google Sheets." />
+  <meta name="keywords" content="FinInv, qué es FinInv, finanzas personales, cartera libre, cartera gestionada, bolsillos, préstamos, multi-divisa, COP, USD, EUR, offline PWA, Google Sheets, Momentos Pro" />
   <meta name="author" content="Momentos Pro" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#020617" />
@@ -15,8 +15,8 @@
   <link rel="icon" href="/recursos/media/global/favicon_fininv.png" sizes="100x100" type="image/png" />
   <link rel="apple-touch-icon" href="/recursos/media/global/pwa_fininv_256x256.png" sizes="256x256" />
 
-  <meta property="og:title" content="Sobre FinInv — Control Financiero e Inversiones" />
-  <meta property="og:description" content="Descubre cómo FinInv te ayuda a organizar tus finanzas, deudas, obligaciones e inversiones en múltiples divisas con tus datos en tu propio Google Sheets." />
+  <meta property="og:title" content="Sobre FinInv — Finanzas, Inversiones y Préstamos" />
+  <meta property="og:description" content="Organiza tus finanzas, inversiones multi-divisa y préstamos con modo sin conexión y sincronización directa en tu propio Google Sheets." />
   <meta property="og:image" content="https://www.fininv.momentospro.com/recursos/media/global/pwa_fininv_256x256.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="256" />
@@ -25,15 +25,15 @@
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="es_CO" />
 
-  <!-- Schema.org SEO: AboutPage + WebApplication (Misión, Visión y Objetivos) -->
+  <!-- Schema.org SEO -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "AboutPage",
-    "name": "Sobre FinInv — Misión, Visión, Objetivos y Funciones",
+    "name": "Sobre FinInv — Control Financiero, Inversiones y Préstamos",
     "url": "https://www.fininv.momentospro.com/sobre/",
     "inLanguage": "es-CO",
-    "description": "Misión: brindar claridad financiera personal e inversiones en múltiples divisas (COP, USD, EUR y cualquier moneda) con soberanía total de los datos en Google Sheets. Visión: ser la herramienta web privada de referencia en gestión financiera personal.",
+    "description": "Plataforma PWA privada para el control de finanzas personales, portafolios de inversión multi-divisa y préstamos con soberanía total de los datos en Google Sheets.",
     "mainEntity": {
       "@type": "WebApplication",
       "name": "FinInv",
@@ -67,32 +67,195 @@
   </header>
 
   <main class="sobre-main">
-    <!-- Hero -->
-    <section class="sobre-hero">
-      <div class="sobre-badge">
-        <i class="fa-solid fa-shield-halved"></i>
-        <span>100% Privado · Tus datos en tu navegador y tu Google Drive</span>
+    <!-- Hero con Mini-Dashboard Visual -->
+    <section class="sobre-hero sobre-hero-split">
+      <div>
+        <div class="sobre-badge">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>100% Privado · Offline-First · Tus datos en tu Google Drive</span>
+        </div>
+        <h1>Finanzas, Inversiones y Préstamos en un solo lugar</h1>
+        <p style="margin:0">
+          <strong>FinInv</strong> es una aplicación web instalable (PWA) que te da claridad total sobre tu dinero en
+          <strong>cualquier divisa (COP, USD, EUR y más)</strong>, funciona incluso sin internet y sincroniza directamente con tu propio <strong>Google Sheets</strong> sin intermediarios.
+        </p>
+        <div class="sobre-hero-actions">
+          <a href="/" class="sobre-btn primary">
+            <i class="fa-solid fa-wallet"></i>
+            <span>Abrir FinInv</span>
+          </a>
+          <a href="/tyc/" class="sobre-btn">
+            <i class="fa-solid fa-file-contract"></i>
+            <span>Términos y Condiciones</span>
+          </a>
+        </div>
       </div>
-      <h1>Control financiero personal e inversiones en un solo lugar</h1>
-      <p>
-        <strong>FinInv</strong> es una aplicación web (PWA) diseñada para que organices tus cuentas,
-        gastos diarios, tarjeta de crédito, obligaciones mensuales e inversiones en <strong>múltiples divisas (COP, USD, EUR y cualquier moneda)</strong>,
-        sin depender de servidores externos y con sincronización directa hacia tu propio <strong>Google Sheets</strong>.
+
+      <!-- Maqueta visual del ecosistema FinInv -->
+      <aside class="sobre-mockup" aria-label="Vista previa visual de FinInv">
+        <div class="sobre-mockup-top">
+          <div class="sobre-mockup-dots"><span></span><span></span><span></span></div>
+          <div class="sobre-mockup-pills">
+            <span class="sobre-pill active"><i class="fa-solid fa-wallet"></i> Finanzas</span>
+            <span class="sobre-pill violet"><i class="fa-solid fa-arrow-trend-up"></i> Inversiones</span>
+            <span class="sobre-pill emerald"><i class="fa-solid fa-hand-holding-dollar"></i> Préstamos</span>
+          </div>
+        </div>
+        <div class="sobre-mockup-grid">
+          <div class="sobre-mockup-stat">
+            <small>Liquidez operativa</small>
+            <strong style="color:var(--emerald)">$ 2.850.000</strong>
+          </div>
+          <div class="sobre-mockup-stat">
+            <small>Portafolio Inversiones</small>
+            <strong style="color:var(--violet)">USD $1,140.37</strong>
+          </div>
+          <div class="sobre-mockup-stat">
+            <small>Termómetro TC</small>
+            <strong style="color:var(--sky)">Al día · Cubierta</strong>
+          </div>
+          <div class="sobre-mockup-stat">
+            <small>Préstamos por cobrar</small>
+            <strong style="color:var(--text-strong)">3 / 6 cuotas</strong>
+            <div class="sobre-progress"><span style="width:50%"></span></div>
+          </div>
+        </div>
+        <div class="sobre-mini-row" style="padding-top:0.25rem;border-top:1px solid var(--border);color:var(--text-muted);font-size:0.76rem">
+          <span><i class="fa-solid fa-signal" style="color:var(--emerald);margin-right:0.35rem"></i>Sincronizado con tu Google Sheet</span>
+          <span class="sobre-pill sky">Multi-divisa</span>
+        </div>
+      </aside>
+    </section>
+
+    <!-- Selector de secciones -->
+    <nav class="sobre-tabs-bar" aria-label="Secciones informativas">
+      <button type="button" class="sobre-tab-btn is-active" data-sobre-tab="arch"><i class="fa-solid fa-diagram-project"></i> Arquitectura</button>
+      <button type="button" class="sobre-tab-btn" data-sobre-tab="modulos"><i class="fa-solid fa-layer-group"></i> Módulos</button>
+      <button type="button" class="sobre-tab-btn" data-sobre-tab="mision"><i class="fa-solid fa-bullseye"></i> Misión y Visión</button>
+      <button type="button" class="sobre-tab-btn" data-sobre-tab="empezar"><i class="fa-solid fa-rocket"></i> Cómo empezar</button>
+      <button type="button" class="sobre-tab-btn" data-sobre-tab="faq"><i class="fa-regular fa-circle-question"></i> Preguntas</button>
+    </nav>
+
+    <!-- Diagrama de Arquitectura -->
+    <section class="sobre-segment" data-sobre-panel="arch">
+      <h2 class="sobre-section-title">¿Cómo viajan tus datos? (Arquitectura sin intermediarios)</h2>
+      <p class="sobre-section-sub">
+        Tus movimientos nunca pasan por servidores de terceros: se guardan primero en tu dispositivo y se respaldan en tu propio Google Drive.
       </p>
-      <div class="sobre-hero-actions">
-        <a href="/" class="sobre-btn primary">
-          <i class="fa-solid fa-wallet"></i>
-          <span>Abrir FinInv</span>
-        </a>
-        <a href="/tyc/" class="sobre-btn">
-          <i class="fa-solid fa-file-contract"></i>
-          <span>Términos y Condiciones</span>
-        </a>
+      <div class="sobre-arch-flow">
+        <article class="sobre-arch-node">
+          <div class="sobre-card-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
+          <h3 style="margin:0;font-size:1rem;color:var(--text-strong)">1. Tu Navegador (PWA)</h3>
+          <p style="margin:0;font-size:0.88rem;color:#cbd5e1">
+            Guarda todo al instante en <code>localStorage</code>. Si estás sin internet, marca los cambios como pendientes (<code>pendingSync</code>) sin cerrar tu sesión.
+          </p>
+        </article>
+
+        <div class="sobre-arch-arrow" aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <article class="sobre-arch-node">
+          <div class="sobre-card-icon sky"><i class="fa-solid fa-shield-halved"></i></div>
+          <h3 style="margin:0;font-size:1rem;color:var(--text-strong)">2. Tu Apps Script (<code>/exec</code>)</h3>
+          <p style="margin:0;font-size:0.88rem;color:#cbd5e1">
+            Verifica primero si hay conexión real; cuando hay red, valida tu usuario y contraseña (<strong>SHA-256</strong>) o correo en <code>t_user</code> antes de sincronizar.
+          </p>
+        </article>
+
+        <div class="sobre-arch-arrow" aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <article class="sobre-arch-node">
+          <div class="sobre-card-icon emerald"><i class="fa-solid fa-table"></i></div>
+          <h3 style="margin:0;font-size:1rem;color:var(--text-strong)">3. Tu Google Sheet</h3>
+          <p style="margin:0;font-size:0.88rem;color:#cbd5e1">
+            Almacena 13 hojas organizadas con <code>ID</code> únicos (cuentas, movimientos, inversiones, subcuentas, préstamos y cierres) bajo tu control absoluto.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Los 3 Módulos Explicados Gráficamente -->
+    <section class="sobre-segment is-hidden" data-sobre-panel="modulos">
+      <h2 class="sobre-section-title">Los 3 Módulos de FinInv al detalle</h2>
+      <p class="sobre-section-sub">
+        Cada módulo tiene su propia barra de navegación, encabezados fijos y buscadores en tiempo real.
+      </p>
+
+      <div class="sobre-grid cols-3">
+        <!-- Módulo 1: Finanzas -->
+        <article class="sobre-card">
+          <div class="sobre-card-icon"><i class="fa-solid fa-wallet"></i></div>
+          <h3>1. Módulo de Finanzas</h3>
+          <ul class="sobre-list">
+            <li><strong>Cuentas completas:</strong> liquidez (débito, Nequi, efectivo), tarjetas de crédito (con cupo y <strong>avances</strong> hacia otras cuentas) y <strong>créditos a cuotas</strong> (capital vs. intereses y mora).</li>
+            <li><strong>Consumo vs. Inversión:</strong> el concepto protegido <strong>Inversión de Activos</strong> separa automáticamente tus aportes de los gastos de consumo.</li>
+            <li><strong>Corte y Cierres:</strong> configura tu <strong>día de corte personalizado</strong>, cierra el mes con observaciones y consulta el historial buscable.</li>
+          </ul>
+          <div class="sobre-mini-ui">
+            <div class="sobre-mini-row">
+              <span style="color:var(--text-muted)">4 pestañas</span>
+              <span class="sobre-pill active">Resumen · Mov · Cierre · Historial</span>
+            </div>
+            <div class="sobre-mini-row">
+              <span>Termómetro TC</span>
+              <strong style="color:var(--emerald)">Cubierta (+$650k)</strong>
+            </div>
+          </div>
+        </article>
+
+        <!-- Módulo 2: Inversiones -->
+        <article class="sobre-card">
+          <div class="sobre-card-icon violet"><i class="fa-solid fa-arrow-trend-up"></i></div>
+          <h3>2. Módulo de Inversiones</h3>
+          <ul class="sobre-list">
+            <li><strong>Cartera Gestionada:</strong> fondos manejados por la entidad (CDT, cajitas) con actualización de valor y rendimiento.</li>
+            <li><strong>Cartera Libre:</strong> tú eliges en qué invertir mediante <strong>subcuentas</strong> (acciones, ETFs) y <strong>Bolsillos</strong> (reserva sin rendimientos).</li>
+            <li><strong>TRM en vivo y multi-divisa:</strong> consulta tasas en vivo (Datos Abiertos / <code>open.er-api.com</code>) o usa tasa manual, comisiones y salidas externas.</li>
+          </ul>
+          <div class="sobre-mini-ui">
+            <div class="sobre-mini-row">
+              <span style="color:var(--text-muted)">Reglas internas (Cartera Libre)</span>
+              <span class="sobre-pill violet">ID único</span>
+            </div>
+            <div class="sobre-flow-rules">
+              <div class="sobre-flow-rule">
+                <span><span class="sobre-pill sky">Bolsillo</span></span>
+                <span><i class="fa-solid fa-arrow-right" style="color:var(--sky)"></i> Cualquier subcuenta</span>
+              </div>
+              <div class="sobre-flow-rule">
+                <span><span class="sobre-pill violet">Inversión</span></span>
+                <span><i class="fa-solid fa-arrow-right" style="color:var(--violet)"></i> Solo Bolsillo</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Módulo 3: Préstamos -->
+        <article class="sobre-card">
+          <div class="sobre-card-icon emerald"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+          <h3>3. Módulo de Préstamos</h3>
+          <ul class="sobre-list">
+            <li><strong>Control por ID único:</strong> registra varios préstamos a una misma persona sin mezclar cuotas ni saldos.</li>
+            <li><strong>Intereses y frecuencias:</strong> sin interés, % mensual o % total, con cobros únicos, semanales, quincenales o mensuales.</li>
+            <li><strong>Préstamos previos a la app:</strong> regístralos con abonos anteriores sin descontar saldo de tus cuentas actuales.</li>
+          </ul>
+          <div class="sobre-mini-ui">
+            <div class="sobre-mini-row">
+              <span>Progreso de cobro</span>
+              <strong style="color:var(--emerald)">60% pagado</strong>
+            </div>
+            <div class="sobre-progress"><span style="width:60%"></span></div>
+            <div class="sobre-mini-row" style="font-size:0.75rem;color:var(--text-muted)">
+              <span>Estado Financiero</span>
+              <span>Préstamos</span>
+              <span>Movimientos</span>
+            </div>
+          </div>
+        </article>
       </div>
     </section>
 
     <!-- Misión, Visión y Objetivos -->
-    <section>
+    <section class="sobre-segment is-hidden" data-sobre-panel="mision">
       <h2 class="sobre-section-title">Misión, Visión y Objetivos</h2>
       <p class="sobre-section-sub">
         El propósito detrás de <strong>FinInv</strong> y nuestro compromiso con tu privacidad y claridad financiera.
@@ -102,135 +265,75 @@
           <div class="sobre-card-icon"><i class="fa-solid fa-bullseye"></i></div>
           <h3>Misión</h3>
           <p>
-            Brindar a cualquier persona una herramienta web rápida, clara y gratuita para controlar sus finanzas personales e inversiones en cualquier divisa (COP, USD, EUR y más), manteniendo la soberanía total de sus datos en su propio navegador y Google Drive.
+            Brindar a cualquier persona una herramienta web rápida, clara y gratuita para controlar sus finanzas personales, inversiones en cualquier divisa y préstamos, manteniendo la soberanía total de sus datos en su navegador y Google Drive.
           </p>
         </article>
         <article class="sobre-card">
           <div class="sobre-card-icon sky"><i class="fa-solid fa-eye"></i></div>
           <h3>Visión</h3>
           <p>
-            Consolidarnos como la plataforma de referencia en control financiero personal e inversiones sin intermediarios, demostrando que es posible tomar mejores decisiones económicas sin entregar información bancaria a terceros.
+            Consolidarnos como la plataforma de referencia en gestión financiera personal sin intermediarios, demostrando que es posible tomar mejores decisiones económicas sin entregar información bancaria a terceros.
           </p>
         </article>
         <article class="sobre-card">
           <div class="sobre-card-icon emerald"><i class="fa-solid fa-flag-checkered"></i></div>
           <h3>Objetivos</h3>
           <ul class="sobre-list">
-            <li>Separar con claridad los gastos de consumo frente a los aportes a inversión.</li>
-            <li>Prevenir el sobreendeudamiento mediante el termómetro de capacidad de pago de tarjeta de crédito.</li>
-            <li>Garantizar respaldo autónomo y transparente en Google Sheets.</li>
+            <li>Separar con claridad los gastos de consumo frente a la <strong>Inversión de Activos</strong>.</li>
+            <li>Prevenir el sobreendeudamiento mediante el termómetro de capacidad de pago y control de créditos.</li>
+            <li>Garantizar respaldo autónomo en Google Sheets con soporte real sin conexión.</li>
             <li>Ofrecer una experiencia PWA ligera instalable en móvil y PC.</li>
           </ul>
         </article>
       </div>
     </section>
 
-    <!-- ¿Para qué sirve? -->
-    <section>
-      <h2 class="sobre-section-title">¿Para qué sirve FinInv?</h2>
-      <p class="sobre-section-sub">
-        Centraliza tu flujo mensual de dinero y el crecimiento de tu portafolio sin hojas de cálculo complicadas ni suscripciones.
-      </p>
-      <div class="sobre-grid cols-3">
-        <article class="sobre-card">
-          <div class="sobre-card-icon"><i class="fa-solid fa-scale-balanced"></i></div>
-          <h3>Claridad de liquidez real</h3>
-          <p>
-            Visualiza cuánto dinero disponible tienes en bancos, billeteras digitales y efectivo frente a tu deuda real en tarjeta de crédito.
-          </p>
-        </article>
-        <article class="sobre-card">
-          <div class="sobre-card-icon emerald"><i class="fa-solid fa-arrow-trend-up"></i></div>
-          <h3>Separación de consumo e inversión</h3>
-          <p>
-            Distingue automáticamente entre gastos de consumo del mes y aportes enviados a tus fondos de inversión.
-          </p>
-        </article>
-        <article class="sobre-card">
-          <div class="sobre-card-icon sky"><i class="fa-solid fa-database"></i></div>
-          <h3>Propiedad total de tus datos</h3>
-          <p>
-            Tú conservas el control absoluto: la información vive en tu navegador y se respalda directamente en tu propia hoja de Google Sheets.
-          </p>
-        </article>
-      </div>
-    </section>
-
-    <!-- Funciones principales -->
-    <section>
-      <h2 class="sobre-section-title">Funciones principales</h2>
-      <p class="sobre-section-sub">
-        Todo lo que puedes gestionar desde el módulo de <strong>Finanzas</strong> y el módulo de <strong>Inversiones</strong>.
-      </p>
-      <div class="sobre-grid">
-        <article class="sobre-card">
-          <div class="sobre-card-icon"><i class="fa-solid fa-wallet"></i></div>
-          <h3>Módulo de Finanzas</h3>
-          <ul class="sobre-list">
-            <li><strong>Saldos por cuenta:</strong> tarjetas débito, Nequi/billeteras, efectivo y tarjetas de crédito con cupo disponible y porcentaje de uso.</li>
-            <li><strong>Termómetro de Tarjeta de Crédito:</strong> te indica si tu liquidez operativa cubre el pago total de la deuda del mes.</li>
-            <li><strong>KPIs mensuales:</strong> Ingresos del mes, Egresos de consumo, Enviado a Inversiones y Flujo neto.</li>
-            <li><strong>Obligaciones fijas:</strong> controla arriendo, servicios o pagos recurrentes con estado <em>Pagada</em> o pendiente.</li>
-            <li><strong>Egresos por concepto:</strong> barras comparativas separando gastos de consumo y aportes por fondo de inversión.</li>
-            <li><strong>Movimientos y Cierre Contable:</strong> historial filtrable, traspasos entre cuentas y cierre mensual histórico.</li>
-          </ul>
-        </article>
-
-        <article class="sobre-card">
-          <div class="sobre-card-icon violet"><i class="fa-solid fa-chart-line"></i></div>
-          <h3>Módulo de Inversiones</h3>
-          <ul class="sobre-list">
-            <li><strong>Fondos simples y fragmentados:</strong> administra desde cuentas rentables o CDTs (BBVA, Nu, etc.) hasta brókers con múltiples acciones o ETFs (ARQ, bolsa).</li>
-            <li><strong>Multi-divisa (cualquier moneda):</strong> registra cuentas, fondos e inversiones en COP, USD, EUR o la divisa que necesites con conversión automática.</li>
-            <li><strong>TRM en vivo o manual:</strong> consulta la tasa USD/COP del día o fija tu propia tasa personalizada.</li>
-            <li><strong>Operaciones detalladas:</strong> registra aportes, retiros, valoraciones actuales y comisiones con cálculo de rentabilidad.</li>
-            <li><strong>Vínculo automático:</strong> los aportes y retiros desde tus cuentas líquidas se reflejan en tu flujo financiero.</li>
-          </ul>
-        </article>
-
-        <article class="sobre-card">
-          <div class="sobre-card-icon sky"><i class="fa-solid fa-table"></i></div>
-          <h3>Sincronización con Google Sheets</h3>
-          <ul class="sobre-list">
-            <li>Conecta tu cuenta de Google mediante <strong>OAuth</strong> o usa tu propio <strong>Google Apps Script</strong>.</li>
-            <li>Cada movimiento, cuenta, obligación, cierre e inversión queda guardado en tu propio Google Drive.</li>
-            <li>Sin bases de datos intermediarias: nadie más accede a tu información financiera.</li>
-          </ul>
-        </article>
-
-        <article class="sobre-card">
-          <div class="sobre-card-icon emerald"><i class="fa-solid fa-mobile-screen-button"></i></div>
-          <h3>Experiencia PWA y Privacidad</h3>
-          <ul class="sobre-list">
-            <li><strong>Instalable como App:</strong> úsala en Android, iPhone o PC como aplicación independiente.</li>
-            <li><strong>Modo privacidad:</strong> oculta todos los montos de la pantalla con un solo clic.</li>
-            <li><strong>Tema oscuro y claro:</strong> adaptable a tu preferencia en cualquier dispositivo.</li>
-            <li><strong>Compartir Web:</strong> comparte el acceso rápido de FinInv desde el menú.</li>
-          </ul>
-        </article>
-      </div>
-    </section>
-
     <!-- Cómo empezar -->
-    <section>
+    <section class="sobre-segment is-hidden" data-sobre-panel="empezar">
       <h2 class="sobre-section-title">¿Cómo empezar en 3 pasos?</h2>
       <p class="sobre-section-sub">En menos de dos minutos puedes tener tu control financiero funcionando.</p>
       <div class="sobre-steps">
         <div class="sobre-step">
           <div class="sobre-step-num">1</div>
           <h3>Configura tus cuentas</h3>
-          <p>Desde el menú <strong>Cuentas y Conceptos</strong> ajusta tus cuentas bancarias, billeteras, tarjeta de crédito y categorías.</p>
+          <p>Desde <strong>Cuentas y Conceptos</strong> ajusta tus cuentas de liquidez, tarjetas de crédito, créditos a cuotas y conceptos.</p>
         </div>
         <div class="sobre-step">
           <div class="sobre-step-num">2</div>
           <h3>Conecta tu Google Sheet (opcional)</h3>
-          <p>En <strong>Conectar Gmail</strong> vincula tu hoja de cálculo en Google Drive para respaldar y sincronizar tus datos.</p>
+          <p>En <strong>Conectar Gmail</strong> pega la URL <code>/exec</code> de tu Google Apps Script y protege el acceso con usuario y contraseña.</p>
         </div>
         <div class="sobre-step">
           <div class="sobre-step-num">3</div>
           <h3>Registra y analiza</h3>
-          <p>Usa <strong>+ Nuevo movimiento</strong> o el módulo de <strong>Inversiones</strong> y revisa tu resumen mensual en tiempo real.</p>
+          <p>Usa <strong>+ Nuevo movimiento</strong>, <strong>Inversiones</strong> o <strong>Préstamos</strong>; activa el modo privacidad (<i class="fa-regular fa-eye"></i>) cuando estés en público.</p>
         </div>
+      </div>
+    </section>
+
+    <!-- Preguntas Frecuentes -->
+    <section class="sobre-segment is-hidden" data-sobre-panel="faq">
+      <h2 class="sobre-section-title">Preguntas frecuentes</h2>
+      <p class="sobre-section-sub">Respuestas rápidas sobre privacidad, modo sin conexión y funcionamiento.</p>
+      <div class="sobre-faq">
+        <details>
+          <summary>¿Qué pasa si registro un movimiento cuando no tengo internet?</summary>
+          <p>
+            El movimiento se guarda al instante en tu dispositivo (<code>localStorage</code>) y se marca como pendiente de envío (<code>pendingSync</code>) sin cerrar tu sesión. En cuanto recuperes la conexión, la app sincroniza automáticamente los cambios con tu Google Sheet.
+          </p>
+        </details>
+        <details>
+          <summary>¿Puedo cambiar el nombre de una cuenta de inversión después de crearla?</summary>
+          <p>
+            Sí. Todas las cuentas de inversión, subcuentas y préstamos se vinculan internamente mediante un <code>ID</code> único. Si editas el nombre de una cuenta de inversión, todo su historial y subcuentas se mantienen intactos.
+          </p>
+        </details>
+        <details>
+          <summary>¿Momentos Pro puede ver mis saldos, movimientos o contraseñas?</summary>
+          <p>
+            No. FinInv no tiene servidores propios de base de datos. Tu información vive exclusivamente en tu navegador y en tu propio Google Sheet, y tu contraseña se valida directamente contra tu hoja <code>t_user</code> usando hash SHA-256.
+          </p>
+        </details>
       </div>
     </section>
   </main>
@@ -242,5 +345,21 @@
     <a href="/tyc/">TyC</a> ·
     <a href="/">Volver a la App</a>
   </footer>
+
+  <script>
+    (function () {
+      var btns = document.querySelectorAll('[data-sobre-tab]');
+      var panels = document.querySelectorAll('[data-sobre-panel]');
+      btns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var target = btn.getAttribute('data-sobre-tab');
+          btns.forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+          panels.forEach(function (p) {
+            p.classList.toggle('is-hidden', p.getAttribute('data-sobre-panel') !== target);
+          });
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
