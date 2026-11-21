@@ -26,13 +26,15 @@
     // Barra superior
     var invTopTitle = state.invActiveTab === 'cuentas' ? 'Inversiones' : 'Estado Financiero de Inversiones';
     var topBarHtml =
-      '<div class="inv-top-bar">' +
-        '<div>' +
-          '<h2 class="section-title-upper" style="margin:0">' + invTopTitle + '</h2>' +
-        '</div>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:0.5rem">' +
-          '<button type="button" id="btn-inv-new-fund" class="btn btn-secondary"><i class="fa-solid fa-folder-plus"></i> Nueva Cuenta</button>' +
-          '<button type="button" id="btn-inv-new-op" class="btn btn-primary" ' + (invSummary.fundSummaries.length === 0 ? 'disabled' : '') + '><i class="fa-solid fa-right-left"></i> Registrar Operación</button>' +
+      '<div class="view-sticky-header">' +
+        '<div class="inv-top-bar">' +
+          '<div>' +
+            '<h2 class="section-title-upper" style="margin:0">' + invTopTitle + '</h2>' +
+          '</div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:0.5rem">' +
+            '<button type="button" id="btn-inv-new-fund" class="btn btn-secondary"><i class="fa-solid fa-folder-plus"></i> Nueva Cuenta</button>' +
+            '<button type="button" id="btn-inv-new-op" class="btn btn-primary" ' + (invSummary.fundSummaries.length === 0 ? 'disabled' : '') + '><i class="fa-solid fa-right-left"></i> Registrar Operación</button>' +
+          '</div>' +
         '</div>' +
       '</div>';
 
@@ -67,10 +69,7 @@
           '<p class="text-muted" style="margin:0 0 0.85rem">Aún no tienes cuentas de inversión creadas (ej. ARQ, Fondo BBVA, Cajita Nu).</p>' +
           '<button type="button" id="btn-empty-new-fund" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Crear primera cuenta de inversión</button>' +
         '</div>'
-      : '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.25rem">' +
-          '<h3 class="section-title-upper" style="margin:0">Inversiones (' + invSummary.fundSummaries.length + ')</h3>' +
-        '</div>' +
-        '<div class="inv-funds-grid">' + invSummary.fundSummaries.map(function (f) {
+      : '<div class="inv-funds-grid">' + invSummary.fundSummaries.map(function (f) {
           var acc = f.account;
           var cur = f.currency;
           var isFrag = f.mode === 'fragmentado';
@@ -279,15 +278,17 @@
       }
 
       container.innerHTML =
-        '<h2 class="section-title-upper" style="margin:0 0 0.85rem">Historial de Movimientos</h2>' +
-        '<div class="movimientos-toolbar" style="margin-bottom:0.85rem">' +
-          '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">' +
-            '<select id="inv-mov-fund-filter" class="select" style="width:auto;max-width:100%;padding:0.55rem 0.85rem;font-size:0.92rem">' + fundOptsHtml + '</select>' +
-            '<select id="inv-mov-type-filter" class="select" style="width:auto;max-width:100%;padding:0.55rem 0.85rem;font-size:0.92rem">' + typeOptsHtml + '</select>' +
-          '</div>' +
-          '<div class="search-box">' +
-            '<i class="fa-solid fa-magnifying-glass"></i>' +
-            '<input type="text" id="inv-mov-search" class="input" placeholder="Buscar inversión o detalle..." value="' + esc(curSearch) + '" />' +
+        '<div class="view-sticky-header">' +
+          '<h2 class="section-title-upper" style="margin:0">Historial de Movimientos</h2>' +
+          '<div class="movimientos-toolbar">' +
+            '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">' +
+              '<select id="inv-mov-fund-filter" class="select" style="width:auto;max-width:100%;padding:0.55rem 0.85rem;font-size:0.92rem">' + fundOptsHtml + '</select>' +
+              '<select id="inv-mov-type-filter" class="select" style="width:auto;max-width:100%;padding:0.55rem 0.85rem;font-size:0.92rem">' + typeOptsHtml + '</select>' +
+            '</div>' +
+            '<div class="search-box">' +
+              '<i class="fa-solid fa-magnifying-glass"></i>' +
+              '<input type="text" id="inv-mov-search" class="input" placeholder="Buscar inversión o detalle..." value="' + esc(curSearch) + '" />' +
+            '</div>' +
           '</div>' +
         '</div>' +
         '<div class="table-wrap">' +

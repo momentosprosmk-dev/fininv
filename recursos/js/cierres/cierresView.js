@@ -65,7 +65,9 @@
       var notesLen = String(state.closeNotes || '').trim().length;
       var canClose = notesLen > 10;
       container.innerHTML =
-        '<h2 class="section-title-upper" style="margin:0 0 0.85rem">Cerrar Mes Contable</h2>' +
+        '<div class="view-sticky-header">' +
+          '<h2 class="section-title-upper" style="margin:0">Cerrar Mes Contable</h2>' +
+        '</div>' +
         '<div style="padding-bottom:5rem">' +
           '<section class="card">' +
             '<h2 class="section-title" style="font-size:1rem;margin-bottom:0.25rem">Cierre Contable de ' + esc(fmt.formatMonthLabel(state.selectedMonth)) + '</h2>' +
@@ -106,11 +108,13 @@
       }
 
       container.innerHTML =
-        '<h2 class="section-title-upper" style="margin:0 0 0.85rem">Historial de Meses Cerrados</h2>' +
-        '<div class="movimientos-toolbar" style="margin-bottom:0.85rem">' +
-          '<div class="search-box" style="margin-left:auto">' +
-            '<i class="fa-solid fa-magnifying-glass"></i>' +
-            '<input type="text" id="cierres-search-input" class="input" placeholder="Buscar por mes, notas o valores..." value="' + esc(state.cierresSearchTerm || '') + '" />' +
+        '<div class="view-sticky-header">' +
+          '<h2 class="section-title-upper" style="margin:0">Historial de Meses Cerrados</h2>' +
+          '<div class="movimientos-toolbar">' +
+            '<div class="search-box" style="margin-left:auto">' +
+              '<i class="fa-solid fa-magnifying-glass"></i>' +
+              '<input type="text" id="cierres-search-input" class="input" placeholder="Buscar por mes, notas o valores..." value="' + esc(state.cierresSearchTerm || '') + '" />' +
+            '</div>' +
           '</div>' +
         '</div>' +
         '<section class="card" style="padding:0;overflow:hidden">' +

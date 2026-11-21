@@ -232,11 +232,13 @@
       : '';
 
     container.innerHTML =
-      '<section>' +
-        '<div class="section-header">' +
+      '<div class="view-sticky-header">' +
+        '<div class="section-header" style="margin-bottom:0">' +
           '<h2 class="section-title-upper">Saldos al cierre de ' + esc(fmt.formatMonthLabel(state.selectedMonth)) + '</h2>' +
           closedBadge +
         '</div>' +
+      '</div>' +
+      '<section>' +
         '<div class="accounts-grid">' + accountsHtml + '</div>' +
       '</section>' +
       thermometerHtml +

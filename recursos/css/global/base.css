@@ -165,6 +165,19 @@ a {
   margin-bottom: -0.35rem !important;
 }
 
+.view-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  background: var(--bg-body);
+  padding: 0.65rem 0 0.6rem;
+  margin-top: -0.65rem;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
 /* Tarjetas y superficies */
 .card {
   background: var(--bg-surface);

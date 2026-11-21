@@ -106,9 +106,12 @@
     var rates = data.exchangeRates || {};
 
     var fundMap = {};
-    accounts.forEach(function (acc) {
+    var fundIdByName = {};
+    accounts.forEach(function (acc, idx) {
+      var fid = acc.id || ('inv-' + (idx + 1));
       var initBal = Number(acc.initialBalance) || 0;
-      fundMap[acc.name] = {
+      fundIdByName[acc.name] = fid;
+      fundMap[fid] = {
         account: acc,
         mode: acc.mode === 'fragmentado' ? 'fragmentado' : 'simple',
         currency: acc.currency || 'COP',
@@ -120,14 +123,30 @@
         totalComisiones: 0,
         totalRendimientos: 0,
         subsMap: {},
+        subIdByName: {},
       };
     });
 
-    subs.forEach(function (sub) {
-      var f = fundMap[sub.fundName];
+    function resolveFund(fundId, fundName) {
+      if (fundId && fundMap[fundId]) return fundMap[fundId];
+      var byName = fundName ? fundIdByName[fundName] : '';
+      return byName ? fundMap[byName] : null;
+    }
+
+    function resolveSub(f, subId, subName) {
+      if (!f) return null;
+      if (subId && f.subsMap[subId]) return f.subsMap[subId];
+      var byName = subName ? f.subIdByName[subName] : '';
+      return byName ? f.subsMap[byName] : null;
+    }
+
+    subs.forEach(function (sub, idx) {
+      var f = resolveFund(sub.fundId, sub.fundName);
       if (!f) return;
+      var sid = sub.id || ('sub-' + (idx + 1));
       var initSub = Number(sub.initialBalance) || 0;
-      f.subsMap[sub.name] = {
+      f.subIdByName[sub.name] = sid;
+      f.subsMap[sid] = {
         sub: sub,
         currentValue: initSub,
         netInvested: initSub,
@@ -138,7 +157,7 @@
     });
 
     movs.forEach(function (m) {
-      var f = fundMap[m.fundName];
+      var f = resolveFund(m.fundId, m.fundName);
       if (!f) return;
       var amt = Number(m.amount) || 0;
       var comm = Number(m.commission) || 0;
@@ -167,7 +186,7 @@
           f.totalRetirado += amt;
         }
       } else if (m.type === 'AsignarSub') {
-        var s = f.subsMap[m.subName];
+        var s = resolveSub(f, m.subId, m.subName);
         if (apply === 'moved') {
           var netSub = Math.max(0, amt - comm);
           f.availableCash -= amt;
@@ -183,7 +202,7 @@
           }
         }
       } else if (m.type === 'LiberarSub') {
-        var sRel = f.subsMap[m.subName];
+        var sRel = resolveSub(f, m.subId, m.subName);
         if (sRel) {
           sRel.currentValue -= amt;
           sRel.netInvested -= amt;
@@ -194,9 +213,10 @@
           f.availableCash += amt - comm;
         }
       } else if (m.type === 'Rendimiento') {
-        if (m.subName && f.subsMap[m.subName]) {
-          f.subsMap[m.subName].currentValue += amt;
-          f.subsMap[m.subName].totalRendimientos += amt;
+        var sRend = resolveSub(f, m.subId, m.subName);
+        if (sRend) {
+          sRend.currentValue += amt;
+          sRend.totalRendimientos += amt;
         } else {
           f.availableCash += amt;
         }
@@ -211,7 +231,7 @@
           f.netContributed -= amt;
         }
         // Entra al fondo destino (normalName guarda el fondo destino en TraspasoInv)
-        var dest = fundMap[m.normalAccount];
+        var dest = resolveFund(m.destFundId, m.normalAccount);
         if (dest) {
           var destAmt = apply === 'moved' ? Math.max(0, amt - comm) : amt;
           var convertedDest = destAmt * (f.rate / dest.rate);
@@ -227,8 +247,8 @@
     var totalGainLossCOP = 0;
     var totalComisionesCOP = 0;
 
-    var fundSummaries = accounts.map(function (acc) {
-      var f = fundMap[acc.name];
+    var fundSummaries = accounts.map(function (acc, idx) {
+      var f = fundMap[acc.id || ('inv-' + (idx + 1))];
       var subList = Object.keys(f.subsMap).map(function (k) {
         var item = f.subsMap[k];
         var gain = item.currentValue - item.netInvested;

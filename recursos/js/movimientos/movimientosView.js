@@ -83,12 +83,14 @@
     }
 
     container.innerHTML =
-      '<h2 class="section-title-upper" style="margin:0 0 0.85rem">Historial de Movimientos</h2>' +
-      '<div class="movimientos-toolbar">' +
-        '<div class="filter-pills">' + pillsHtml + '</div>' +
-        '<div class="search-box">' +
-          '<i class="fa-solid fa-magnifying-glass"></i>' +
-          '<input type="text" id="mov-search-input" class="input" placeholder="Buscar concepto, cuenta o detalle..." value="' + esc(state.searchTerm) + '" />' +
+      '<div class="view-sticky-header">' +
+        '<h2 class="section-title-upper" style="margin:0">Historial de Movimientos</h2>' +
+        '<div class="movimientos-toolbar">' +
+          '<div class="filter-pills">' + pillsHtml + '</div>' +
+          '<div class="search-box">' +
+            '<i class="fa-solid fa-magnifying-glass"></i>' +
+            '<input type="text" id="mov-search-input" class="input" placeholder="Buscar concepto, cuenta o detalle..." value="' + esc(state.searchTerm) + '" />' +
+          '</div>' +
         '</div>' +
       '</div>' +
       '<div class="table-wrap">' +

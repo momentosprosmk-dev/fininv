@@ -132,15 +132,19 @@
 
     if (activeTab === 'lista') {
       container.innerHTML =
-        '<h2 class="section-title-upper" style="margin:0 0 0.85rem">Préstamos</h2>' +
-        '<div class="movimientos-toolbar" style="margin-bottom:1rem">' +
-          '<div class="filter-pills" style="gap:0.35rem">' + filterPills + '</div>' +
-          '<button type="button" id="btn-new-loan" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nuevo préstamo</button>' +
+        '<div class="view-sticky-header">' +
+          '<h2 class="section-title-upper" style="margin:0">Préstamos</h2>' +
+          '<div class="movimientos-toolbar">' +
+            '<div class="filter-pills" style="gap:0.35rem">' + filterPills + '</div>' +
+            '<button type="button" id="btn-new-loan" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nuevo préstamo</button>' +
+          '</div>' +
         '</div>' +
         cardsHtml;
     } else if (activeTab === 'estado') {
       container.innerHTML =
-        '<h2 class="section-title-upper" style="margin:0 0 0.85rem">Estado Financiero de Préstamos</h2>' +
+        '<div class="view-sticky-header">' +
+          '<h2 class="section-title-upper" style="margin:0">Estado Financiero de Préstamos</h2>' +
+        '</div>' +
         '<section class="kpi-grid">' +
           '<div class="kpi-card"><div class="kpi-label text-sky"><i class="fa-solid fa-hand-holding-dollar"></i> Capital activo</div><p class="kpi-value tabular">' + esc(mCOP(totalPrincipalActive)) + '</p></div>' +
           '<div class="kpi-card"><div class="kpi-label text-amber"><i class="fa-regular fa-clock"></i> Total por cobrar</div><p class="kpi-value tabular">' + esc(mCOP(totalPending)) + '</p></div>' +
@@ -286,11 +290,13 @@
       }
 
       container.innerHTML =
-        '<div class="movimientos-toolbar" style="margin-bottom:0.85rem">' +
+        '<div class="view-sticky-header">' +
           '<h2 class="section-title-upper" style="margin:0">Historial de Movimientos de Préstamos</h2>' +
-          '<div class="search-box">' +
-            '<i class="fa-solid fa-magnifying-glass"></i>' +
-            '<input type="text" id="prest-mov-search" class="input" placeholder="Buscar persona, cuenta o detalle..." value="' + esc(state.prestSearchTerm || '') + '" />' +
+          '<div class="movimientos-toolbar">' +
+            '<div class="search-box" style="margin-left:auto">' +
+              '<i class="fa-solid fa-magnifying-glass"></i>' +
+              '<input type="text" id="prest-mov-search" class="input" placeholder="Buscar persona, cuenta o detalle..." value="' + esc(state.prestSearchTerm || '') + '" />' +
+            '</div>' +
           '</div>' +
         '</div>' +
         '<div class="table-wrap">' +

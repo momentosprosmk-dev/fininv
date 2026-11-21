@@ -132,16 +132,41 @@
       cuentasInversion: (data.investmentAccounts || []).map(function (a, idx) {
         return [a.id || 'inv-' + (idx + 1), a.name, a.mode || 'simple', a.currency || 'COP', a.initialBalance || 0, a.goal || 0, a.notes || ''];
       }),
-      subinversiones: (data.subInvestments || []).map(function (s, idx) {
-        var cleanSubNotes = String(s.notes || '').replace(/\s*\[bolsillo\]/g, '').trim();
-        if (s.isPocket) {
-          cleanSubNotes = (cleanSubNotes ? cleanSubNotes + ' ' : '') + '[bolsillo]';
-        }
-        return [s.id || 'sub-' + (idx + 1), s.fundName, s.name, s.initialBalance || 0, cleanSubNotes];
-      }),
-      movimientosInversion: (data.investmentMovements || []).map(function (m) {
-        return [m.id, m.date, m.type, m.fundName, m.subName || '', m.normalAccount || '', m.description || '', m.amount || 0, m.commission || 0, m.commissionApply || 'moved', m.exchangeRate || 1, m.amountCOP || 0, m.linkedMovementId || '', m.createdAt || ''];
-      }),
+      subinversiones: (function () {
+        var accIdByName = {};
+        (data.investmentAccounts || []).forEach(function (a, idx) {
+          accIdByName[a.name] = a.id || ('inv-' + (idx + 1));
+        });
+        return (data.subInvestments || []).map(function (s, idx) {
+          var cleanSubNotes = String(s.notes || '').replace(/\s*\[bolsillo\]/g, '').trim();
+          if (s.isPocket) {
+            cleanSubNotes = (cleanSubNotes ? cleanSubNotes + ' ' : '') + '[bolsillo]';
+          }
+          var fid = s.fundId || accIdByName[s.fundName] || s.fundName;
+          return [s.id || 'sub-' + (idx + 1), fid, s.name, s.initialBalance || 0, cleanSubNotes];
+        });
+      })(),
+      movimientosInversion: (function () {
+        var accIdByName = {};
+        (data.investmentAccounts || []).forEach(function (a, idx) {
+          accIdByName[a.name] = a.id || ('inv-' + (idx + 1));
+        });
+        var subIdByKey = {};
+        (data.subInvestments || []).forEach(function (s, idx) {
+          var sid = s.id || ('sub-' + (idx + 1));
+          var fid = s.fundId || accIdByName[s.fundName] || s.fundName;
+          subIdByKey[fid + '::' + s.name] = sid;
+          subIdByKey['::' + s.name] = sid;
+        });
+        return (data.investmentMovements || []).map(function (m) {
+          var fid = m.fundId || accIdByName[m.fundName] || m.fundName;
+          var sid = m.subId || (m.subName ? (subIdByKey[fid + '::' + m.subName] || subIdByKey['::' + m.subName] || m.subName) : '');
+          var normalOrDest = m.type === 'TraspasoInv'
+            ? (m.destFundId || accIdByName[m.normalAccount] || m.normalAccount || '')
+            : (m.normalAccount || '');
+          return [m.id, m.date, m.type, fid, sid, normalOrDest, m.description || '', m.amount || 0, m.commission || 0, m.commissionApply || 'moved', m.exchangeRate || 1, m.amountCOP || 0, m.linkedMovementId || '', m.createdAt || ''];
+        });
+      })(),
       prestamos: (data.loans || []).map(function (l) {
         var cleanNotes = String(l.notes || '').replace(/\s*\[previo:[^\]]+\]/g, '').trim();
         if (l.isHistorical) {
@@ -298,13 +323,23 @@
       };
     });
 
+    var accById = {};
+    var accByName = {};
+    investmentAccounts.forEach(function (a) {
+      accById[a.id] = a;
+      accByName[a.name] = a;
+    });
+
     var subInvestments = (subInvRaw || []).filter(function (r) { return r[1] && r[2]; }).map(function (r, idx) {
       var rawSubNotes = String(r[4] || '');
       var isPocket = /\[bolsillo\]/.test(rawSubNotes);
       var cleanSubNotes = rawSubNotes.replace(/\s*\[bolsillo\]/g, '').trim();
+      var rawFundRef = String(r[1]);
+      var matchedAcc = accById[rawFundRef] || accByName[rawFundRef] || null;
       return {
         id: String(r[0] || 'sub-' + (idx + 1)),
-        fundName: String(r[1]),
+        fundId: matchedAcc ? matchedAcc.id : rawFundRef,
+        fundName: matchedAcc ? matchedAcc.name : rawFundRef,
         name: String(r[2]),
         initialBalance: parseSheetNumber(r[3]),
         isPocket: isPocket,
@@ -312,14 +347,33 @@
       };
     });
 
+    var subById = {};
+    var subByKey = {};
+    subInvestments.forEach(function (s) {
+      subById[s.id] = s;
+      subByKey[s.fundId + '::' + s.name] = s;
+      subByKey['::' + s.name] = s;
+    });
+
     var investmentMovements = (invMovRaw || []).filter(function (r) { return r[0] && r[1]; }).map(function (r) {
+      var mType = String(r[2] || 'Aporte');
+      var rawFundRef = String(r[3] || '');
+      var matchedAcc = accById[rawFundRef] || accByName[rawFundRef] || null;
+      var resolvedFundId = matchedAcc ? matchedAcc.id : rawFundRef;
+      var rawSubRef = String(r[4] || '');
+      var matchedSub = rawSubRef ? (subById[rawSubRef] || subByKey[resolvedFundId + '::' + rawSubRef] || subByKey['::' + rawSubRef] || null) : null;
+      var rawNormalRef = String(r[5] || '');
+      var matchedDest = (mType === 'TraspasoInv' && rawNormalRef) ? (accById[rawNormalRef] || accByName[rawNormalRef] || null) : null;
       return {
         id: String(r[0]),
         date: String(r[1]).slice(0, 10),
-        type: String(r[2] || 'Aporte'),
-        fundName: String(r[3] || ''),
-        subName: String(r[4] || ''),
-        normalAccount: String(r[5] || ''),
+        type: mType,
+        fundId: resolvedFundId,
+        fundName: matchedAcc ? matchedAcc.name : rawFundRef,
+        subId: matchedSub ? matchedSub.id : rawSubRef,
+        subName: matchedSub ? matchedSub.name : rawSubRef,
+        destFundId: matchedDest ? matchedDest.id : '',
+        normalAccount: matchedDest ? matchedDest.name : rawNormalRef,
         description: String(r[6] || ''),
         amount: parseSheetNumber(r[7]),
         commission: parseSheetNumber(r[8]),
@@ -387,11 +441,38 @@
     return err;
   }
 
-  function httpStatusError(res, fallbackMsg) {
-    if (res && (res.status === 401 || res.status === 403 || res.status === 404)) {
-      return authLinkError('El link de Apps Script es incorrecto o fue revocado (' + res.status + ').');
+  function networkConnectionError(msg) {
+    var err = new Error(msg || 'Sin conexión con Google Sheet.');
+    err.isNetworkError = true;
+    return err;
+  }
+
+  async function fetchAppsScriptJson(url, options, fallbackMsg) {
+    var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timerId = controller ? setTimeout(function () { controller.abort(); }, 15000) : null;
+    var fetchOpts = Object.assign({}, options || {});
+    if (controller) fetchOpts.signal = controller.signal;
+
+    var res;
+    try {
+      res = await fetch(url, fetchOpts);
+    } catch (netErr) {
+      if (timerId) clearTimeout(timerId);
+      throw networkConnectionError('Sin conexión con Google Sheet.');
     }
-    return new Error(fallbackMsg + ' (' + (res ? res.status : 'error') + ')');
+    if (timerId) clearTimeout(timerId);
+
+    if (!res || !res.ok) {
+      throw networkConnectionError((fallbackMsg || 'No se pudo conectar con Google Sheet') + ' (' + (res ? res.status : 'sin respuesta') + ').');
+    }
+
+    var text = '';
+    try {
+      text = await res.text();
+      return JSON.parse(text);
+    } catch (parseErr) {
+      throw networkConnectionError('Respuesta inválida del servidor (posible falta de conexión a internet).');
+    }
   }
 
   function parseAppsScriptResponse(json) {
@@ -419,17 +500,15 @@
 
   async function readFromAppsScript(scriptUrl, auth) {
     if (auth && ((auth.username && auth.passwordHash) || auth.email)) {
-      var postRes = await fetch(scriptUrl, {
+      var postJson = await fetchAppsScriptJson(scriptUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'pull', auth: auth }),
-      });
-      if (!postRes.ok) throw httpStatusError(postRes, 'Error al leer Apps Script');
-      return parseAppsScriptResponse(await postRes.json());
+      }, 'Error al leer Apps Script');
+      return parseAppsScriptResponse(postJson);
     }
-    var res = await fetch(scriptUrl, { method: 'GET' });
-    if (!res.ok) throw httpStatusError(res, 'Error al leer Apps Script');
-    return parseAppsScriptResponse(await res.json());
+    var getJson = await fetchAppsScriptJson(scriptUrl, { method: 'GET' }, 'Error al leer Apps Script');
+    return parseAppsScriptResponse(getJson);
   }
 
   async function registerAppsScriptUser(scriptUrl, auth, data) {
@@ -449,13 +528,11 @@
   }
 
   async function loginAppsScriptUser(scriptUrl, auth) {
-    var res = await fetch(scriptUrl, {
+    var json = await fetchAppsScriptJson(scriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'auth_login', auth: auth }),
-    });
-    if (!res.ok) throw httpStatusError(res, 'Error al iniciar sesión en Apps Script');
-    var json = await res.json();
+    }, 'Error al iniciar sesión en Apps Script');
     if (!json || json.ok === false) {
       throw authLinkError((json && json.error) || 'Usuario o contraseña incorrectos.');
     }
@@ -482,13 +559,11 @@
   async function writeToAppsScript(scriptUrl, data, auth) {
     var serialized = serializeAppData(data);
     var payload = Object.assign({ action: 'push', auth: auth || null }, serialized);
-    var res = await fetch(scriptUrl, {
+    var json = await fetchAppsScriptJson(scriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw httpStatusError(res, 'Error al guardar en Apps Script');
-    var json = await res.json();
+    }, 'Error al guardar en Apps Script');
     if (!json || json.ok === false) {
       throw authLinkError((json && json.error) || 'No autorizado para guardar en el Google Sheet.');
     }
@@ -497,13 +572,11 @@
 
   async function manageAppsScriptUsers(scriptUrl, action, auth, extra) {
     var payload = Object.assign({ action: action, auth: auth || null }, extra || {});
-    var res = await fetch(scriptUrl, {
+    var json = await fetchAppsScriptJson(scriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw httpStatusError(res, 'Error al gestionar usuarios');
-    var json = await res.json();
+    }, 'Error al gestionar usuarios');
     if (!json || json.ok === false) {
       throw authLinkError((json && json.error) || 'No se pudo completar la operación.');
     }

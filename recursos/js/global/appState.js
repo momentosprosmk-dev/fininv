@@ -314,8 +314,8 @@
       var thead = wrap.querySelector('thead');
       if (!thead) return;
       var view = wrap.closest('.tab-view');
-      var toolbar = view ? view.querySelector('.movimientos-toolbar') : null;
-      var stickyBottom = (toolbar ? toolbar.getBoundingClientRect().bottom : scrollTop) - 2;
+      var toolbar = view ? (view.querySelector('.view-sticky-header') || view.querySelector('.movimientos-toolbar')) : null;
+      var stickyBottom = (toolbar ? toolbar.getBoundingClientRect().bottom : scrollTop);
       var wrapRect = wrap.getBoundingClientRect();
       var theadH = thead.offsetHeight || 40;
       if (wrapRect.top < stickyBottom && wrapRect.bottom > stickyBottom + theadH) {
@@ -338,14 +338,16 @@
     appState.authEmail = '';
     appState.authUser = '';
     appState.authPassHash = '';
-    setPendingSync(false);
     localStorage.removeItem(APPS_SCRIPT_URL_STORAGE);
     localStorage.removeItem(SHEET_WEB_URL_STORAGE);
     localStorage.removeItem(AUTH_MODE_STORAGE);
     localStorage.removeItem(AUTH_EMAIL_STORAGE);
     localStorage.removeItem(AUTH_USER_STORAGE);
     localStorage.removeItem(AUTH_PASS_HASH_STORAGE);
-    appState.syncError = errMsg || 'Tu sesión expiró o las credenciales cambiaron. Vuelve a conectarte.';
+    var baseMsg = errMsg || 'Tu sesión expiró o las credenciales cambiaron. Vuelve a conectarte.';
+    appState.syncError = appState.pendingSync
+      ? baseMsg + ' Tus cambios locales pendientes se enviarán al volver a iniciar sesión.'
+      : baseMsg;
     renderHeader(computeDerived());
     openGoogleConnect();
   }
@@ -368,13 +370,13 @@
       }
       setPendingSync(false);
     } catch (err) {
-      if (err && err.isAuthOrLinkError) {
+      if (err && err.isAuthOrLinkError && !err.isNetworkError) {
         appState.isSyncing = false;
         clearSessionAndPrompt(err.message);
         return;
       }
       setPendingSync(true);
-      appState.syncError = err && err.message ? err.message : 'Error al sincronizar con Apps Script';
+      appState.syncError = err && err.message ? err.message : 'Sin conexión con Google Sheet. Cambios guardados localmente.';
     } finally {
       appState.isSyncing = false;
       renderHeader(computeDerived());
@@ -416,7 +418,7 @@
       return true;
     } catch (err) {
       appState.syncError = err && err.message ? err.message : 'No se pudo conectar. Verifica tus credenciales y la URL /exec.';
-      if (err && err.isAuthOrLinkError && appState.scriptUrl && appState.scriptUrl === url) {
+      if (err && err.isAuthOrLinkError && !err.isNetworkError && appState.scriptUrl && appState.scriptUrl === url) {
         appState.isSyncing = false;
         clearSessionAndPrompt(appState.syncError);
       }
@@ -461,7 +463,28 @@
           ? { username: params.username, passwordHash: pwdHash, rawPassword: params.password, email: params.email || '' }
           : (params.email ? { email: params.email } : null);
 
-        var ok = await pullFromAppsScript(url, isNew, authPayload);
+        var ok = false;
+        if (!isNew && appState.pendingSync && authPayload) {
+          appState.isSyncing = true;
+          appState.syncError = null;
+          renderHeader(computeDerived());
+          try {
+            await window.GoogleSheetsService.loginAppsScriptUser(url, authPayload);
+            var pushRes = await window.GoogleSheetsService.writeToAppsScript(url, appState.data, authPayload);
+            if (pushRes && pushRes.spreadsheetUrl) {
+              appState.sheetWebUrl = pushRes.spreadsheetUrl;
+              localStorage.setItem(SHEET_WEB_URL_STORAGE, pushRes.spreadsheetUrl);
+            }
+            ok = true;
+          } catch (err) {
+            appState.syncError = err && err.message ? err.message : 'No se pudo validar o sincronizar los cambios pendientes.';
+            ok = false;
+          } finally {
+            appState.isSyncing = false;
+          }
+        } else {
+          ok = await pullFromAppsScript(url, isNew, authPayload);
+        }
         if (ok) {
           appState.scriptUrl = url;
           appState.authMode = mode;
@@ -638,15 +661,67 @@
       });
     },
     openInvAccountModal: function (existingAcc) {
+      var minInitialBalance = 0;
+      var investedInSubs = 0;
+      if (existingAcc) {
+        var invSummary = window.AppInvestments.calculateInvestmentSummary(appState.data);
+        var f = invSummary.fundSummaries.find(function (x) { return x.account.name === existingAcc.name; });
+        if (f) {
+          investedInSubs = Math.round(Math.max(0, f.investedInSubs) * 100) / 100;
+          var oldInit = Number(existingAcc.initialBalance) || 0;
+          minInitialBalance = Math.max(0, Math.round((oldInit - f.availableCash) * 100) / 100);
+        }
+      }
       window.InvestmentModals.openAccountModal({
         account: existingAcc,
+        minInitialBalance: minInitialBalance,
+        investedInSubs: investedInSubs,
         onSave: function (acc) {
           updateData(function (prev) {
             var list = (prev.investmentAccounts || []).slice();
             var idx = list.findIndex(function (x) { return x.id === acc.id; });
-            if (idx !== -1) list[idx] = acc;
-            else if (!list.some(function (x) { return x.name.toLowerCase() === acc.name.toLowerCase(); })) list.push(acc);
-            return Object.assign({}, prev, { investmentAccounts: list });
+            var nextSubs = (prev.subInvestments || []).slice();
+            var nextInvMovs = (prev.investmentMovements || []).slice();
+            var nextMovs = (prev.movements || []).slice();
+            if (idx !== -1) {
+              var oldName = list[idx].name;
+              list[idx] = acc;
+              if (oldName && oldName !== acc.name) {
+                nextSubs = nextSubs.map(function (s) {
+                  if (s.fundId === acc.id || s.fundName === oldName) {
+                    return Object.assign({}, s, { fundId: acc.id, fundName: acc.name });
+                  }
+                  return s;
+                });
+                nextInvMovs = nextInvMovs.map(function (m) {
+                  var updated = m;
+                  if (m.fundId === acc.id || m.fundName === oldName) {
+                    updated = Object.assign({}, updated, { fundId: acc.id, fundName: acc.name });
+                  }
+                  if (m.type === 'TraspasoInv' && (m.destFundId === acc.id || m.normalAccount === oldName)) {
+                    updated = Object.assign({}, updated, { destFundId: acc.id, normalAccount: acc.name });
+                  }
+                  return updated;
+                });
+                nextMovs = nextMovs.map(function (m) {
+                  if (m.toAccount === oldName || m.fromAccount === oldName) {
+                    return Object.assign({}, m, {
+                      toAccount: m.toAccount === oldName ? acc.name : m.toAccount,
+                      fromAccount: m.fromAccount === oldName ? acc.name : m.fromAccount,
+                    });
+                  }
+                  return m;
+                });
+              }
+            } else if (!list.some(function (x) { return x.name.toLowerCase() === acc.name.toLowerCase(); })) {
+              list.push(acc);
+            }
+            return Object.assign({}, prev, {
+              investmentAccounts: list,
+              subInvestments: nextSubs,
+              investmentMovements: nextInvMovs,
+              movements: nextMovs,
+            });
           });
         },
       });
@@ -1342,7 +1417,9 @@
     if (appState.scriptUrl) {
       if (appState.pendingSync && (typeof navigator === 'undefined' || navigator.onLine !== false)) {
         syncDataToCloud(appState.data).then(function () {
-          pullFromAppsScript(appState.scriptUrl, false);
+          if (!appState.pendingSync) {
+            pullFromAppsScript(appState.scriptUrl, false);
+          }
         });
       } else if (typeof navigator === 'undefined' || navigator.onLine !== false) {
         pullFromAppsScript(appState.scriptUrl, false);

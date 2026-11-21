@@ -3,6 +3,8 @@
     var root = document.getElementById('modales-root');
     if (!root) return;
     var existing = opts.account || null;
+    var minInit = existing ? Math.max(0, Number(opts.minInitialBalance) || 0) : 0;
+    var investedInSubs = existing ? Math.max(0, Number(opts.investedInSubs) || 0) : 0;
     var state = {
       name: existing ? existing.name : '',
       mode: existing ? existing.mode : 'simple',
@@ -34,7 +36,7 @@
             '<div class="modal-body-scroll">' +
               '<div class="field-group">' +
                 '<label class="field-label">Nombre de la inversión / bróker</label>' +
-                '<input type="text" id="ia-name" class="input" placeholder="Ej. ARQ, Fondo BBVA, Cajita Nu" value="' + esc(state.name) + '" ' + (existing ? 'readonly' : '') + ' />' +
+                '<input type="text" id="ia-name" class="input" placeholder="Ej. ARQ, Fondo BBVA, Cajita Nu" value="' + esc(state.name) + '" />' +
               '</div>' +
               '<div class="form-grid-2">' +
                 '<div class="field-group">' +
@@ -55,6 +57,7 @@
                   '<label class="field-label">Saldo inicial disponible (' + esc(state.currency) + ')</label>' +
                   '<input type="text" inputmode="decimal" id="ia-init" class="input" placeholder="0" value="' + esc(state.initialBalance) + '" />' +
                   '<p id="ia-init-preview" style="margin:0.25rem 0 0;font-size:0.75rem;color:#a5b4fc">' + (window.AppFormat.parseDecimalInput(state.initialBalance) > 0 ? esc(window.AppFormat.formatCurrency(window.AppFormat.parseDecimalInput(state.initialBalance), state.currency)) : '') + '</p>' +
+                  '<div id="ia-init-err" class="alert-banner alert-rose hidden" style="margin-top:0.45rem;margin-bottom:0"></div>' +
                 '</div>' +
                 '<div class="field-group">' +
                   '<label class="field-label">Meta opcional (' + esc(state.currency) + ')</label>' +
@@ -74,7 +77,7 @@
             '</div>' +
             '<div class="modal-bottom-fixed">' +
               '<button type="button" class="btn btn-secondary" id="ia-cancel">Cancelar</button>' +
-              '<button type="submit" class="btn btn-primary">' + (existing ? 'Guardar cambios' : 'Crear cuenta') + '</button>' +
+              '<button type="submit" id="ia-submit" class="btn btn-primary">' + (existing ? 'Guardar cambios' : 'Crear cuenta') + '</button>' +
             '</div>' +
           '</form>' +
         '</div>';
@@ -85,12 +88,31 @@
       document.getElementById('ia-name').addEventListener('input', function (e) { state.name = e.target.value; });
       document.getElementById('ia-mode').addEventListener('change', function (e) { state.mode = e.target.value; });
       document.getElementById('ia-currency').addEventListener('change', function (e) { state.currency = e.target.value; render(); });
+      function validateInitialBalance() {
+        var v = window.AppFormat.parseDecimalInput(state.initialBalance);
+        var errEl = document.getElementById('ia-init-err');
+        var subBtn = document.getElementById('ia-submit');
+        if (existing && minInit > 0 && v < minInit - 0.001) {
+          if (errEl) {
+            errEl.textContent = 'No puedes ingresar un valor menor a ' + window.AppFormat.formatCurrency(minInit, state.currency) + (investedInSubs > 0 ? ' (valor en subcuentas/operaciones).' : '.');
+            errEl.classList.remove('hidden');
+          }
+          if (subBtn) subBtn.disabled = true;
+          return false;
+        }
+        if (errEl) errEl.classList.add('hidden');
+        if (subBtn) subBtn.disabled = false;
+        return true;
+      }
+
       document.getElementById('ia-init').addEventListener('input', function (e) {
         state.initialBalance = e.target.value;
         var v = window.AppFormat.parseDecimalInput(state.initialBalance);
         var p = document.getElementById('ia-init-preview');
         if (p) p.textContent = v > 0 ? window.AppFormat.formatCurrency(v, state.currency) : '';
+        validateInitialBalance();
       });
+      validateInitialBalance();
       document.getElementById('ia-goal').addEventListener('input', function (e) {
         state.goal = e.target.value;
         var v = window.AppFormat.parseDecimalInput(state.goal);
@@ -113,7 +135,7 @@
       document.getElementById('ia-form').addEventListener('submit', function (e) {
         e.preventDefault();
         var trimmed = state.name.trim();
-        if (!trimmed) return;
+        if (!trimmed || !validateInitialBalance()) return;
         opts.onSave({
           id: existing ? existing.id : 'inv-' + Date.now(),
           name: trimmed,
@@ -696,6 +718,7 @@
         if (!name || !f) return;
         var newSub = {
           id: 'sub-' + Date.now(),
+          fundId: f.account.id,
           fundName: f.account.name,
           name: name,
           initialBalance: 0,
@@ -762,11 +785,20 @@
       document.getElementById('io-form').addEventListener('submit', function (e) {
         e.preventDefault();
         if (missing || insufficientMsg) return;
+        var chosenSubObj = (f && state.subName)
+          ? f.subSummaries.find(function (s) { return s.sub.name === state.subName; })
+          : null;
+        var destFundObj = state.type === 'TraspasoInv'
+          ? fundSummaries.find(function (x) { return x.account.name === state.destFundName; })
+          : null;
         opts.onSave({
           date: state.date,
           type: state.type,
+          fundId: f ? f.account.id : '',
           fundName: state.fundName,
+          subId: chosenSubObj ? chosenSubObj.sub.id : '',
           subName: state.subName,
+          destFundId: destFundObj ? destFundObj.account.id : '',
           normalAccount: state.type === 'TraspasoInv'
             ? state.destFundName
             : (state.normalAccount === '__externo__' ? '' : state.normalAccount),
