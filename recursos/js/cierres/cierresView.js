@@ -1,4 +1,100 @@
 (function () {
+  function downloadClosesCsv(closes, currency) {
+    var headers = ['Mes', 'Ingresos (' + currency + ')', 'Consumo', 'Inversion', 'Liquidez Final', 'Deuda TC', 'Resultado TC', 'Notas'];
+    var csvCell = function (val) {
+      var s = String(val == null ? '' : val).replace(/"/g, '""');
+      return '"' + s + '"';
+    };
+    var lines = [headers.map(csvCell).join(',')];
+    (closes || []).forEach(function (c) {
+      lines.push([
+        c.month || '',
+        Number(c.totalIncome || 0),
+        Number(c.totalConsumptionExpense || 0),
+        Number(c.totalArqInvestment || 0),
+        Number(c.liquidityTotal || 0),
+        Number(c.ccDebt || 0),
+        Number(c.ccSurplusOrDeficit || 0),
+        c.notes || '',
+      ].map(csvCell).join(','));
+    });
+    var blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'fininv-cierres-mensuales.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function buildClosesTrendHtml(closes, fmt, esc, hide, mCOP) {
+    if (!closes || closes.length < 2) return '';
+    var sortedAsc = closes.slice().sort(function (a, b) {
+      return String(a.month || '').localeCompare(String(b.month || ''));
+    });
+    var recent = sortedAsc.slice(-6);
+    var latest = recent[recent.length - 1];
+    var prev = recent[recent.length - 2];
+
+    var deltaBadge = function (curVal, prevVal, invertGood) {
+      if (hide) return '<span class="text-dim" style="font-size:0.72rem">•••</span>';
+      var diff = Number(curVal || 0) - Number(prevVal || 0);
+      if (diff === 0) return '<span class="text-dim" style="font-size:0.72rem">Sin cambio</span>';
+      var isPos = diff > 0;
+      var good = invertGood ? !isPos : isPos;
+      var cls = good ? 'text-emerald' : 'text-rose';
+      var arrow = isPos ? '▲' : '▼';
+      return '<span class="' + cls + '" style="font-size:0.72rem;font-weight:600">' + arrow + ' ' + (isPos ? '+' : '-') + esc(mCOP(Math.abs(diff))) + '</span>';
+    };
+
+    var maxFlow = 1;
+    recent.forEach(function (c) {
+      maxFlow = Math.max(maxFlow, Number(c.totalIncome || 0), Number(c.totalConsumptionExpense || 0), Number(c.liquidityTotal || 0));
+    });
+
+    var barsHtml = recent.map(function (c) {
+      var incPct = Math.round((Math.max(0, Number(c.totalIncome || 0)) / maxFlow) * 100);
+      var expPct = Math.round((Math.max(0, Number(c.totalConsumptionExpense || 0)) / maxFlow) * 100);
+      var invPct = Math.round((Math.max(0, Number(c.totalArqInvestment || 0)) / maxFlow) * 100);
+      var shortMonth = String(c.month || '');
+      return (
+        '<div style="flex:1 1 0;min-width:3.2rem;display:flex;flex-direction:column;align-items:center;gap:0.35rem">' +
+          '<div style="height:4.5rem;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:3px;padding:0 0.25rem;border-bottom:1px solid var(--border-subtle)">' +
+            '<span title="Ingresos: ' + esc(mCOP(c.totalIncome)) + '" style="width:8px;border-radius:3px 3px 0 0;background:var(--emerald);height:' + Math.max(4, incPct) + '%"></span>' +
+            '<span title="Consumo: ' + esc(mCOP(c.totalConsumptionExpense)) + '" style="width:8px;border-radius:3px 3px 0 0;background:var(--rose);height:' + Math.max(4, expPct) + '%"></span>' +
+            '<span title="Inversión: ' + esc(mCOP(c.totalArqInvestment)) + '" style="width:8px;border-radius:3px 3px 0 0;background:#a78bfa;height:' + Math.max(4, invPct) + '%"></span>' +
+          '</div>' +
+          '<span style="font-size:0.7rem;color:var(--text-muted);font-weight:600">' + esc(shortMonth) + '</span>' +
+        '</div>'
+      );
+    }).join('');
+
+    return (
+      '<section class="card" style="margin-bottom:1rem">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem">' +
+          '<div>' +
+            '<h3 class="section-title" style="font-size:0.95rem;margin:0">Comparativa: ' + esc(fmt.formatMonthLabel(latest.month)) + ' vs ' + esc(fmt.formatMonthLabel(prev.month)) + '</h3>' +
+            '<p class="text-muted" style="font-size:0.75rem;margin:0.15rem 0 0">Tendencia de tus últimos ' + recent.length + ' meses cerrados.</p>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:0.75rem;font-size:0.72rem;color:var(--text-muted)">' +
+            '<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--emerald);margin-right:4px"></span>Ingresos</span>' +
+            '<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--rose);margin-right:4px"></span>Consumo</span>' +
+            '<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#a78bfa;margin-right:4px"></span>Inversión</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="cierre-summary-grid" style="margin-bottom:0.9rem">' +
+          '<div class="cierre-stat"><p class="cierre-stat-label">Ingresos</p><p class="cierre-stat-val text-emerald tabular">' + esc(mCOP(latest.totalIncome)) + '</p>' + deltaBadge(latest.totalIncome, prev.totalIncome, false) + '</div>' +
+          '<div class="cierre-stat"><p class="cierre-stat-label">Consumo</p><p class="cierre-stat-val text-rose tabular">' + esc(mCOP(latest.totalConsumptionExpense)) + '</p>' + deltaBadge(latest.totalConsumptionExpense, prev.totalConsumptionExpense, true) + '</div>' +
+          '<div class="cierre-stat"><p class="cierre-stat-label">Inversión</p><p class="cierre-stat-val text-violet tabular">' + esc(mCOP(latest.totalArqInvestment)) + '</p>' + deltaBadge(latest.totalArqInvestment, prev.totalArqInvestment, false) + '</div>' +
+          '<div class="cierre-stat"><p class="cierre-stat-label">Liquidez Final</p><p class="cierre-stat-val tabular" style="color:var(--text-strong)">' + esc(mCOP(latest.liquidityTotal)) + '</p>' + deltaBadge(latest.liquidityTotal, prev.liquidityTotal, false) + '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:flex-end;gap:0.4rem;overflow-x:auto;padding-top:0.25rem">' + barsHtml + '</div>' +
+      '</section>'
+    );
+  }
+
   function renderCierresView(state) {
     var container = document.getElementById('view-cierres');
     if (!container) return;
@@ -95,6 +191,7 @@
           '</div>' +
         '</div>';
     } else {
+      container._csvCloses = filteredCloses;
       var existingCierresSearch = container.querySelector('#cierres-search-input');
       var existingCierresTbody = container.querySelector('#cierres-table-body');
       if (existingCierresSearch && existingCierresTbody && document.activeElement === existingCierresSearch) {
@@ -107,16 +204,24 @@
         return;
       }
 
+      var trendHtml = buildClosesTrendHtml(closes, fmt, esc, hide, mCOP);
+
       container.innerHTML =
         '<div class="view-sticky-header">' +
           '<h2 class="section-title-upper" style="margin:0">Historial de Meses Cerrados</h2>' +
           '<div class="movimientos-toolbar">' +
-            '<div class="search-box" style="margin-left:auto">' +
-              '<i class="fa-solid fa-magnifying-glass"></i>' +
-              '<input type="text" id="cierres-search-input" class="input" placeholder="Buscar por mes, notas o valores..." value="' + esc(state.cierresSearchTerm || '') + '" />' +
+            '<div style="display:flex;align-items:center;gap:0.5rem;margin-left:auto;flex-wrap:wrap">' +
+              '<div class="search-box">' +
+                '<i class="fa-solid fa-magnifying-glass"></i>' +
+                '<input type="text" id="cierres-search-input" class="input" placeholder="Buscar por mes, notas o valores..." value="' + esc(state.cierresSearchTerm || '') + '" />' +
+              '</div>' +
+              '<button type="button" id="btn-export-cierres-csv" class="btn btn-secondary" style="padding:0.42rem 0.7rem;font-size:0.78rem;white-space:nowrap" title="Exportar cierres a CSV">' +
+                '<i class="fa-solid fa-file-csv"></i> CSV' +
+              '</button>' +
             '</div>' +
           '</div>' +
         '</div>' +
+        trendHtml +
         '<section class="card" style="padding:0;overflow:hidden">' +
           historyHtml +
         '</section>';
@@ -125,6 +230,13 @@
       if (cierresSearchInp) {
         cierresSearchInp.addEventListener('input', function (e) {
           window.AppActions.setCierresSearchTerm(e.target.value);
+        });
+      }
+
+      var cierresCsvBtn = document.getElementById('btn-export-cierres-csv');
+      if (cierresCsvBtn) {
+        cierresCsvBtn.addEventListener('click', function () {
+          downloadClosesCsv(container._csvCloses || [], fmt.getBaseCurrency());
         });
       }
     }

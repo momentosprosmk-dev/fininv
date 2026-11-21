@@ -5,6 +5,35 @@
     return 'badge-sky';
   }
 
+  function downloadMovementsCsv(movements, monthKey, currency) {
+    var headers = ['Fecha', 'Tipo', 'Concepto', 'Descripcion', 'Cuenta Origen', 'Cuenta Destino', 'Monto (' + currency + ')'];
+    var csvCell = function (val) {
+      var s = String(val == null ? '' : val).replace(/"/g, '""');
+      return '"' + s + '"';
+    };
+    var lines = [headers.map(csvCell).join(',')];
+    (movements || []).forEach(function (m) {
+      lines.push([
+        m.date || '',
+        m.type || '',
+        m.category || '',
+        m.description || '',
+        m.fromAccount || '',
+        m.toAccount || '',
+        Number(m.amount || 0),
+      ].map(csvCell).join(','));
+    });
+    var blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'fininv-movimientos-' + (monthKey || 'mes') + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
   function renderMovimientosView(state) {
     var container = document.getElementById('view-movimientos');
     if (!container) return;
@@ -30,7 +59,10 @@
                 '<button type="button" class="inline-confirm-btn no" data-cancel-del="' + esc(m.id) + '">No</button>' +
                 '<button type="button" class="inline-confirm-btn yes" data-confirm-del="' + esc(m.id) + '">Sí</button>' +
               '</div>'
-            : '<button type="button" class="icon-delete-btn" data-ask-del="' + esc(m.id) + '" title="Eliminar movimiento"><i class="fa-regular fa-trash-can"></i></button>';
+            : '<div style="display:inline-flex;align-items:center;gap:0.25rem">' +
+                '<button type="button" class="icon-delete-btn" data-dup-mov="' + esc(m.id) + '" title="Duplicar movimiento"><i class="fa-regular fa-copy"></i></button>' +
+                '<button type="button" class="icon-delete-btn" data-ask-del="' + esc(m.id) + '" title="Eliminar movimiento"><i class="fa-regular fa-trash-can"></i></button>' +
+              '</div>';
 
           var amountClass = m.type === 'Ingreso' ? 'text-emerald' : (m.type === 'Egreso' ? 'text-rose' : 'text-sky');
           var prefix = m.type === 'Ingreso' ? '+' : (m.type === 'Egreso' ? '-' : '');
@@ -49,6 +81,12 @@
         }).join('');
 
     function bindRowDeleteActions(scope) {
+      scope.querySelectorAll('[data-dup-mov]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          window.AppActions.duplicateMovement(btn.getAttribute('data-dup-mov'));
+        });
+      });
+
       scope.querySelectorAll('[data-ask-del]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           window.AppActions.askDeleteMovement(btn.getAttribute('data-ask-del'));
@@ -67,6 +105,8 @@
         });
       });
     }
+
+    container._csvMovements = state.monthMovements;
 
     var existingInput = container.querySelector('#mov-search-input');
     var existingTbody = container.querySelector('#mov-table-body');
@@ -87,9 +127,14 @@
         '<h2 class="section-title-upper" style="margin:0">Historial de Movimientos</h2>' +
         '<div class="movimientos-toolbar">' +
           '<div class="filter-pills">' + pillsHtml + '</div>' +
-          '<div class="search-box">' +
-            '<i class="fa-solid fa-magnifying-glass"></i>' +
-            '<input type="text" id="mov-search-input" class="input" placeholder="Buscar concepto, cuenta o detalle..." value="' + esc(state.searchTerm) + '" />' +
+          '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">' +
+            '<div class="search-box">' +
+              '<i class="fa-solid fa-magnifying-glass"></i>' +
+              '<input type="text" id="mov-search-input" class="input" placeholder="Buscar concepto, cuenta o detalle..." value="' + esc(state.searchTerm) + '" />' +
+            '</div>' +
+            '<button type="button" id="btn-export-mov-csv" class="btn btn-secondary" style="padding:0.42rem 0.7rem;font-size:0.78rem;white-space:nowrap" title="Exportar movimientos visibles a CSV">' +
+              '<i class="fa-solid fa-file-csv"></i> CSV' +
+            '</button>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -112,6 +157,13 @@
     if (searchInput) {
       searchInput.addEventListener('input', function (e) {
         window.AppActions.setSearchTerm(e.target.value);
+      });
+    }
+
+    var csvBtn = document.getElementById('btn-export-mov-csv');
+    if (csvBtn) {
+      csvBtn.addEventListener('click', function () {
+        downloadMovementsCsv(container._csvMovements || [], state.selectedMonth, fmt.getBaseCurrency());
       });
     }
 

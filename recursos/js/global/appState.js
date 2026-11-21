@@ -187,6 +187,16 @@
       }
     }
 
+    var backupRemindPill = document.getElementById('backup-remind-pill');
+    if (backupRemindPill) {
+      var d = appState.data || {};
+      var hasLocalData = (d.movements || []).length > 0 || (d.investmentMovements || []).length > 0 || (d.loans || []).length > 0;
+      var lastBk = Number(localStorage.getItem('fininv_last_backup_at') || 0);
+      var needsBackup = mode === 'none' && hasLocalData && (!lastBk || (Date.now() - lastBk) >= 14 * 86400000);
+      backupRemindPill.classList.toggle('hidden', !needsBackup);
+      if (needsBackup && menuDot) menuDot.classList.remove('hidden');
+    }
+
     var closeDayPill = document.getElementById('close-day-pill');
     if (closeDayPill) {
       var curCloseDay = window.AppFormat.getMonthCloseDay();
@@ -639,6 +649,18 @@
     askDeleteMovement: function (id) {
       appState.pendingDeleteMovementId = id;
       renderApp();
+    },
+    duplicateMovement: function (id) {
+      var orig = (appState.data.movements || []).find(function (m) { return m.id === id; });
+      if (!orig) return;
+      window.AppActions.openMoveModal({
+        type: orig.type,
+        fromAccount: orig.fromAccount,
+        toAccount: orig.toAccount,
+        category: orig.category,
+        description: orig.description,
+        amount: orig.amount,
+      });
     },
     deleteMovement: function (id) {
       appState.pendingDeleteMovementId = null;
@@ -1344,6 +1366,10 @@
         closeDropdown();
         window.openResetModal({
           currentUser: appState.authUser || '',
+          isConnected: Boolean(appState.scriptUrl),
+          onBackupDone: function () {
+            renderHeader(computeDerived());
+          },
           data: appState.data,
           onRestoreBackup: function (backupPayload) {
             if (!backupPayload || !backupPayload.data) return;

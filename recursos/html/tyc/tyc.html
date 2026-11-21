@@ -26,7 +26,7 @@
     <ul>
       <li><strong>FinInv</strong> es una herramienta digital de registro personal estructurada en tres módulos principales:
         <ul>
-          <li><strong>Finanzas:</strong> control de cuentas de liquidez, tarjetas de crédito (incluidos avances), créditos a cuotas, ingresos, egresos, traspasos, obligaciones fijas, día de corte contable personalizado y cierres mensuales.</li>
+          <li><strong>Finanzas:</strong> control de cuentas de liquidez, tarjetas de crédito (incluidos avances), créditos a cuotas, ingresos, egresos, traspasos, duplicación rápida de movimientos, obligaciones fijas, día de corte contable personalizado, cierres mensuales con comparativa de tendencias y exportación de reportes en formato <code>.csv</code>.</li>
           <li><strong>Inversiones:</strong> gestión de portafolios en múltiples divisas (COP, USD, EUR y cualquier moneda ISO 4217 o personalizada) mediante <strong>Cartera Gestionada</strong> y <strong>Cartera Libre</strong> (con subcuentas de inversión, subcuentas tipo <strong>Bolsillo</strong> sin rendimientos, traspasos internos, comisiones y aportes/retiros vinculados).</li>
           <li><strong>Préstamos:</strong> registro y seguimiento de préstamos otorgados a terceros (incluidos préstamos previos a la app), intereses, cuotas, vencimientos y cobros vinculados.</li>
         </ul>
@@ -44,7 +44,7 @@
         </ul>
       </li>
       <li><strong>Control de acceso y flujo de proyecto nuevo o existente:</strong> Al vincular un Google Sheet, el usuario ingresa primero su enlace <code>/exec</code> y posteriormente configura o valida su método de acceso (correo autorizado o usuario y contraseña con hash <strong>SHA-256</strong> en la hoja <code>t_user</code>), gestionado exclusivamente dentro de su propia hoja.</li>
-      <li><strong>Administrar Datos y copias de seguridad cifradas:</strong> Tanto en modo local como conectado a Google Sheets, la sección <strong>Administrar Datos</strong> permite generar y restaurar copias de seguridad en formato <code>.json</code> cifradas en el propio dispositivo mediante <strong>AES-GCM de 256 bits</strong> y derivación de clave <strong>PBKDF2</strong> con la contraseña definida por el usuario, así como descargarlas, compartirlas o restablecer datos parcial o totalmente.</li>
+      <li><strong>Administrar Datos, copias de seguridad cifradas y exportación CSV:</strong> Tanto en modo local como conectado a Google Sheets, la sección <strong>Administrar Datos</strong> permite generar y restaurar copias de seguridad en formato <code>.json</code> cifradas en el propio dispositivo mediante <strong>AES-GCM de 256 bits</strong> y derivación de clave <strong>PBKDF2</strong> con la contraseña definida por el usuario (incluyendo moneda base, divisas personalizadas y día de corte), descargarlas, compartirlas o restablecer datos parcial o totalmente. Adicionalmente, el usuario puede exportar movimientos y cierres mensuales en formato legible <code>.csv</code> (sin cifrado), asumiendo la custodia de dichos archivos en su dispositivo.</li>
       <li><strong>No custodia en servidores propios:</strong> <strong>MomentosPro</strong> y <strong>FinInv</strong> <strong>no recolectan, no almacenan, no custodian, no leen ni tienen acceso</strong> en servidores propios a los saldos, movimientos, cuentas, inversiones, préstamos, cierres, contraseñas de respaldo, credenciales ni hojas de cálculo de los usuarios.</li>
       <li><strong>Responsabilidad total del usuario:</strong> Cada usuario es el <strong>único y exclusivo responsable</strong> de:
         <ul>
@@ -59,7 +59,7 @@
 
     <h2>4. Uso de Almacenamiento Local, Caché y PWA</h2>
     <ul>
-      <li>La Plataforma utiliza <code>localStorage</code> y <strong>Service Worker</strong> (caché PWA) para guardar preferencias de tema, ocultamiento de valores, aceptación de estos Términos y Condiciones, credenciales de conexión configuradas por el usuario y los datos locales (incluidos los cambios pendientes de sincronización mientras no haya conexión a internet).</li>
+      <li>La Plataforma utiliza <code>localStorage</code> y <strong>Service Worker</strong> (caché PWA) para guardar preferencias de tema, ocultamiento de valores, aceptación de estos Términos y Condiciones, fecha de último respaldo para recordatorios locales, credenciales de conexión configuradas por el usuario y los datos locales (incluidos los cambios pendientes de sincronización mientras no haya conexión a internet).</li>
       <li>El usuario puede limpiar el almacenamiento del navegador o utilizar la herramienta de restablecimiento de <strong>Administrar Datos</strong> en cualquier momento bajo su propia responsabilidad, entendiendo que ello eliminará los datos locales no respaldados en una copia cifrada o en su Google Sheet.</li>
     </ul>
 

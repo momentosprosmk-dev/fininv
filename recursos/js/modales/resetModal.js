@@ -180,8 +180,22 @@
         var invCount = (curData.investmentAccounts || []).length;
         var loanCount = (curData.loans || []).length;
         var canExport = state.exportPwd.length >= 4 && !state.exportBusy;
+        var hasAnyData = movCount > 0 || (curData.investmentMovements || []).length > 0 || loanCount > 0;
+        var lastBackupTs = Number(localStorage.getItem('fininv_last_backup_at') || 0);
+        var daysSinceBackup = lastBackupTs > 0 ? Math.floor((Date.now() - lastBackupTs) / 86400000) : null;
+        var backupReminderHtml = '';
+        if (!opts.isConnected && hasAnyData && (daysSinceBackup === null || daysSinceBackup >= 14)) {
+          backupReminderHtml =
+            '<div class="alert-banner alert-amber" style="margin-bottom:0.75rem;font-size:0.8rem">' +
+              '<i class="fa-solid fa-triangle-exclamation"></i> ' +
+              (daysSinceBackup === null
+                ? 'Trabajas sin Google Sheets y aún no has creado una copia de seguridad cifrada.'
+                : 'Han pasado <strong>' + daysSinceBackup + ' días</strong> desde tu último respaldo cifrado.') +
+            '</div>';
+        }
 
         var exportBoxHtml =
+          backupReminderHtml +
           '<div class="config-box" style="margin-bottom:0.85rem">' +
             '<p class="field-label" style="margin:0 0 0.25rem;color:var(--text-strong)"><i class="fa-solid fa-download text-indigo"></i> Exportar copia cifrada (.json)</p>' +
             '<p style="margin:0 0 0.65rem;font-size:0.8rem;color:var(--text-muted)">Respaldo actual: <strong>' + movCount + '</strong> mov. · <strong>' + invCount + '</strong> inversiones · <strong>' + loanCount + '</strong> préstamos. Siempre se cifra con tu contraseña.</p>' +
@@ -379,6 +393,8 @@
                   title: 'Respaldo FinInv',
                   text: 'Copia de seguridad cifrada de FinInv (' + today + ')',
                 });
+                try { localStorage.setItem('fininv_last_backup_at', String(Date.now())); } catch (e) {}
+                if (typeof opts.onBackupDone === 'function') opts.onBackupDone();
                 state.exportPwd = '';
                 state.exportMsg = 'Copia cifrada compartida correctamente.';
                 return;
@@ -393,6 +409,8 @@
             a.click();
             document.body.removeChild(a);
             setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+            try { localStorage.setItem('fininv_last_backup_at', String(Date.now())); } catch (e) {}
+            if (typeof opts.onBackupDone === 'function') opts.onBackupDone();
             state.exportPwd = '';
             state.exportMsg = mode === 'share'
               ? 'Tu navegador no permite compartir archivos directamente; se descargó la copia cifrada.'
