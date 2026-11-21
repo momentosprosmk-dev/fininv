@@ -83,6 +83,7 @@
     }
 
     container.innerHTML =
+      '<h2 class="section-title-upper" style="margin:0 0 0.85rem">Historial de Movimientos</h2>' +
       '<div class="movimientos-toolbar">' +
         '<div class="filter-pills">' + pillsHtml + '</div>' +
         '<div class="search-box">' +

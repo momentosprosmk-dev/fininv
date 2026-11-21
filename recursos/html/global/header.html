@@ -115,7 +115,7 @@
     </div>
   </div>
 
-  <nav class="header-tabs" aria-label="Secciones">
+  <nav class="header-tabs cols-4" aria-label="Secciones">
     <button type="button" class="tab-btn active" data-tab="resumen" title="Resumen del Mes">
       <i class="fa-solid fa-chart-pie"></i>
       <span class="tab-label-pc">Resumen del Mes</span>
@@ -127,9 +127,14 @@
       <span id="tab-mov-label-pc" class="tab-label-pc">Movimientos (0)</span>
     </button>
 
-    <button type="button" class="tab-btn" data-tab="cierres" title="Cierre Contable">
+    <button type="button" class="tab-btn" data-tab="cierre-mes" title="Cerrar Mes">
+      <i class="fa-regular fa-calendar-check"></i>
+      <span class="tab-label-pc">Cerrar Mes</span>
+    </button>
+
+    <button type="button" class="tab-btn" data-tab="cierres" title="Historial de Cierres">
       <i class="fa-solid fa-clock-rotate-left"></i>
-      <span class="tab-label-pc">Cierre Contable</span>
+      <span class="tab-label-pc">Historial</span>
     </button>
   </nav>
 
@@ -153,15 +158,15 @@
   </nav>
 
   <nav id="prest-tabs" class="header-tabs hidden" aria-label="Secciones de Préstamos">
-    <button type="button" class="tab-btn active" data-prest-tab="lista" title="Préstamos">
+    <button type="button" class="tab-btn active" data-prest-tab="estado" title="Estado Financiero">
+      <i class="fa-solid fa-chart-pie"></i>
+      <span class="tab-label-pc">Estado Financiero</span>
+    </button>
+
+    <button type="button" class="tab-btn" data-prest-tab="lista" title="Préstamos">
       <i class="fa-solid fa-hand-holding-dollar"></i>
       <span id="prest-tab-count-badge" class="tab-badge-mobile">0</span>
       <span id="prest-tab-count-label-pc" class="tab-label-pc">Préstamos (0)</span>
-    </button>
-
-    <button type="button" class="tab-btn" data-prest-tab="estado" title="Estado Financiero">
-      <i class="fa-solid fa-chart-pie"></i>
-      <span class="tab-label-pc">Estado Financiero</span>
     </button>
 
     <button type="button" class="tab-btn" data-prest-tab="movimientos" title="Movimientos">

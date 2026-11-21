@@ -15,10 +15,12 @@
     activeModule: 'finanzas', // finanzas | inversiones
     activeTab: 'resumen',
     invActiveTab: 'resumen', // resumen | movimientos
-    prestActiveTab: 'lista', // lista | estado | movimientos
+    prestActiveTab: 'estado', // estado | lista | movimientos
     invFilterFund: 'Todas',
     invFilterType: 'Todos',
     invSearchTerm: '',
+    prestSearchTerm: '',
+    cierresSearchTerm: '',
     expandedInvFunds: {},
     filterType: 'Todos',
     searchTerm: '',
@@ -281,7 +283,7 @@
     var isPrest = appState.activeModule === 'prestamos';
     viewRes.classList.toggle('hidden', !isFin || appState.activeTab !== 'resumen');
     viewMov.classList.toggle('hidden', !isFin || appState.activeTab !== 'movimientos');
-    viewCie.classList.toggle('hidden', !isFin || appState.activeTab !== 'cierres');
+    viewCie.classList.toggle('hidden', !isFin || (appState.activeTab !== 'cierres' && appState.activeTab !== 'cierre-mes'));
     if (viewInv) viewInv.classList.toggle('hidden', !isInv);
     if (viewPrest) viewPrest.classList.toggle('hidden', !isPrest);
 
@@ -294,7 +296,7 @@
       window.renderResumenView(viewState);
     } else if (appState.activeTab === 'movimientos') {
       window.renderMovimientosView(viewState);
-    } else if (appState.activeTab === 'cierres') {
+    } else if (appState.activeTab === 'cierres' || appState.activeTab === 'cierre-mes') {
       window.renderCierresView(viewState);
     }
 
@@ -820,6 +822,8 @@
     setInvFilterFund: function (fund) { appState.invFilterFund = fund; renderApp(); },
     setInvFilterType: function (type) { appState.invFilterType = type; renderApp(); },
     setInvSearchTerm: function (term) { appState.invSearchTerm = term; renderApp(); },
+    setPrestSearchTerm: function (term) { appState.prestSearchTerm = term; renderApp(); },
+    setCierresSearchTerm: function (term) { appState.cierresSearchTerm = term; renderApp(); },
     deleteInvMov: function (id) {
       appState.pendingDeleteInvMovId = null;
       updateData(function (prev) {
@@ -835,6 +839,7 @@
       appState.closeNotes = notes;
     },
     closeMonth: function () {
+      if (String(appState.closeNotes || '').trim().length <= 10) return;
       var summary = window.AppAccounting.calculateMonthSummary(appState.data, appState.selectedMonth);
       var record = {
         month: appState.selectedMonth,
@@ -1073,7 +1078,7 @@
         appState.activeModule = btn.getAttribute('data-module-switch');
         appState.activeTab = 'resumen';
         appState.invActiveTab = 'resumen';
-        appState.prestActiveTab = 'lista';
+        appState.prestActiveTab = 'estado';
         closeDropdown();
         renderApp();
       });

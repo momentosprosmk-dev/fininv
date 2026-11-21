@@ -133,7 +133,11 @@
         return [a.id || 'inv-' + (idx + 1), a.name, a.mode || 'simple', a.currency || 'COP', a.initialBalance || 0, a.goal || 0, a.notes || ''];
       }),
       subinversiones: (data.subInvestments || []).map(function (s, idx) {
-        return [s.id || 'sub-' + (idx + 1), s.fundName, s.name, s.initialBalance || 0, s.notes || ''];
+        var cleanSubNotes = String(s.notes || '').replace(/\s*\[bolsillo\]/g, '').trim();
+        if (s.isPocket) {
+          cleanSubNotes = (cleanSubNotes ? cleanSubNotes + ' ' : '') + '[bolsillo]';
+        }
+        return [s.id || 'sub-' + (idx + 1), s.fundName, s.name, s.initialBalance || 0, cleanSubNotes];
       }),
       movimientosInversion: (data.investmentMovements || []).map(function (m) {
         return [m.id, m.date, m.type, m.fundName, m.subName || '', m.normalAccount || '', m.description || '', m.amount || 0, m.commission || 0, m.commissionApply || 'moved', m.exchangeRate || 1, m.amountCOP || 0, m.linkedMovementId || '', m.createdAt || ''];
@@ -295,12 +299,16 @@
     });
 
     var subInvestments = (subInvRaw || []).filter(function (r) { return r[1] && r[2]; }).map(function (r, idx) {
+      var rawSubNotes = String(r[4] || '');
+      var isPocket = /\[bolsillo\]/.test(rawSubNotes);
+      var cleanSubNotes = rawSubNotes.replace(/\s*\[bolsillo\]/g, '').trim();
       return {
         id: String(r[0] || 'sub-' + (idx + 1)),
         fundName: String(r[1]),
         name: String(r[2]),
         initialBalance: parseSheetNumber(r[3]),
-        notes: String(r[4] || ''),
+        isPocket: isPocket,
+        notes: cleanSubNotes,
       };
     });
 

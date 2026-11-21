@@ -132,6 +132,7 @@
 
     if (activeTab === 'lista') {
       container.innerHTML =
+        '<h2 class="section-title-upper" style="margin:0 0 0.85rem">Préstamos</h2>' +
         '<div class="movimientos-toolbar" style="margin-bottom:1rem">' +
           '<div class="filter-pills" style="gap:0.35rem">' + filterPills + '</div>' +
           '<button type="button" id="btn-new-loan" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nuevo préstamo</button>' +
@@ -210,9 +211,21 @@
         return b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt);
       });
 
-      var rowsHtml = timeline.length === 0
-        ? '<tr><td colspan="7" class="text-dim" style="text-align:center;padding:2.5rem 1rem">No hay movimientos vinculados a préstamos aún.</td></tr>'
-        : timeline.map(function (item) {
+      var prestSearch = String(state.prestSearchTerm || '').trim().toLowerCase();
+      var filteredTimeline = !prestSearch
+        ? timeline
+        : timeline.filter(function (item) {
+            return (
+              String(item.borrower || '').toLowerCase().indexOf(prestSearch) !== -1 ||
+              String(item.account || '').toLowerCase().indexOf(prestSearch) !== -1 ||
+              String(item.notes || '').toLowerCase().indexOf(prestSearch) !== -1 ||
+              String(item.date || '').toLowerCase().indexOf(prestSearch) !== -1
+            );
+          });
+
+      var rowsHtml = filteredTimeline.length === 0
+        ? '<tr><td colspan="7" class="text-dim" style="text-align:center;padding:2.5rem 1rem">' + (timeline.length === 0 ? 'No hay movimientos vinculados a préstamos aún.' : 'No hay movimientos de préstamos que coincidan con la búsqueda.') + '</td></tr>'
+        : filteredTimeline.map(function (item) {
             var isIn = item.kind === 'ingreso' || item.kind === 'ingreso_hist';
             var isHistIn = item.kind === 'ingreso_hist';
             var isHistOut = item.kind === 'egreso_hist';
@@ -243,18 +256,58 @@
             );
           }).join('');
 
+      function bindPrestMovDeletes(scope) {
+        scope.querySelectorAll('[data-ask-del-loan]').forEach(function (btn) {
+          btn.addEventListener('click', function () { window.AppActions.askDeleteLoan(btn.getAttribute('data-ask-del-loan')); });
+        });
+        scope.querySelectorAll('[data-cancel-del-loan]').forEach(function (btn) {
+          btn.addEventListener('click', function () { window.AppActions.askDeleteLoan(null); });
+        });
+        scope.querySelectorAll('[data-confirm-del-loan]').forEach(function (btn) {
+          btn.addEventListener('click', function () { window.AppActions.deleteLoan(btn.getAttribute('data-confirm-del-loan')); });
+        });
+        scope.querySelectorAll('[data-ask-del-loan-pay]').forEach(function (btn) {
+          btn.addEventListener('click', function () { window.AppActions.askDeleteLoanPayment(btn.getAttribute('data-ask-del-loan-pay')); });
+        });
+        scope.querySelectorAll('[data-cancel-del-loan-pay]').forEach(function (btn) {
+          btn.addEventListener('click', function () { window.AppActions.askDeleteLoanPayment(null); });
+        });
+        scope.querySelectorAll('[data-confirm-del-loan-pay]').forEach(function (btn) {
+          btn.addEventListener('click', function () { window.AppActions.deleteLoanPayment(btn.getAttribute('data-confirm-del-loan-pay')); });
+        });
+      }
+
+      var existingPrestSearch = container.querySelector('#prest-mov-search');
+      var existingPrestTbody = container.querySelector('#prest-mov-table-body');
+      if (existingPrestSearch && existingPrestTbody && document.activeElement === existingPrestSearch) {
+        existingPrestTbody.innerHTML = rowsHtml;
+        bindPrestMovDeletes(existingPrestTbody);
+        return;
+      }
+
       container.innerHTML =
         '<div class="movimientos-toolbar" style="margin-bottom:0.85rem">' +
           '<h2 class="section-title-upper" style="margin:0">Historial de Movimientos de Préstamos</h2>' +
+          '<div class="search-box">' +
+            '<i class="fa-solid fa-magnifying-glass"></i>' +
+            '<input type="text" id="prest-mov-search" class="input" placeholder="Buscar persona, cuenta o detalle..." value="' + esc(state.prestSearchTerm || '') + '" />' +
+          '</div>' +
         '</div>' +
         '<div class="table-wrap">' +
           '<table class="data-table">' +
             '<thead><tr>' +
               '<th>Fecha</th><th>Tipo</th><th>Persona</th><th>Detalle</th><th>Cuenta</th><th class="text-right">Monto</th><th class="text-right">Acción</th>' +
             '</tr></thead>' +
-            '<tbody>' + rowsHtml + '</tbody>' +
+            '<tbody id="prest-mov-table-body">' + rowsHtml + '</tbody>' +
           '</table>' +
         '</div>';
+
+      var prestSearchInp = document.getElementById('prest-mov-search');
+      if (prestSearchInp) {
+        prestSearchInp.addEventListener('input', function (e) {
+          window.AppActions.setPrestSearchTerm(e.target.value);
+        });
+      }
     }
 
     container.querySelectorAll('[data-loan-filter]').forEach(function (btn) {

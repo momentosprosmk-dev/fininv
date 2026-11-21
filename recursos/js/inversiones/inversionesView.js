@@ -24,11 +24,11 @@
       : '';
 
     // Barra superior
+    var invTopTitle = state.invActiveTab === 'cuentas' ? 'Inversiones' : 'Estado Financiero de Inversiones';
     var topBarHtml =
       '<div class="inv-top-bar">' +
         '<div>' +
-          '<h2 class="section-title-upper" style="margin-bottom:0.2rem">Módulo de Inversiones</h2>' +
-          '<p class="text-muted" style="margin:0;font-size:0.9rem">Cartera gestionada (BBVA, CDT) y cartera libre (ARQ, acciones) con soporte multi-moneda.</p>' +
+          '<h2 class="section-title-upper" style="margin:0">' + invTopTitle + '</h2>' +
         '</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:0.5rem">' +
           '<button type="button" id="btn-inv-new-fund" class="btn btn-secondary"><i class="fa-solid fa-folder-plus"></i> Nueva Cuenta</button>' +
@@ -93,8 +93,9 @@
             var subRows = f.subSummaries.length === 0
               ? '<p class="text-dim" style="margin:0;font-size:0.85rem">Sin sub-inversiones aún. Usa <strong>Registrar Operación</strong> para crear e invertir en una subcuenta.</p>'
               : f.subSummaries.map(function (s) {
+                  var isPocket = Boolean(s.sub.isPocket);
                   var sPos = s.gainLoss >= 0;
-                  var hasNoCapital = Math.abs(Number(s.currentValue) || 0) <= 0.001 && Math.abs(Number(s.netInvested) || 0) <= 0.001;
+                  var hasNoCapital = (Number(s.currentValue) || 0) <= 0.001;
                   var isDelSub = state.pendingDeleteSubId === s.sub.id;
                   var delSubCtrl = hasNoCapital
                     ? (isDelSub
@@ -105,15 +106,19 @@
                   return (
                     '<div class="inv-sub-item">' +
                       '<div style="min-width:0;flex:1">' +
-                        '<p class="obligation-name" style="font-size:0.92rem;white-space:normal;word-break:break-word">' + esc(s.sub.name) + '</p>' +
+                        '<p class="obligation-name" style="font-size:0.92rem;white-space:normal;word-break:break-word">' + esc(s.sub.name) +
+                          (isPocket ? ' <span class="badge badge-sky" style="margin-left:0.3rem">Bolsillo</span>' : '') +
+                        '</p>' +
                         '<p class="obligation-sub tabular">' +
-                          'Actual: <strong style="color:var(--text-strong)">' + esc(mCur(s.currentValue, cur)) + '</strong>' +
-                          ' &middot; Inv: ' + esc(mCur(s.netInvested, cur)) +
-                          ' &middot; <span class="' + (sPos ? 'text-emerald' : 'text-rose') + '">' + (hide ? '••••' : (sPos ? '+' : '') + s.gainLossPct.toFixed(1) + '%') + '</span>' +
+                          (isPocket
+                            ? 'Saldo: <strong style="color:var(--text-strong)">' + esc(mCur(s.currentValue, cur)) + '</strong> &middot; Sin rendimientos'
+                            : 'Actual: <strong style="color:var(--text-strong)">' + esc(mCur(s.currentValue, cur)) + '</strong>' +
+                              ' &middot; Inv: ' + esc(mCur(s.netInvested, cur)) +
+                              ' &middot; <span class="' + (sPos ? 'text-emerald' : 'text-rose') + '">' + (hide ? '••••' : (sPos ? '+' : '') + s.gainLossPct.toFixed(1) + '%') + '</span>') +
                         '</p>' +
                       '</div>' +
                       '<div style="display:flex;align-items:center;gap:0.35rem;flex-shrink:0">' +
-                        (!hasNoCapital ? '<button type="button" class="btn btn-secondary btn-sub-update" data-fund="' + esc(acc.name) + '" data-sub="' + esc(s.sub.name) + '" style="padding:0.28rem 0.6rem;font-size:0.75rem" title="Actualizar valor actual"><i class="fa-solid fa-chart-line"></i> Valor</button>' : '') +
+                        (!isPocket && !hasNoCapital ? '<button type="button" class="btn btn-secondary btn-sub-update" data-fund="' + esc(acc.name) + '" data-sub="' + esc(s.sub.name) + '" style="padding:0.28rem 0.6rem;font-size:0.75rem" title="Actualizar valor actual"><i class="fa-solid fa-chart-line"></i> Valor</button>' : '') +
                         delSubCtrl +
                       '</div>' +
                     '</div>'
@@ -129,10 +134,16 @@
               '</div>';
           }
 
+          var hasSubWithValue = (f.subSummaries || []).some(function (s) {
+            return (Number(s.currentValue) || 0) > 0.001;
+          });
+          var canDeleteFund = !hasSubWithValue && (Number(f.totalValue) || 0) <= 0.001;
           var isDelFund = state.pendingDeleteFundId === acc.id;
-          var delFundCtrl = isDelFund
-            ? '<div class="inline-confirm"><span class="text-rose">¿Eliminar?</span><button type="button" class="inline-confirm-btn no" data-cancel-del-fund="' + esc(acc.id) + '">No</button><button type="button" class="inline-confirm-btn yes" data-confirm-del-fund="' + esc(acc.id) + '">Sí</button></div>'
-            : '<button type="button" class="icon-delete-btn" data-ask-del-fund="' + esc(acc.id) + '" title="Eliminar cuenta"><i class="fa-regular fa-trash-can"></i></button>';
+          var delFundCtrl = !canDeleteFund
+            ? ''
+            : (isDelFund
+                ? '<div class="inline-confirm"><span class="text-rose">¿Eliminar?</span><button type="button" class="inline-confirm-btn no" data-cancel-del-fund="' + esc(acc.id) + '">No</button><button type="button" class="inline-confirm-btn yes" data-confirm-del-fund="' + esc(acc.id) + '">Sí</button></div>'
+                : '<button type="button" class="icon-delete-btn" data-ask-del-fund="' + esc(acc.id) + '" title="Eliminar cuenta"><i class="fa-regular fa-trash-can"></i></button>');
 
           var detailLabel = isFrag
             ? (isExpanded ? 'Ocultar detalle' : 'Ver detalle (' + f.subSummaries.length + ')')
@@ -268,17 +279,15 @@
       }
 
       container.innerHTML =
-        '<div class="inv-top-bar">' +
+        '<h2 class="section-title-upper" style="margin:0 0 0.85rem">Historial de Movimientos</h2>' +
+        '<div class="movimientos-toolbar" style="margin-bottom:0.85rem">' +
           '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">' +
             '<select id="inv-mov-fund-filter" class="select" style="width:auto;max-width:100%;padding:0.55rem 0.85rem;font-size:0.92rem">' + fundOptsHtml + '</select>' +
             '<select id="inv-mov-type-filter" class="select" style="width:auto;max-width:100%;padding:0.55rem 0.85rem;font-size:0.92rem">' + typeOptsHtml + '</select>' +
           '</div>' +
-          '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">' +
-            '<div class="search-box" style="width:14rem">' +
-              '<i class="fa-solid fa-magnifying-glass"></i>' +
-              '<input type="text" id="inv-mov-search" class="input" placeholder="Buscar inversión o detalle..." value="' + esc(curSearch) + '" />' +
-            '</div>' +
-            '<button type="button" id="btn-inv-new-op-tab" class="btn btn-primary" ' + (invSummary.fundSummaries.length === 0 ? 'disabled' : '') + '><i class="fa-solid fa-plus"></i> Operación</button>' +
+          '<div class="search-box">' +
+            '<i class="fa-solid fa-magnifying-glass"></i>' +
+            '<input type="text" id="inv-mov-search" class="input" placeholder="Buscar inversión o detalle..." value="' + esc(curSearch) + '" />' +
           '</div>' +
         '</div>' +
         '<div class="table-wrap">' +
@@ -298,8 +307,6 @@
       invSearchInp.addEventListener('input', function (e) {
         window.AppActions.setInvSearchTerm(e.target.value);
       });
-      var newOpTabBtn = document.getElementById('btn-inv-new-op-tab');
-      if (newOpTabBtn) newOpTabBtn.addEventListener('click', function () { window.AppActions.openInvOpModal({}); });
 
       bindInvMovRowDeletes(container);
       return;

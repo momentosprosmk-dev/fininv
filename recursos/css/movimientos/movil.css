@@ -103,20 +103,27 @@
 .inline-confirm {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  gap: 0.3rem;
   border-radius: 0.5rem;
   border: 1px solid var(--rose-border);
   background: var(--rose-bg);
-  padding: 0.2rem 0.4rem;
-  font-size: 0.7rem;
+  padding: 0.22rem 0.45rem;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .inline-confirm-btn {
   border: none;
   border-radius: 0.35rem;
-  padding: 0.15rem 0.4rem;
-  font-size: 0.6875rem;
+  padding: 0.18rem 0.45rem;
+  font-size: 0.7rem;
   font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .inline-confirm-btn.no {

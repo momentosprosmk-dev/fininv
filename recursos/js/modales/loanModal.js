@@ -86,9 +86,9 @@
               '</div>' +
               '<div class="form-grid-2">' +
                 (state.isHistorical
-                  ? '<div class="field-group"><label class="field-label">Ya me han abonado antes (' + esc(fmt.getBaseCurrency()) + ')</label><input type="text" inputmode="decimal" id="lm-init-paid" class="input" placeholder="0" value="' + esc(state.initialPaidStr) + '" /></div>'
+                  ? '<div class="field-group"><label class="field-label">Ya me han abonado antes (' + esc(fmt.getBaseCurrency()) + ')</label><input type="text" inputmode="decimal" id="lm-init-paid" class="input" placeholder="0" value="' + esc(state.initialPaidStr) + '" /><p id="lm-init-paid-preview" style="margin:0.25rem 0 0;font-size:0.75rem;color:#a5b4fc">' + (fmt.parseDecimalInput(state.initialPaidStr) > 0 ? esc(fmt.formatCOP(fmt.parseDecimalInput(state.initialPaidStr))) : '') + '</p></div>'
                   : '<div class="field-group"><label class="field-label">Sale de la cuenta</label><select id="lm-from" class="select">' + accOpts + '</select></div>') +
-                '<div class="field-group"><label class="field-label">Capital prestado (' + esc(fmt.getBaseCurrency()) + ')</label><input type="text" inputmode="decimal" id="lm-principal" class="input" placeholder="Ej. 300000" value="' + esc(state.principalStr) + '" /></div>' +
+                '<div class="field-group"><label class="field-label">Capital prestado (' + esc(fmt.getBaseCurrency()) + ')</label><input type="text" inputmode="decimal" id="lm-principal" class="input" placeholder="Ej. 300000" value="' + esc(state.principalStr) + '" /><p id="lm-principal-preview" style="margin:0.25rem 0 0;font-size:0.75rem;color:#a5b4fc">' + (calc.principal > 0 ? esc(fmt.formatCOP(calc.principal)) : '') + '</p></div>' +
               '</div>' +
               '<div class="config-box" style="margin-bottom:0.85rem">' +
                 '<div class="form-grid-2" style="margin-bottom:' + (state.interestMode === 'none' ? '0' : '0.6rem') + '">' +
@@ -160,6 +160,8 @@
         var av = state.fromAccount ? (balances[state.fromAccount] || 0) : 0;
         var ins = !state.isHistorical && Boolean(state.fromAccount) && c.principal > av;
         var ok = Boolean(state.borrower.trim()) && (state.isHistorical || Boolean(state.fromAccount)) && c.principal > 0 && !ins;
+        var pEl = document.getElementById('lm-principal-preview');
+        if (pEl) pEl.textContent = c.principal > 0 ? fmt.formatCOP(c.principal) : '';
         var totEl = document.getElementById('lm-total-due');
         if (totEl) totEl.textContent = fmt.formatCOP(c.totalDue);
         var qEl = document.getElementById('lm-quota-val');
@@ -178,7 +180,12 @@
       var fromSel = document.getElementById('lm-from');
       if (fromSel) fromSel.addEventListener('change', function (e) { state.fromAccount = e.target.value; render(); });
       var initPaidInp = document.getElementById('lm-init-paid');
-      if (initPaidInp) initPaidInp.addEventListener('input', function (e) { state.initialPaidStr = e.target.value; });
+      if (initPaidInp) initPaidInp.addEventListener('input', function (e) {
+        state.initialPaidStr = e.target.value;
+        var v = fmt.parseDecimalInput(state.initialPaidStr);
+        var ipPrev = document.getElementById('lm-init-paid-preview');
+        if (ipPrev) ipPrev.textContent = v > 0 ? fmt.formatCOP(v) : '';
+      });
       document.getElementById('lm-principal').addEventListener('input', function (e) { state.principalStr = e.target.value; updatePreview(); });
       document.getElementById('lm-int-mode').addEventListener('change', function (e) { state.interestMode = e.target.value; render(); });
       var rateInp = document.getElementById('lm-int-rate');
@@ -247,6 +254,8 @@
     };
 
     function render() {
+      var prevScrollEl = root.querySelector('.modal-body-scroll');
+      var prevScrollTop = prevScrollEl ? prevScrollEl.scrollTop : 0;
       var amt = fmt.parseDecimalInput(state.amountStr);
       var canSave = Boolean(state.toAccount) && amt > 0;
       var accOpts = '<option value="">Selecciona cuenta...</option>' + liquidAccounts.map(function (a) {
@@ -255,32 +264,37 @@
 
       root.innerHTML =
         '<div class="modal-backdrop">' +
-          '<div class="modal-box" style="max-width:440px">' +
-            '<div class="modal-header">' +
-              '<div><h2 class="modal-title">Registrar Cobro</h2><p class="modal-subtitle">Préstamo a ' + esc(loan.borrower) + '</p></div>' +
-              '<button type="button" class="modal-close" id="lpm-close"><i class="fa-solid fa-xmark"></i></button>' +
+          '<div class="modal-box modal-flex" style="max-width:440px">' +
+            '<div class="modal-top-fixed">' +
+              '<div class="modal-header" style="margin-bottom:0">' +
+                '<div><h2 class="modal-title">Registrar Cobro</h2><p class="modal-subtitle">Préstamo a ' + esc(loan.borrower) + '</p></div>' +
+                '<button type="button" class="modal-close" id="lpm-close"><i class="fa-solid fa-xmark"></i></button>' +
+              '</div>' +
             '</div>' +
-            '<div class="config-box" style="margin-bottom:0.85rem">' +
-              '<p style="margin:0;font-size:0.82rem;color:var(--text-muted)">Saldo pendiente total: <strong style="color:var(--amber)">' + esc(fmt.formatCOP(opts.remainingTotal)) + '</strong></p>' +
-              '<p style="margin:0.2rem 0 0;font-size:0.8rem;color:var(--text-muted)">Cuota sugerida actual: <strong style="color:var(--text-strong)">' + esc(fmt.formatCOP(suggested)) + '</strong></p>' +
+            '<div class="modal-body-scroll">' +
+              '<div class="config-box" style="margin-bottom:0.85rem">' +
+                '<p style="margin:0;font-size:0.82rem;color:var(--text-muted)">Saldo pendiente total: <strong style="color:var(--amber)">' + esc(fmt.formatCOP(opts.remainingTotal)) + '</strong></p>' +
+                '<p style="margin:0.2rem 0 0;font-size:0.8rem;color:var(--text-muted)">Cuota sugerida actual: <strong style="color:var(--text-strong)">' + esc(fmt.formatCOP(suggested)) + '</strong></p>' +
+              '</div>' +
+              '<div class="field-group"><label class="field-label">Fecha de cobro</label><div id="lpm-datepicker"></div></div>' +
+              '<div class="field-group"><label class="field-label">Entra a la cuenta</label><select id="lpm-to" class="select">' + accOpts + '</select></div>' +
+              '<div class="field-group">' +
+                '<label class="field-label">Monto recibido (' + esc(fmt.getBaseCurrency()) + ')</label>' +
+                '<input type="text" inputmode="decimal" id="lpm-amt" class="input" value="' + esc(state.amountStr) + '" />' +
+                '<p id="lpm-amt-preview" style="margin:0.25rem 0 0;font-size:0.75rem;color:#a5b4fc">' + (amt > 0 ? esc(fmt.formatCOP(amt)) : '') + '</p>' +
+                '<p style="margin:0.25rem 0 0;font-size:0.76rem;color:var(--text-muted)">Puedes ingresar el total o un abono parcial.</p>' +
+              '</div>' +
+              '<div class="field-group" style="margin-bottom:0">' +
+                '<label class="obs-toggle-row">' +
+                  '<span class="obs-toggle-label">Agregar observaciones</span>' +
+                  '<span class="obs-switch ' + (state.showObs ? 'is-on' : '') + '"><input type="checkbox" id="lpm-obs-toggle" ' + (state.showObs ? 'checked' : '') + ' /><span class="obs-switch-thumb"></span></span>' +
+                '</label>' +
+                (state.showObs
+                  ? '<input type="text" id="lpm-notes" class="input" style="margin-top:0.5rem" placeholder="Ej. Abono cuota 1" value="' + esc(state.notes) + '" />'
+                  : '') +
+              '</div>' +
             '</div>' +
-            '<div class="field-group"><label class="field-label">Fecha de cobro</label><div id="lpm-datepicker"></div></div>' +
-            '<div class="field-group"><label class="field-label">Entra a la cuenta</label><select id="lpm-to" class="select">' + accOpts + '</select></div>' +
-            '<div class="field-group">' +
-              '<label class="field-label">Monto recibido (' + esc(fmt.getBaseCurrency()) + ')</label>' +
-              '<input type="text" inputmode="decimal" id="lpm-amt" class="input" value="' + esc(state.amountStr) + '" />' +
-              '<p style="margin:0.25rem 0 0;font-size:0.76rem;color:var(--text-muted)">Puedes ingresar el total o un abono parcial.</p>' +
-            '</div>' +
-            '<div class="field-group">' +
-              '<label class="obs-toggle-row">' +
-                '<span class="obs-toggle-label">Agregar observaciones</span>' +
-                '<span class="obs-switch ' + (state.showObs ? 'is-on' : '') + '"><input type="checkbox" id="lpm-obs-toggle" ' + (state.showObs ? 'checked' : '') + ' /><span class="obs-switch-thumb"></span></span>' +
-              '</label>' +
-              (state.showObs
-                ? '<input type="text" id="lpm-notes" class="input" style="margin-top:0.5rem" placeholder="Ej. Abono cuota 1" value="' + esc(state.notes) + '" />'
-                : '') +
-            '</div>' +
-            '<div class="modal-footer">' +
+            '<div class="modal-bottom-fixed">' +
               '<button type="button" class="btn btn-secondary" id="lpm-cancel">Cancelar</button>' +
               '<button type="button" class="btn btn-emerald" id="lpm-save" ' + (!canSave ? 'disabled' : '') + '>Registrar Ingreso</button>' +
             '</div>' +
@@ -298,7 +312,10 @@
       });
       document.getElementById('lpm-amt').addEventListener('input', function (e) {
         state.amountStr = e.target.value;
-        document.getElementById('lpm-save').disabled = !(state.toAccount && fmt.parseDecimalInput(state.amountStr) > 0);
+        var v = fmt.parseDecimalInput(state.amountStr);
+        var prevEl = document.getElementById('lpm-amt-preview');
+        if (prevEl) prevEl.textContent = v > 0 ? fmt.formatCOP(v) : '';
+        document.getElementById('lpm-save').disabled = !(state.toAccount && v > 0);
       });
       var lpmObsToggle = document.getElementById('lpm-obs-toggle');
       if (lpmObsToggle) lpmObsToggle.addEventListener('change', function (e) {

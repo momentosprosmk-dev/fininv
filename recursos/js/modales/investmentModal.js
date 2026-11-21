@@ -54,10 +54,12 @@
                 '<div class="field-group">' +
                   '<label class="field-label">Saldo inicial disponible (' + esc(state.currency) + ')</label>' +
                   '<input type="text" inputmode="decimal" id="ia-init" class="input" placeholder="0" value="' + esc(state.initialBalance) + '" />' +
+                  '<p id="ia-init-preview" style="margin:0.25rem 0 0;font-size:0.75rem;color:#a5b4fc">' + (window.AppFormat.parseDecimalInput(state.initialBalance) > 0 ? esc(window.AppFormat.formatCurrency(window.AppFormat.parseDecimalInput(state.initialBalance), state.currency)) : '') + '</p>' +
                 '</div>' +
                 '<div class="field-group">' +
                   '<label class="field-label">Meta opcional (' + esc(state.currency) + ')</label>' +
                   '<input type="text" inputmode="decimal" id="ia-goal" class="input" placeholder="Ej. 10000000" value="' + esc(state.goal) + '" />' +
+                  '<p id="ia-goal-preview" style="margin:0.25rem 0 0;font-size:0.75rem;color:#a5b4fc">' + (window.AppFormat.parseDecimalInput(state.goal) > 0 ? esc(window.AppFormat.formatCurrency(window.AppFormat.parseDecimalInput(state.goal), state.currency)) : '') + '</p>' +
                 '</div>' +
               '</div>' +
               '<div class="field-group" style="margin-bottom:0">' +
@@ -83,8 +85,18 @@
       document.getElementById('ia-name').addEventListener('input', function (e) { state.name = e.target.value; });
       document.getElementById('ia-mode').addEventListener('change', function (e) { state.mode = e.target.value; });
       document.getElementById('ia-currency').addEventListener('change', function (e) { state.currency = e.target.value; render(); });
-      document.getElementById('ia-init').addEventListener('input', function (e) { state.initialBalance = e.target.value; });
-      document.getElementById('ia-goal').addEventListener('input', function (e) { state.goal = e.target.value; });
+      document.getElementById('ia-init').addEventListener('input', function (e) {
+        state.initialBalance = e.target.value;
+        var v = window.AppFormat.parseDecimalInput(state.initialBalance);
+        var p = document.getElementById('ia-init-preview');
+        if (p) p.textContent = v > 0 ? window.AppFormat.formatCurrency(v, state.currency) : '';
+      });
+      document.getElementById('ia-goal').addEventListener('input', function (e) {
+        state.goal = e.target.value;
+        var v = window.AppFormat.parseDecimalInput(state.goal);
+        var p = document.getElementById('ia-goal-preview');
+        if (p) p.textContent = v > 0 ? window.AppFormat.formatCurrency(v, state.currency) : '';
+      });
       var iaObsToggle = document.getElementById('ia-obs-toggle');
       if (iaObsToggle) iaObsToggle.addEventListener('change', function (e) {
         state.showObs = Boolean(e.target.checked);
@@ -219,6 +231,7 @@
               '<div class="field-group">' +
                 '<label class="field-label">¿Cuánto marca hoy tu fondo / banco? (' + esc(cur) + ')</label>' +
                 '<input type="text" inputmode="decimal" id="uv-amount" class="input" value="' + esc(valueStr) + '" />' +
+                '<p id="uv-amount-preview" style="margin:0.25rem 0 0;font-size:0.75rem;color:#a5b4fc">' + (realVal > 0 ? esc(fmt.formatCurrency(realVal, cur)) : '') + '</p>' +
               '</div>' +
               '<div id="uv-preview" class="alert-banner ' + (totalGain >= 0 ? 'alert-emerald' : 'alert-rose') + '" style="margin-bottom:0">' +
                 'Ajuste por rendimiento: <strong>' + (diff >= 0 ? '+' : '') + esc(fmt.formatCurrency(diff, cur)) + '</strong><br/>' +
@@ -240,6 +253,8 @@
       inp.addEventListener('input', function (e) {
         valueStr = e.target.value;
         var v = fmt.parseDecimalInput(valueStr);
+        var amtPrev = document.getElementById('uv-amount-preview');
+        if (amtPrev) amtPrev.textContent = v > 0 ? fmt.formatCurrency(v, cur) : '';
         var d = Math.round((v - currentBookValue) * 100) / 100;
         var g = Math.round((v - netContributed) * 100) / 100;
         var p = netContributed > 0 ? ((g / netContributed) * 100).toFixed(2) : '0.00';
@@ -294,6 +309,7 @@
       isCreatingSub: false,
       newSubName: '',
       newSubNotes: '',
+      newSubIsPocket: false,
     };
 
     function getSelectedFund() {
@@ -344,11 +360,16 @@
         copAmountForNormal = amountVal;
       } else if (state.type === 'Retiro' && isForeign) {
         split = inv.computeCommissionSplit(baseAmountInFundCur, state.commType, commInFundCur, state.commApply);
-        equivVal = state.equivManual
-          ? fmt.parseDecimalInput(state.equivStr)
-          : (split.netToDest > 0 ? Math.round(split.netToDest * refRate) : 0);
-        copAmountForNormal = equivVal;
-        rate = (split.netToDest > 0 && equivVal > 0) ? Math.round((equivVal / split.netToDest) * 100) / 100 : refRate;
+        if (state.normalAccount === '__externo__') {
+          copAmountForNormal = 0;
+          rate = refRate;
+        } else {
+          equivVal = state.equivManual
+            ? fmt.parseDecimalInput(state.equivStr)
+            : (split.netToDest > 0 ? Math.round(split.netToDest * refRate) : 0);
+          copAmountForNormal = equivVal;
+          rate = (split.netToDest > 0 && equivVal > 0) ? Math.round((equivVal / split.netToDest) * 100) / 100 : refRate;
+        }
       } else {
         split = inv.computeCommissionSplit(baseAmountInFundCur, state.commType, commInFundCur, state.commApply);
         copAmountForNormal = (state.type === 'Aporte') ? amountVal : (state.type === 'Retiro' ? split.netToDest : 0);
@@ -365,42 +386,60 @@
         }
       } else if (state.type === 'Retiro' && f) {
         var neededFromFund = split.applyTo === 'fund' ? (split.grossAmount + split.commission) : split.grossAmount;
-        if (f.availableCash <= 0 || neededFromFund > f.availableCash) {
-          insufficientMsg = 'Saldo disponible insuficiente en ' + f.account.name + '. Disponible: ' + fmt.formatCurrency(Math.max(0, f.availableCash), cur);
+        var availRetiro = Math.round(Math.max(0, f.availableCash) * 100) / 100;
+        if (availRetiro <= 0 || neededFromFund > availRetiro + 0.001) {
+          insufficientMsg = 'Saldo disponible insuficiente en ' + f.account.name + '. Disponible: ' + fmt.formatCurrency(availRetiro, cur);
         }
       } else if (state.type === 'AsignarSub' && f) {
         var neededAssign = split.applyTo === 'fund' ? (split.grossAmount + split.commission) : split.grossAmount;
-        if (f.availableCash <= 0 || neededAssign > f.availableCash) {
-          insufficientMsg = 'Disponible por invertir insuficiente en ' + f.account.name + '. Disponible: ' + fmt.formatCurrency(Math.max(0, f.availableCash), cur);
+        var availAssign = Math.round(Math.max(0, f.availableCash) * 100) / 100;
+        if (availAssign <= 0 || neededAssign > availAssign + 0.001) {
+          insufficientMsg = 'Disponible por invertir insuficiente en ' + f.account.name + '. Disponible: ' + fmt.formatCurrency(availAssign, cur);
         }
       } else if (state.type === 'LiberarSub' && f && state.subName) {
         var subObj = f.subSummaries.find(function (s) { return s.sub.name === state.subName; });
-        var subBal = subObj ? subObj.currentValue : 0;
-        if (subBal <= 0 || amountVal > subBal) {
-          insufficientMsg = 'Saldo insuficiente en ' + state.subName + '. Disponible: ' + fmt.formatCurrency(Math.max(0, subBal), cur);
+        var subBal = Math.round(Math.max(0, subObj ? subObj.currentValue : 0) * 100) / 100;
+        if (subBal <= 0 || amountVal > subBal + 0.001) {
+          insufficientMsg = 'Saldo insuficiente en ' + state.subName + '. Disponible: ' + fmt.formatCurrency(subBal, cur);
         }
       } else if (state.type === 'TraspasoInv' && f) {
         var neededTr = split.applyTo === 'fund' ? (split.grossAmount + split.commission) : split.grossAmount;
-        if (f.availableCash <= 0 || neededTr > f.availableCash) {
+        var availTr = Math.round(Math.max(0, f.availableCash) * 100) / 100;
+        if (availTr <= 0 || neededTr > availTr + 0.001) {
           insufficientMsg = 'Saldo disponible insuficiente en ' + f.account.name + '.';
         }
       }
 
-      var fundListForType = (state.type === 'AsignarSub' || state.type === 'LiberarSub')
+      var fundListForType = state.type === 'AsignarSub'
         ? fundSummaries.filter(function (x) { return x.mode === 'fragmentado'; })
-        : fundSummaries;
+        : (state.type === 'LiberarSub'
+            ? fundSummaries.filter(function (x) {
+                return x.mode === 'fragmentado' && (x.subSummaries || []).some(function (s) {
+                  return (Number(s.currentValue) || 0) > 0.001;
+                });
+              })
+            : fundSummaries);
 
       var fundOpts = '<option value="">Selecciona fondo...</option>' + fundListForType.map(function (x) {
         return '<option value="' + esc(x.account.name) + '" ' + (state.fundName === x.account.name ? 'selected' : '') + '>' + esc(x.account.name) + ' (' + esc(x.currency) + ')</option>';
       }).join('');
 
-      var normalOpts = '<option value="">Selecciona cuenta...</option>' + liquidAccounts.map(function (a) {
-        return '<option value="' + esc(a.name) + '" ' + (state.normalAccount === a.name ? 'selected' : '') + '>' + esc(a.name) + '</option>';
-      }).join('');
+      var normalOpts = '<option value="">Selecciona cuenta...</option>' +
+        (state.type === 'Retiro'
+          ? '<option value="__externo__" ' + (state.normalAccount === '__externo__' ? 'selected' : '') + '>Externo / Vaciar saldo (no afecta cuentas)</option>'
+          : '') +
+        liquidAccounts.map(function (a) {
+          return '<option value="' + esc(a.name) + '" ' + (state.normalAccount === a.name ? 'selected' : '') + '>' + esc(a.name) + '</option>';
+        }).join('');
 
+      var visibleSubs = f
+        ? (state.type === 'LiberarSub'
+            ? f.subSummaries.filter(function (s) { return (Number(s.currentValue) || 0) > 0.001; })
+            : f.subSummaries)
+        : [];
       var subOpts = f
-        ? '<option value="">Selecciona sub-inversión...</option>' + f.subSummaries.map(function (s) {
-            return '<option value="' + esc(s.sub.name) + '" ' + (state.subName === s.sub.name ? 'selected' : '') + '>' + esc(s.sub.name) + '</option>';
+        ? '<option value="">Selecciona sub-inversión...</option>' + visibleSubs.map(function (s) {
+            return '<option value="' + esc(s.sub.name) + '" ' + (state.subName === s.sub.name ? 'selected' : '') + '>' + esc(s.sub.name) + (s.sub.isPocket ? ' [Bolsillo]' : '') + '</option>';
           }).join('')
         : '<option value="">Selecciona fondo primero...</option>';
 
@@ -426,8 +465,12 @@
         var subFieldContent = state.isCreatingSub && canCreateSub
           ? '<div class="config-box" style="margin:0;padding:0.65rem">' +
               '<div class="field-group" style="margin-bottom:0.5rem">' +
-                '<input type="text" id="io-new-sub-name" class="input" placeholder="Nombre de la subcuenta (ej. Microsoft)" value="' + esc(state.newSubName) + '" />' +
+                '<input type="text" id="io-new-sub-name" class="input" placeholder="Nombre de la subcuenta (ej. Microsoft o Reserva)" value="' + esc(state.newSubName) + '" />' +
               '</div>' +
+              '<label style="display:flex;align-items:center;gap:0.45rem;margin-bottom:0.5rem;font-size:0.78rem;color:var(--text-soft);cursor:pointer">' +
+                '<input type="checkbox" id="io-new-sub-pocket" ' + (state.newSubIsPocket ? 'checked' : '') + ' />' +
+                '<span>Bolsillo / reserva (sin rendimientos)</span>' +
+              '</label>' +
               '<div style="display:flex;gap:0.45rem;align-items:center">' +
                 '<input type="text" id="io-new-sub-notes" class="input" placeholder="Notas (opcional)" value="' + esc(state.newSubNotes) + '" style="flex:1" />' +
                 '<button type="button" id="io-save-new-sub" class="btn btn-primary" style="padding:0.45rem 0.75rem;font-size:0.8rem">Crear</button>' +
@@ -440,6 +483,14 @@
           : null;
         var subStatsHtml = (selectedSubObj && !state.isCreatingSub)
           ? (function () {
+              if (selectedSubObj.sub.isPocket) {
+                return (
+                  '<p style="margin:0.35rem 0 0;font-size:0.78rem;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:0.35rem 0.65rem">' +
+                    '<span>Saldo en bolsillo: <strong class="tabular" style="color:var(--text-strong)">' + esc(fmt.formatCurrency(selectedSubObj.currentValue, cur)) + '</strong></span>' +
+                    '<span class="text-sky">Sin rendimientos</span>' +
+                  '</p>'
+                );
+              }
               var sGain = selectedSubObj.gainLoss || 0;
               var sPos = sGain >= 0;
               var sPct = (sGain >= 0 ? '+' : '') + (selectedSubObj.gainLossPct || 0).toFixed(1) + '%';
@@ -489,20 +540,24 @@
               (split.commission > 0 ? ' (Comisión: <strong>' + esc(fmt.formatCurrency(split.commission, cur)) + '</strong> ' + (split.applyTo === 'fund' ? 'descontada de tu saldo previo en el fondo' : 'descontada del envío') + ')' : '') +
             '</div>';
         } else if (state.type === 'Retiro') {
-          previewHtml =
-            '<div class="alert-banner alert-indigo">' +
-              'Salen <strong>' + esc(fmt.formatCurrency(split.applyTo === 'fund' ? split.grossAmount + split.commission : split.grossAmount, cur)) + '</strong> del fondo &rarr; ' +
-              'Ingresan <strong>' + esc(fmt.formatCOP(copAmountForNormal)) + '</strong> a tu cuenta normal' +
-              (split.commission > 0 ? ' (Comisión: <strong>' + esc(fmt.formatCurrency(split.commission, cur)) + '</strong>)' : '') +
-            '</div>';
+          previewHtml = state.normalAccount === '__externo__'
+            ? '<div class="alert-banner alert-amber">' +
+                'Salen <strong>' + esc(fmt.formatCurrency(split.applyTo === 'fund' ? split.grossAmount + split.commission : split.grossAmount, cur)) + '</strong> de la inversión (salida externa / ajuste, sin ingresar a tus cuentas de Finanzas).' +
+              '</div>'
+            : '<div class="alert-banner alert-indigo">' +
+                'Salen <strong>' + esc(fmt.formatCurrency(split.applyTo === 'fund' ? split.grossAmount + split.commission : split.grossAmount, cur)) + '</strong> del fondo &rarr; ' +
+                'Ingresan <strong>' + esc(fmt.formatCOP(copAmountForNormal)) + '</strong> a tu cuenta normal' +
+                (split.commission > 0 ? ' (Comisión: <strong>' + esc(fmt.formatCurrency(split.commission, cur)) + '</strong>)' : '') +
+              '</div>';
         }
       }
 
+      var isExternalRetiro = state.type === 'Retiro' && state.normalAccount === '__externo__';
       var missing =
         amountVal <= 0 ||
         !state.fundName ||
         ((state.type === 'Aporte' || state.type === 'Retiro') && !state.normalAccount) ||
-        (isForeign && (state.type === 'Aporte' || state.type === 'Retiro') && equivVal <= 0) ||
+        (isForeign && (state.type === 'Aporte' || (state.type === 'Retiro' && !isExternalRetiro)) && equivVal <= 0) ||
         ((state.type === 'AsignarSub' || state.type === 'LiberarSub') && !state.subName) ||
         (state.type === 'TraspasoInv' && !state.destFundName);
 
@@ -529,9 +584,19 @@
               accountFields +
               '<div class="form-grid-2">' +
                 '<div class="field-group"><label class="field-label">Fecha</label><div id="io-datepicker"></div></div>' +
-                '<div class="field-group"><label class="field-label">' + esc(amountLabel) + '</label><input type="text" inputmode="decimal" id="io-amount" class="input" placeholder="Ej. 100000" value="' + esc(state.amountStr) + '" /></div>' +
+                '<div class="field-group">' +
+                  '<label class="field-label">' + esc(amountLabel) + '</label>' +
+                  '<input type="text" inputmode="decimal" id="io-amount" class="input" placeholder="Ej. 100000" value="' + esc(state.amountStr) + '" />' +
+                  (amountVal > 0
+                    ? '<p style="margin:0.25rem 0 0;font-size:0.75rem;color:#a5b4fc">' + esc(fmt.formatCurrency(amountVal, state.type === 'Aporte' ? baseCur : cur)) + '</p>'
+                    : '') +
+                  (state.type === 'Retiro' && f
+                    ? '<p style="margin:0.35rem 0 0;font-size:0.8rem;color:var(--text-muted)">Disponible para retirar: <strong class="text-sky tabular">' + esc(fmt.formatCurrency(Math.round(Math.max(0, f.availableCash) * 100) / 100, cur)) + '</strong></p>'
+                    : '') +
+                  (insufficientMsg ? '<div class="alert-banner alert-rose" style="margin-top:0.5rem;margin-bottom:0">' + esc(insufficientMsg) + '</div>' : '') +
+                '</div>' +
               '</div>' +
-              (isForeign && (state.type === 'Aporte' || state.type === 'Retiro')
+              (isForeign && (state.type === 'Aporte' || (state.type === 'Retiro' && state.normalAccount !== '__externo__'))
                 ? '<div class="field-group">' +
                     '<label class="field-label">' +
                       (state.type === 'Aporte'
@@ -539,6 +604,9 @@
                         : '¿A cuánto equivale en ' + esc(baseCur) + ' (ingresa a tu cuenta normal)?') +
                     '</label>' +
                     '<input type="text" inputmode="decimal" id="io-equiv" class="input" placeholder="Ej. ' + (state.type === 'Aporte' ? '25.50' : '100000') + '" value="' + esc(state.equivManual ? state.equivStr : (equivVal > 0 ? String(equivVal) : '')) + '" />' +
+                    (equivVal > 0
+                      ? '<p style="margin:0.25rem 0 0;font-size:0.75rem;color:#a5b4fc">' + esc(fmt.formatCurrency(equivVal, state.type === 'Aporte' ? cur : baseCur)) + '</p>'
+                      : '') +
                     '<p style="margin:0.3rem 0 0;font-size:0.78rem;color:#34d399">' +
                       (amountVal > 0 && equivVal > 0
                         ? 'Tasa implícita: 1 ' + esc(cur) + ' ≈ ' + esc(fmt.formatCOP(rate))
@@ -555,7 +623,12 @@
                     '<option value="fixed" ' + (state.commType === 'fixed' ? 'selected' : '') + '>Valor fijo (' + (state.type === 'Aporte' ? esc(baseCur) : esc(cur)) + ')</option>' +
                   '</select>' +
                   (state.commType !== 'none'
-                    ? '<input type="text" inputmode="decimal" id="io-comm-val" class="input" placeholder="' + (state.commType === 'percent' ? 'Ej. 4' : 'Ej. 4000') + '" value="' + esc(state.commValueStr) + '" />'
+                    ? '<div>' +
+                        '<input type="text" inputmode="decimal" id="io-comm-val" class="input" placeholder="' + (state.commType === 'percent' ? 'Ej. 4' : 'Ej. 4000') + '" value="' + esc(state.commValueStr) + '" />' +
+                        (state.commType === 'fixed' && commVal > 0
+                          ? '<p style="margin:0.25rem 0 0;font-size:0.75rem;color:#a5b4fc">' + esc(fmt.formatCurrency(commVal, state.type === 'Aporte' ? baseCur : cur)) + '</p>'
+                          : '') +
+                      '</div>'
                     : '') +
                 '</div>' +
                 (state.commType !== 'none'
@@ -575,7 +648,6 @@
                   : '') +
               '</div>' +
               previewHtml +
-              (insufficientMsg ? '<div class="alert-banner alert-rose" style="margin-top:0.75rem;margin-bottom:0">' + esc(insufficientMsg) + '</div>' : '') +
             '</div>' +
             '<div class="modal-bottom-fixed">' +
               '<button type="button" class="btn btn-secondary" id="io-cancel">Cancelar</button>' +
@@ -609,10 +681,13 @@
         state.isCreatingSub = !state.isCreatingSub;
         state.newSubName = '';
         state.newSubNotes = '';
+        state.newSubIsPocket = false;
         render();
       });
       var newSubNameInp = document.getElementById('io-new-sub-name');
       if (newSubNameInp) newSubNameInp.addEventListener('input', function (e) { state.newSubName = e.target.value; });
+      var newSubPocketChk = document.getElementById('io-new-sub-pocket');
+      if (newSubPocketChk) newSubPocketChk.addEventListener('change', function (e) { state.newSubIsPocket = Boolean(e.target.checked); });
       var newSubNotesInp = document.getElementById('io-new-sub-notes');
       if (newSubNotesInp) newSubNotesInp.addEventListener('input', function (e) { state.newSubNotes = e.target.value; });
       var saveNewSubBtn = document.getElementById('io-save-new-sub');
@@ -624,6 +699,7 @@
           fundName: f.account.name,
           name: name,
           initialBalance: 0,
+          isPocket: Boolean(state.newSubIsPocket),
           notes: state.newSubNotes.trim(),
         };
         if (typeof opts.onCreateSub === 'function') {
@@ -646,6 +722,7 @@
         state.isCreatingSub = false;
         state.newSubName = '';
         state.newSubNotes = '';
+        state.newSubIsPocket = false;
         render();
       });
       var destSel = document.getElementById('io-dest-fund');
@@ -690,13 +767,19 @@
           type: state.type,
           fundName: state.fundName,
           subName: state.subName,
-          normalAccount: state.type === 'TraspasoInv' ? state.destFundName : state.normalAccount,
-          description: state.description.trim() || state.type,
+          normalAccount: state.type === 'TraspasoInv'
+            ? state.destFundName
+            : (state.normalAccount === '__externo__' ? '' : state.normalAccount),
+          description: state.description.trim() || (state.normalAccount === '__externo__' ? 'Salida externa / Vaciar saldo' : state.type),
           amount: Math.round(baseAmountInFundCur * 100) / 100,
           commission: split.commission,
           commissionApply: split.applyTo,
           exchangeRate: rate,
-          amountCOP: state.type === 'Aporte' ? amountVal : (state.type === 'Retiro' ? copAmountForNormal : Math.round(baseAmountInFundCur * rate)),
+          amountCOP: state.type === 'Aporte'
+            ? amountVal
+            : (state.type === 'Retiro'
+                ? (state.normalAccount === '__externo__' ? Math.round(baseAmountInFundCur * rate) : copAmountForNormal)
+                : Math.round(baseAmountInFundCur * rate)),
         });
         closeFn();
       });
