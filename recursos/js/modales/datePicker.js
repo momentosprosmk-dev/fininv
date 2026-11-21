@@ -58,14 +58,14 @@
             ? '<div class="datepicker-popover">' +
                 '<div class="dp-head">' +
                   '<button type="button" class="dp-nav-btn" id="dp-prev" title="Mes anterior"><i class="fa-solid fa-chevron-left"></i></button>' +
-                  '<span style="font-size:0.78rem;font-weight:600;color:#fff">' + window.escapeHTML(monthLabel) + '</span>' +
+                  '<span style="font-size:0.78rem;font-weight:600;color:var(--text-strong)">' + window.escapeHTML(monthLabel) + '</span>' +
                   '<button type="button" class="dp-nav-btn" id="dp-next" title="Mes siguiente"><i class="fa-solid fa-chevron-right"></i></button>' +
                 '</div>' +
                 '<div class="dp-grid">' + weekdaysHtml + '</div>' +
                 '<div class="dp-grid" style="margin-top:0.25rem">' + cellsHtml + '</div>' +
                 '<div class="dp-foot">' +
                   '<button type="button" class="link-btn" id="dp-today">Ir a hoy</button>' +
-                  '<button type="button" class="link-btn" style="color:#94a3b8" id="dp-close">Cerrar</button>' +
+                  '<button type="button" class="link-btn" style="color:var(--text-muted)" id="dp-close">Cerrar</button>' +
                 '</div>' +
               '</div>'
             : '') +

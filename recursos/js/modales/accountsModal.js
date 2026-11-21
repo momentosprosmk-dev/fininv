@@ -185,7 +185,7 @@
           var isProtectedDefaultInv = c.type === 'Egreso' && (c.name === 'Inversión de Activos' || c.id === 'cat-e7' || c.id === 'egr-7');
           return (
             '<div class="config-item">' +
-              '<div style="font-size:0.85rem;color:#fff">' + esc(c.name) +
+              '<div style="font-size:0.85rem;color:var(--text-strong)">' + esc(c.name) +
                 (c.isArq ? ' <span class="badge badge-violet">Inversión</span>' : '') +
                 (isProtectedDefaultInv ? ' <span class="badge badge-sky">Por defecto</span>' : '') +
               '</div>' +

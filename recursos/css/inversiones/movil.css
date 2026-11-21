@@ -155,3 +155,11 @@
   background: rgba(139, 92, 246, 0.16);
   color: #c4b5fd;
 }
+
+:root[data-theme="light"] .btn-toggle-fund-detail {
+  color: #4338ca;
+}
+
+:root[data-theme="light"] .btn-toggle-fund-detail.is-expanded {
+  color: #6d28d9;
+}

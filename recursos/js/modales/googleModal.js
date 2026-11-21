@@ -124,7 +124,7 @@
 
         var protectedLinkHtml =
           (opts.sheetWebUrl
-            ? '<a href="' + esc(opts.sheetWebUrl) + '" target="_blank" rel="noreferrer" class="config-item" style="margin-bottom:0.6rem;color:#e2e8f0"><span>Abrir mi Google Sheet en Drive</span><i class="fa-solid fa-arrow-up-right-from-square text-muted"></i></a>'
+            ? '<a href="' + esc(opts.sheetWebUrl) + '" target="_blank" rel="noreferrer" class="config-item" style="margin-bottom:0.6rem;color:var(--text-main)"><span>Abrir mi Google Sheet en Drive</span><i class="fa-solid fa-arrow-up-right-from-square text-muted"></i></a>'
             : '') +
           '<div class="config-item" style="margin-bottom:0.6rem;word-break:break-all;font-size:0.82rem;color:var(--text-muted)">' +
             '<span><strong>URL Apps Script:</strong> ' + esc(opts.scriptUrl) + '</span>' +

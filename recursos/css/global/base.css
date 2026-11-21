@@ -365,6 +365,24 @@ a {
   color: #c4b5fd;
 }
 
+:root[data-theme="light"] .badge-emerald {
+  color: #047857;
+}
+
+:root[data-theme="light"] .badge-rose {
+  color: #be123c;
+}
+
+:root[data-theme="light"] .badge-sky {
+  background: rgba(2, 132, 199, 0.12);
+  color: #0369a1;
+}
+
+:root[data-theme="light"] .badge-violet {
+  background: rgba(124, 58, 237, 0.12);
+  color: #6d28d9;
+}
+
 .text-emerald { color: var(--emerald); }
 .text-rose { color: var(--rose); }
 .text-amber { color: var(--amber); }
